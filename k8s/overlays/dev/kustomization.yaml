@@ -26,4 +26,4 @@ patches:
         value: 1
       - op: replace
         path: /spec/template/spec/containers/0/command
-        value: ["pnpm", "dev"]
+        value: ["bun", "dev"]

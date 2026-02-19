@@ -16,7 +16,7 @@ spec:
       containers:
         - name: frontend
           image: fintrack-frontend:latest
-          command: ["pnpm", "start"]
+          command: ["bun", "run", "start"]
           ports:
             - containerPort: 3000
           env:
