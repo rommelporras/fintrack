@@ -62,7 +62,7 @@ async def test_list_transactions(client, user_and_accounts):
     })
     r = await client.get("/transactions")
     assert r.status_code == 200
-    assert len(r.json()) >= 2
+    assert len(r.json()["items"]) >= 2
 
 
 async def test_filter_by_type(client, user_and_accounts):
@@ -77,7 +77,7 @@ async def test_filter_by_type(client, user_and_accounts):
     })
     r = await client.get("/transactions?type=income")
     assert r.status_code == 200
-    assert all(t["type"] == "income" for t in r.json())
+    assert all(t["type"] == "income" for t in r.json()["items"])
 
 
 async def test_delete_transaction(client, user_and_accounts):
@@ -90,7 +90,7 @@ async def test_delete_transaction(client, user_and_accounts):
     del_r = await client.delete(f"/transactions/{txn_id}")
     assert del_r.status_code == 204
     r2 = await client.get("/transactions")
-    assert all(t["id"] != txn_id for t in r2.json())
+    assert all(t["id"] != txn_id for t in r2.json()["items"])
 
 
 async def test_atm_withdrawal_with_fee(client):
@@ -141,3 +141,57 @@ async def test_invalid_amount_rejected(client, user_and_accounts):
         "date": "2026-02-19",
     })
     assert r.status_code == 422
+
+
+async def test_list_transactions_returns_total(client, user_and_accounts):
+    ids = user_and_accounts
+    for i in range(3):
+        await client.post("/transactions", json={
+            "account_id": ids["bank_id"], "amount": "100.00",
+            "type": "expense", "date": "2026-02-01",
+            "description": f"Expense {i}",
+        })
+    r = await client.get("/transactions?limit=2&offset=0")
+    assert r.status_code == 200
+    data = r.json()
+    assert "total" in data
+    assert "items" in data
+    assert data["total"] == 3
+    assert len(data["items"]) == 2
+
+
+async def test_search_transactions_by_description(client, user_and_accounts):
+    ids = user_and_accounts
+    await client.post("/transactions", json={
+        "account_id": ids["bank_id"], "amount": "500.00",
+        "type": "expense", "date": "2026-02-01",
+        "description": "Jollibee lunch",
+    })
+    await client.post("/transactions", json={
+        "account_id": ids["bank_id"], "amount": "200.00",
+        "type": "expense", "date": "2026-02-01",
+        "description": "Mercury Drug",
+    })
+    r = await client.get("/transactions?search=jollibee")
+    assert r.status_code == 200
+    assert len(r.json()["items"]) == 1
+    assert r.json()["items"][0]["description"] == "Jollibee lunch"
+
+
+async def test_search_transactions_case_insensitive(client, user_and_accounts):
+    ids = user_and_accounts
+    await client.post("/transactions", json={
+        "account_id": ids["bank_id"], "amount": "500.00",
+        "type": "expense", "date": "2026-02-01",
+        "description": "Grab Food order",
+    })
+    r = await client.get("/transactions?search=grab food")
+    assert r.status_code == 200
+    assert len(r.json()["items"]) == 1
+
+
+async def test_search_transactions_no_match(client, user_and_accounts):
+    ids = user_and_accounts
+    r = await client.get("/transactions?search=nonexistent")
+    assert r.status_code == 200
+    assert r.json()["items"] == []
