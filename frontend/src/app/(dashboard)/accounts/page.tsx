@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus } from "lucide-react";
+import { Plus, Pencil } from "lucide-react";
 
 interface Account {
   id: string;
@@ -55,6 +55,13 @@ export default function AccountsPage() {
   const [type, setType] = useState("bank");
   const [openingBalance, setOpeningBalance] = useState("0.00");
 
+  const [editOpen, setEditOpen] = useState(false);
+  const [editAccount, setEditAccount] = useState<Account | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editBalance, setEditBalance] = useState("0.00");
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
   async function loadAccounts() {
     const data = await api.get<Account[]>("/accounts");
     setAccounts(data);
@@ -78,6 +85,34 @@ export default function AccountsPage() {
       setError(e instanceof Error ? e.message : "Failed to create account");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function openEdit(account: Account) {
+    setEditAccount(account);
+    setEditName(account.name);
+    setEditBalance(account.opening_balance);
+    setEditOpen(true);
+    setEditError(null);
+  }
+
+  async function handleEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editAccount) return;
+    setEditSubmitting(true);
+    setEditError(null);
+    try {
+      await api.patch(`/accounts/${editAccount.id}`, {
+        name: editName,
+        opening_balance: editBalance,
+      });
+      setEditOpen(false);
+      setEditAccount(null);
+      await loadAccounts();
+    } catch (e: unknown) {
+      setEditError(e instanceof Error ? e.message : "Failed to update account");
+    } finally {
+      setEditSubmitting(false);
     }
   }
 
@@ -157,7 +192,16 @@ export default function AccountsPage() {
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">{a.name}</CardTitle>
-                  <Badge variant="secondary">{TYPE_LABELS[a.type] ?? a.type}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{TYPE_LABELS[a.type] ?? a.type}</Badge>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openEdit(a); }}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label={`Edit ${a.name}`}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -170,6 +214,37 @@ export default function AccountsPage() {
           ))}
         </div>
       )}
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Account</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEdit} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Opening Balance (₱)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={editBalance}
+                onChange={(e) => setEditBalance(e.target.value)}
+              />
+            </div>
+            {editError && <p className="text-sm text-destructive">{editError}</p>}
+            <Button type="submit" className="w-full" disabled={editSubmitting}>
+              {editSubmitting ? "Saving…" : "Save Changes"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
