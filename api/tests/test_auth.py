@@ -47,3 +47,19 @@ async def test_me_returns_user(client):
     response = await client.get("/auth/me")
     assert response.status_code == 200
     assert response.json()["email"] == "me@example.com"
+
+
+@pytest.mark.asyncio
+async def test_patch_me_updates_name(client):
+    await client.post("/auth/register", json={
+        "email": "patch@example.com", "name": "Original", "password": "password123"
+    })
+    r = await client.patch("/auth/me", json={"name": "Updated"})
+    assert r.status_code == 200
+    assert r.json()["name"] == "Updated"
+
+
+@pytest.mark.asyncio
+async def test_patch_me_requires_auth(client):
+    r = await client.patch("/auth/me", json={"name": "Updated"})
+    assert r.status_code == 401
