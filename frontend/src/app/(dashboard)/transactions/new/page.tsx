@@ -26,25 +26,43 @@ interface Category {
   type: string;
 }
 
-const SUB_TYPES: Record<string, { value: string; label: string }[]> = {
-  income: [
-    { value: "salary", label: "Salary" },
-    { value: "bonus", label: "Bonus / Incentive" },
-    { value: "freelance", label: "Freelance / Project" },
-    { value: "other_income", label: "Other Income" },
-  ],
-  expense: [
-    { value: "regular", label: "Regular" },
-    { value: "bill_payment", label: "Bill Payment" },
-    { value: "subscription", label: "Subscription" },
-    { value: "other_expense", label: "Other Expense" },
-  ],
-  transfer: [
-    { value: "own_account", label: "Own Account" },
-    { value: "sent_to_person", label: "Sent to Person" },
-    { value: "atm_withdrawal", label: "ATM Withdrawal" },
-  ],
-};
+const INCOME_SUBTYPES = [
+  { value: "salary", label: "Salary" },
+  { value: "thirteenth_month", label: "13th Month Pay" },
+  { value: "bonus", label: "Bonus" },
+  { value: "overtime", label: "Overtime" },
+  { value: "freelance", label: "Freelance" },
+  { value: "business", label: "Business Income" },
+  { value: "consulting", label: "Consulting" },
+  { value: "rental", label: "Rental Income" },
+  { value: "interest", label: "Interest" },
+  { value: "dividends", label: "Dividends" },
+  { value: "capital_gains", label: "Capital Gains" },
+  { value: "sss_benefit", label: "SSS Benefit" },
+  { value: "philhealth_reimbursement", label: "PhilHealth Reimbursement" },
+  { value: "pagibig_dividend", label: "Pag-IBIG Dividend" },
+  { value: "government_aid", label: "Government Aid" },
+  { value: "remittance_received", label: "Remittance Received" },
+  { value: "gift_received", label: "Gift Received" },
+  { value: "tax_refund", label: "Tax Refund" },
+  { value: "sale_of_items", label: "Sale of Items" },
+  { value: "refund_cashback", label: "Refund / Cashback" },
+  { value: "other_income", label: "Other Income" },
+];
+
+const EXPENSE_SUBTYPES = [
+  { value: "regular", label: "Regular Expense" },
+  { value: "bill_payment", label: "Bill Payment" },
+  { value: "subscription", label: "Subscription" },
+  { value: "gift_given", label: "Gift Given" },
+  { value: "other_expense", label: "Other Expense" },
+];
+
+const TRANSFER_SUBTYPES = [
+  { value: "own_account", label: "Own Account" },
+  { value: "sent_to_person", label: "Sent to Person" },
+  { value: "atm_withdrawal", label: "ATM Withdrawal" },
+];
 
 export default function NewTransactionPage() {
   const router = useRouter();
@@ -131,10 +149,11 @@ export default function NewTransactionPage() {
                     <SelectValue placeholder="Optional" />
                   </SelectTrigger>
                   <SelectContent>
-                    {(SUB_TYPES[type] || []).map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
+                    {(type === "income" ? INCOME_SUBTYPES
+                      : type === "expense" ? EXPENSE_SUBTYPES
+                      : TRANSFER_SUBTYPES
+                    ).map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

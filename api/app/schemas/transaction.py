@@ -49,3 +49,8 @@ class TransactionResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class TransactionListResponse(BaseModel):
+    items: list[TransactionResponse]
+    total: int

@@ -6,7 +6,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token
 from app.models.user import User
-from app.schemas.auth import RegisterRequest, LoginRequest, UserResponse
+from app.schemas.auth import RegisterRequest, LoginRequest, UserResponse, UpdateProfileRequest
 from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -60,4 +60,16 @@ async def logout(response: Response):
 
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+@router.patch("/me", response_model=UserResponse)
+async def update_me(
+    data: UpdateProfileRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    current_user.name = data.name
+    await db.commit()
+    await db.refresh(current_user)
     return current_user

@@ -3,6 +3,14 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   PieChart,
   Pie,
@@ -114,27 +122,23 @@ export default function AnalyticsPage() {
 
       {/* Month/Year selector */}
       <div className="flex items-center gap-3">
-        <select
-          className="rounded border px-2 py-1 text-sm"
-          value={month}
-          onChange={(e) => setMonth(Number(e.target.value))}
-        >
-          {MONTH_NAMES.map((name, i) => (
-            <option key={i + 1} value={i + 1}>
-              {name}
-            </option>
-          ))}
-        </select>
-        <input
-          type="number"
-          className="w-24 rounded border px-2 py-1 text-sm"
+        <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
+          <SelectTrigger className="w-36">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {MONTH_NAMES.map((name, i) => (
+              <SelectItem key={i + 1} value={String(i + 1)}>{name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Input
+          className="w-24"
           value={yearInput}
-          min={2020}
-          max={2099}
           onChange={(e) => setYearInput(e.target.value)}
           onBlur={() => {
-            const n = parseInt(yearInput, 10);
-            if (n >= 2020 && n <= 2099) {
+            const n = Number(yearInput);
+            if (!isNaN(n) && n >= 2000 && n <= 2099) {
               setYear(n);
             } else {
               setYearInput(String(year));

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 import uuid
 
 
@@ -20,3 +20,7 @@ class UserResponse(BaseModel):
     avatar: str | None
 
     model_config = {"from_attributes": True}
+
+
+class UpdateProfileRequest(BaseModel):
+    name: str = Field(min_length=1)

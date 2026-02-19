@@ -15,10 +15,17 @@ import {
 import { api } from "@/lib/api";
 import type { ParsedTransaction } from "@/types/parse";
 
+interface Category {
+  id: string;
+  name: string;
+  type: string;
+}
+
 interface TransactionConfirmProps {
   parsed: ParsedTransaction;
   accountId: string;
   documentId?: string;
+  categories?: Category[];
   onSuccess: () => void;
 }
 
@@ -32,12 +39,14 @@ export function TransactionConfirm({
   parsed,
   accountId,
   documentId,
+  categories = [],
   onSuccess,
 }: TransactionConfirmProps) {
   const [amount, setAmount] = useState(parsed.amount ?? "");
   const [date, setDate] = useState(parsed.date ?? "");
   const [description, setDescription] = useState(parsed.description ?? "");
   const [type, setType] = useState(parsed.type ?? "expense");
+  const [categoryId, setCategoryId] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,6 +74,7 @@ export function TransactionConfirm({
         description,
         type,
         source: "paste_ai",
+        ...(categoryId ? { category_id: categoryId } : {}),
         ...(documentId ? { document_id: documentId } : {}),
       });
       onSuccess();
@@ -152,6 +162,25 @@ export function TransactionConfirm({
             </SelectContent>
           </Select>
         </div>
+        {categories.length > 0 && (
+          <div>
+            <Label htmlFor="tc-category">Category</Label>
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger id="tc-category">
+                <SelectValue placeholder="Select category (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories
+                  .filter((c) => c.type === type || c.type === "transfer")
+                  .map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
