@@ -1,15 +1,14 @@
 import uuid
 from datetime import date
-from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, extract
+from sqlalchemy import select
 from app.core.database import get_db
 from app.dependencies import get_current_user
 from app.models.budget import Budget
 from app.models.user import User
-from app.models.transaction import Transaction, TransactionType
 from app.schemas.budget import BudgetCreate, BudgetUpdate, BudgetResponse, BudgetStatusItem
+from app.services.budget_alerts import get_month_spending
 
 router = APIRouter(prefix="/budgets", tags=["budgets"])
 
@@ -40,28 +39,6 @@ async def create_budget(
     return budget
 
 
-async def _get_month_spending(
-    db: AsyncSession,
-    user_id: uuid.UUID,
-    budget: Budget,
-    month_start: date,
-) -> Decimal:
-    q = select(func.coalesce(func.sum(Transaction.amount), Decimal(0))).where(
-        Transaction.user_id == user_id,
-        Transaction.type == TransactionType.expense,
-        Transaction.date >= month_start,
-        extract("month", Transaction.date) == month_start.month,
-        extract("year", Transaction.date) == month_start.year,
-    )
-    if budget.type == "category" and budget.category_id:
-        q = q.where(Transaction.category_id == budget.category_id)
-    elif budget.type == "account" and budget.account_id:
-        q = q.where(Transaction.account_id == budget.account_id)
-    result = await db.execute(q)
-    value = result.scalar()
-    return Decimal(value).quantize(Decimal("0.01")) if value is not None else Decimal("0.00")
-
-
 @router.get("/status", response_model=list[BudgetStatusItem])
 async def get_budget_status(
     current_user: User = Depends(get_current_user),
@@ -77,7 +54,7 @@ async def get_budget_status(
 
     items = []
     for budget in budgets:
-        spent = await _get_month_spending(db, current_user.id, budget, month_start)
+        spent = await get_month_spending(db, current_user.id, budget, month_start)
         percent = float(spent / budget.amount * 100) if budget.amount > 0 else 0.0
 
         if percent >= 100:

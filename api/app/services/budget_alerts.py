@@ -4,7 +4,7 @@ from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, extract
 from app.models.budget import Budget
-from app.models.transaction import Transaction, TransactionType
+from app.models.transaction import Transaction
 from app.models.notification import Notification, NotificationType
 from app.services.discord import send_discord_notification
 
@@ -27,26 +27,27 @@ async def check_budget_alerts(db: AsyncSession, user_id: uuid.UUID) -> None:
         if budget.amount == 0:
             continue
 
-        spent = await _get_month_spending(db, user_id, budget, month_start)
+        spent = await get_month_spending(db, user_id, budget, month_start)
         percent = float(spent / budget.amount * 100)
 
-        if percent >= 100:
+        if percent >= 100 and budget.alert_at_100:
             await _maybe_notify(
                 db, user_id, budget, NotificationType.budget_exceeded, percent, spent
             )
-        elif percent >= 80:
+        elif percent >= 80 and budget.alert_at_80:
             await _maybe_notify(
                 db, user_id, budget, NotificationType.budget_warning, percent, spent
             )
 
 
-async def _get_month_spending(
+async def get_month_spending(
     db: AsyncSession,
     user_id: uuid.UUID,
-    budget: Budget,
+    budget: "Budget",
     month_start: date,
 ) -> Decimal:
-    q = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
+    from app.models.transaction import TransactionType
+    q = select(func.coalesce(func.sum(Transaction.amount), Decimal(0))).where(
         Transaction.user_id == user_id,
         Transaction.type == TransactionType.expense,
         Transaction.date >= month_start,
@@ -58,7 +59,8 @@ async def _get_month_spending(
     elif budget.type == "account" and budget.account_id:
         q = q.where(Transaction.account_id == budget.account_id)
     result = await db.execute(q)
-    return result.scalar() or Decimal(0)
+    value = result.scalar()
+    return Decimal(value).quantize(Decimal("0.01")) if value is not None else Decimal("0.00")
 
 
 async def _maybe_notify(

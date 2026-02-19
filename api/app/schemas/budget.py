@@ -41,6 +41,9 @@ class BudgetResponse(BaseModel):
     category_id: uuid.UUID | None
     account_id: uuid.UUID | None
     amount: Decimal
+    period: str
+    alert_at_80: bool
+    alert_at_100: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}
