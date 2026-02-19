@@ -12,6 +12,7 @@ from app.routers import dashboard as dashboard_router
 from app.routers import documents as documents_router
 from app.routers import parse as parse_router
 from app.routers import statements as statements_router
+from app.routers import budgets as budgets_router
 
 
 @asynccontextmanager
@@ -41,6 +42,7 @@ app.include_router(dashboard_router.router)
 app.include_router(documents_router.router)
 app.include_router(parse_router.router)
 app.include_router(statements_router.router)
+app.include_router(budgets_router.router)
 
 
 @app.get("/health")
