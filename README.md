@@ -49,7 +49,7 @@ fintrack/
 │   │   ├── services/       # Business logic (balance, budget alerts, Discord)
 │   │   └── tasks/          # Celery tasks + beat schedule
 │   ├── migrations/         # Alembic versions + seed data
-│   └── tests/              # 113 async API tests
+│   └── tests/              # 119 async API tests
 ├── frontend/               # Next.js 16 app (App Router)
 │   └── src/
 │       ├── app/
@@ -134,7 +134,7 @@ TEST_DATABASE_URL="postgresql+asyncpg://finance:changeme@127.0.0.1:5435/finance_
   uv run pytest -v
 ```
 
-**113 tests, all passing.** Tests use an isolated `finance_test` database that is created and torn down per session.
+**119 tests, all passing.** Tests use an isolated `finance_test` database that is created and torn down per session.
 
 ---
 

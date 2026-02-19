@@ -10,7 +10,7 @@ def check_statement_due_dates() -> None:
 
 async def _async_check_statements() -> None:
     from datetime import date, timedelta
-    from sqlalchemy import select
+    from sqlalchemy import select, func, cast, Date
     from app.core.database import AsyncSessionLocal
     from app.models.statement import Statement
     from app.models.credit_card import CreditCard
@@ -36,12 +36,13 @@ async def _async_check_statements() -> None:
 
             for stmt, cc in rows:
                 # Dedup: skip if already notified today for this statement+days
+                # Use DB-side date cast to avoid Python local-date vs UTC mismatch
                 existing = await db.execute(
                     select(Notification).where(
                         Notification.type == NotificationType.statement_due,
                         Notification.metadata_["statement_id"].astext == str(stmt.id),
                         Notification.metadata_["days"].astext == str(days),
-                        Notification.created_at >= today,
+                        cast(Notification.created_at, Date) == func.current_date(),
                     )
                 )
                 if existing.scalar_one_or_none():

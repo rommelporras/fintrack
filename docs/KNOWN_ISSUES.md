@@ -238,4 +238,15 @@ The transaction edit endpoint takes the full `TransactionCreate` schema, not a p
 
 | Issue | Resolution |
 |---|---|
-| App metadata "Create Next App" | Fixed — `layout.tsx` updated to `title: "FinTrack"` |
+| [C1] Settings profile save does nothing | Fixed — `PATCH /auth/me` added to auth router with `UpdateProfileRequest` schema |
+| [C2] Expired sessions show empty data | Fixed — 401 interceptor in `api.ts` redirects to `/login` on any 401 |
+| [C3] App metadata "Create Next App" | Fixed — `layout.tsx` updated to `title: "FinTrack"` |
+| [H1] AI import requires 8+ steps | Fixed — scan page rewritten as single inline flow (upload → paste → review → save) |
+| [H3] No search on transactions | Fixed — `search` query param on `GET /transactions` + frontend debounced search input |
+| [H4] Transaction count shows page count | Fixed — `total_count` in response, "Showing X of Y" display |
+| [H5] No account edit in UI | Fixed — pencil icon + edit dialog on each account card |
+| [H6] BulkImportTable always assigns to first account | Fixed — account selector shown when multiple accounts exist |
+| [L1] Analytics uses native HTML form elements | Fixed — replaced with shadcn `Select`/`Input` |
+| [M2] Income sub-types missing from New Transaction form | Fixed — all 21 sub-types added to the form |
+| [M5] No filter for paid/unpaid on Statements page | Fixed — All/Unpaid/Paid toggle buttons added |
+| [M6] TransactionConfirm has no category selector | Fixed — category selector added, filtered by transaction type |
