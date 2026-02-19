@@ -8,6 +8,7 @@ from app.dependencies import get_current_user
 from app.models.transaction import Transaction, TransactionType
 from app.models.user import User
 from app.schemas.transaction import TransactionCreate, TransactionResponse
+from app.services.budget_alerts import check_budget_alerts
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
@@ -55,6 +56,7 @@ async def create_transaction(
     db.add(txn)
     await db.commit()
     await db.refresh(txn)
+    await check_budget_alerts(db, current_user.id)
     return txn
 
 
@@ -78,6 +80,7 @@ async def update_transaction(
         setattr(txn, field, value)
     await db.commit()
     await db.refresh(txn)
+    await check_budget_alerts(db, current_user.id)
     return txn
 
 

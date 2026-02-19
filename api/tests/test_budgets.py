@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+import uuid
 import pytest
 from httpx import AsyncClient
 
@@ -237,3 +238,142 @@ async def test_budget_status_wrong_category_not_counted(
     items = r.json()
     assert items[0]["status"] == "ok"
     assert items[0]["spent"] == "0.00"
+
+
+from unittest.mock import AsyncMock, patch
+from sqlalchemy import select
+import app.core.config as cfg
+from app.models.notification import Notification, NotificationType
+
+
+async def test_budget_alert_fires_at_80_percent(
+    auth_client: AsyncClient, db, account_id: str, category_id: str, monkeypatch
+):
+    monkeypatch.setattr(cfg.settings, "discord_webhook_url", "")
+
+    # Create budget ₱10,000
+    await auth_client.post("/budgets", json={
+        "type": "category", "category_id": category_id, "amount": "10000.00"
+    })
+    me = await auth_client.get("/auth/me")
+    user_id = me.json()["id"]
+
+    # Insert ₱7,900 directly (79%)
+    await _create_expense(db, user_id, account_id, category_id, "7900.00")
+
+    # POST ₱100 via API — total ₱8,000 (80%) → triggers warning
+    r = await auth_client.post("/transactions", json={
+        "account_id": account_id,
+        "category_id": category_id,
+        "amount": "100.00",
+        "type": "expense",
+        "date": str(date.today()),
+        "description": "coffee",
+    })
+    assert r.status_code == 201
+
+    notifs_result = await db.execute(
+        select(Notification).where(Notification.user_id == uuid.UUID(user_id))
+    )
+    notifs = notifs_result.scalars().all()
+    assert len(notifs) == 1
+    assert notifs[0].type == NotificationType.budget_warning
+
+
+async def test_budget_alert_not_duplicated(
+    auth_client: AsyncClient, db, account_id: str, category_id: str, monkeypatch
+):
+    monkeypatch.setattr(cfg.settings, "discord_webhook_url", "")
+
+    await auth_client.post("/budgets", json={
+        "type": "category", "category_id": category_id, "amount": "10000.00"
+    })
+    me = await auth_client.get("/auth/me")
+    user_id = me.json()["id"]
+
+    # Direct insert to get to 79%
+    await _create_expense(db, user_id, account_id, category_id, "7900.00")
+
+    # First API transaction: total = 8000 (80%) → fires warning
+    await auth_client.post("/transactions", json={
+        "account_id": account_id,
+        "category_id": category_id,
+        "amount": "100.00",
+        "type": "expense",
+        "date": str(date.today()),
+        "description": "first",
+    })
+
+    # Second API transaction: total = 8100 (81%) → should NOT create another warning
+    await auth_client.post("/transactions", json={
+        "account_id": account_id,
+        "category_id": category_id,
+        "amount": "100.00",
+        "type": "expense",
+        "date": str(date.today()),
+        "description": "second",
+    })
+
+    notifs_result = await db.execute(
+        select(Notification).where(Notification.user_id == uuid.UUID(user_id))
+    )
+    notifs = notifs_result.scalars().all()
+    warning_notifs = [n for n in notifs if n.type == NotificationType.budget_warning]
+    assert len(warning_notifs) == 1  # Only one warning, not two
+
+
+async def test_budget_exceeded_alert(
+    auth_client: AsyncClient, db, account_id: str, category_id: str, monkeypatch
+):
+    monkeypatch.setattr(cfg.settings, "discord_webhook_url", "")
+
+    await auth_client.post("/budgets", json={
+        "type": "category", "category_id": category_id, "amount": "10000.00"
+    })
+    me = await auth_client.get("/auth/me")
+    user_id = me.json()["id"]
+
+    # Get to 99.9%
+    await _create_expense(db, user_id, account_id, category_id, "9990.00")
+
+    # Push over 100% via API
+    await auth_client.post("/transactions", json={
+        "account_id": account_id,
+        "category_id": category_id,
+        "amount": "20.00",
+        "type": "expense",
+        "date": str(date.today()),
+        "description": "over budget",
+    })
+
+    notifs_result = await db.execute(
+        select(Notification).where(Notification.user_id == uuid.UUID(user_id))
+    )
+    notifs = notifs_result.scalars().all()
+    types = {n.type for n in notifs}
+    assert NotificationType.budget_exceeded in types
+
+
+async def test_budget_alert_discord_called(
+    auth_client: AsyncClient, db, account_id: str, category_id: str, monkeypatch
+):
+    monkeypatch.setattr(cfg.settings, "discord_webhook_url", "https://discord.com/api/webhooks/test")
+
+    await auth_client.post("/budgets", json={
+        "type": "category", "category_id": category_id, "amount": "10000.00"
+    })
+    me = await auth_client.get("/auth/me")
+    user_id = me.json()["id"]
+
+    await _create_expense(db, user_id, account_id, category_id, "7900.00")
+
+    with patch("app.services.discord.httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+        await auth_client.post("/transactions", json={
+            "account_id": account_id,
+            "category_id": category_id,
+            "amount": "100.00",
+            "type": "expense",
+            "date": str(date.today()),
+            "description": "webhook test",
+        })
+        mock_post.assert_called_once()
