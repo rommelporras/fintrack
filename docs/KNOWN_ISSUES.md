@@ -250,3 +250,6 @@ The transaction edit endpoint takes the full `TransactionCreate` schema, not a p
 | [M2] Income sub-types missing from New Transaction form | Fixed — all 21 sub-types added to the form |
 | [M5] No filter for paid/unpaid on Statements page | Fixed — All/Unpaid/Paid toggle buttons added |
 | [M6] TransactionConfirm has no category selector | Fixed — category selector added, filtered by transaction type |
+| [H2] No onboarding — blank dashboard | Fixed — onboarding checklist on dashboard with 3-step guide, dismiss + auto-hide; consistent empty states on Accounts/Cards/Budgets |
+| [H7] Credit card setup requires two pages | Fixed — "+ Create new account" option in card form auto-creates backing account |
+| [M4] Credit limit not in card creation form | Fixed — optional credit limit field added to card creation dialog |
