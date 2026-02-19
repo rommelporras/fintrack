@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Summary {
@@ -56,6 +57,12 @@ export default function DashboardPage() {
     }
     load();
   }, []);
+
+  const hasData = !loading && summary && (
+    Number(summary.total_income) > 0 ||
+    Number(summary.total_expenses) > 0 ||
+    transactions.length > 0
+  );
 
   if (loading) {
     return (
@@ -150,6 +157,26 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Welcome empty state */}
+      {!loading && !hasData && (
+        <Card className="border-dashed">
+          <CardContent className="py-10 text-center space-y-3">
+            <p className="font-semibold text-lg">Welcome to FinTrack</p>
+            <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+              Get started by adding your accounts, then record your first transaction.
+            </p>
+            <div className="flex justify-center gap-3 pt-2">
+              <a href="/accounts">
+                <Button variant="default" size="sm">Add Accounts</Button>
+              </a>
+              <a href="/transactions/new">
+                <Button variant="outline" size="sm">Record Transaction</Button>
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recent Transactions */}
       <Card>

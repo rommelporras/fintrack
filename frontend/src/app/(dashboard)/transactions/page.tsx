@@ -304,7 +304,17 @@ export default function TransactionsPage() {
               ))}
             </div>
           ) : transactions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No transactions found.</p>
+            <div className="text-center py-16 space-y-3">
+              <p className="text-muted-foreground">No transactions found.</p>
+              {typeFilter === "all" && filterAccountId === "all" && filterCategoryId === "all" && !debouncedSearch && (
+                <a href="/transactions/new">
+                  <Button variant="outline" size="sm">Record your first transaction</Button>
+                </a>
+              )}
+              {(typeFilter !== "all" || filterAccountId !== "all" || filterCategoryId !== "all" || !!debouncedSearch) && (
+                <p className="text-xs text-muted-foreground">Try adjusting your filters or search.</p>
+              )}
+            </div>
           ) : (
             <ul className="space-y-0 divide-y">
               {transactions.map((t) => (
