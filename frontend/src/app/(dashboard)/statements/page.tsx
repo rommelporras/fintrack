@@ -61,6 +61,7 @@ export default function StatementsPage() {
   const [statements, setStatements] = useState<Statement[]>([]);
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [paidFilter, setPaidFilter] = useState<"all" | "unpaid" | "paid">("all");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState<NewStatementForm>({
@@ -75,8 +76,12 @@ export default function StatementsPage() {
   async function load() {
     setLoading(true);
     try {
+      const params = new URLSearchParams();
+      if (paidFilter === "unpaid") params.set("is_paid", "false");
+      if (paidFilter === "paid") params.set("is_paid", "true");
+      const query = params.toString() ? `?${params.toString()}` : "";
       const [stmts, cards] = await Promise.all([
-        api.get<Statement[]>("/statements"),
+        api.get<Statement[]>(`/statements${query}`),
         api.get<CreditCard[]>("/credit-cards"),
       ]);
       setStatements(stmts);
@@ -86,7 +91,7 @@ export default function StatementsPage() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [paidFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function markPaid(id: string) {
     setStatements((prev) =>
@@ -136,7 +141,20 @@ export default function StatementsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Statements</h1>
-        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <div className="flex items-center gap-3">
+          <div className="flex gap-2">
+            {(["all", "unpaid", "paid"] as const).map((f) => (
+              <Button
+                key={f}
+                size="sm"
+                variant={paidFilter === f ? "default" : "outline"}
+                onClick={() => setPaidFilter(f)}
+              >
+                {f.charAt(0).toUpperCase() + f.slice(1)}
+              </Button>
+            ))}
+          </div>
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <Button size="sm">
               <Plus className="h-4 w-4 mr-1" />
@@ -221,6 +239,7 @@ export default function StatementsPage() {
             </form>
           </SheetContent>
         </Sheet>
+        </div>
       </div>
 
       {loading ? (
