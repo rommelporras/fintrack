@@ -52,7 +52,7 @@ export default function DocumentsPage() {
     queryFn: () => api.get<Document[]>("/documents"),
   });
 
-  const { data: accounts = [] } = useQuery({
+  const { data: accounts = [], isLoading: accountsLoading } = useQuery({
     queryKey: ["accounts"],
     queryFn: () => api.get<Account[]>("/accounts"),
   });
@@ -149,6 +149,11 @@ export default function DocumentsPage() {
                 <SheetTitle>{selected.filename}</SheetTitle>
               </SheetHeader>
               <div className="mt-4 space-y-4">
+                {!defaultAccountId && !accountsLoading && (
+                  <p className="text-sm text-destructive mb-2">
+                    No account found. Please add an account before importing transactions.
+                  </p>
+                )}
                 <Button
                   variant="secondary"
                   size="sm"
@@ -172,7 +177,13 @@ export default function DocumentsPage() {
                 {!parsedSingle && !parsedBulk && (
                   <div>
                     <p className="text-sm font-medium mb-2">Paste AI Response</p>
-                    <PasteInput bulk={isBulk} onParsed={handleParsed} />
+                    {defaultAccountId ? (
+                      <PasteInput bulk={isBulk} onParsed={handleParsed} />
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        {accountsLoading ? "Loading accounts..." : "Add an account first to import transactions."}
+                      </p>
+                    )}
                   </div>
                 )}
 

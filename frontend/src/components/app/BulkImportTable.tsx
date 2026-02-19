@@ -36,7 +36,7 @@ export function BulkImportTable({
     setError(null);
     try {
       const toImport = rows.filter((_, i) => selected.has(i));
-      await Promise.all(
+      const results = await Promise.allSettled(
         toImport.map((row) =>
           api.post("/transactions", {
             account_id: accountId,
@@ -49,11 +49,18 @@ export function BulkImportTable({
           })
         )
       );
-      onSuccess(toImport.length);
+      const succeeded = results.filter((r) => r.status === "fulfilled").length;
+      const failed = results.filter((r) => r.status === "rejected").length;
+      if (failed > 0) {
+        setError(
+          `${succeeded} imported, ${failed} failed. Check failed rows and try again.`
+        );
+      }
+      if (succeeded > 0) {
+        onSuccess(succeeded);
+      }
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Import failed. Try again."
-      );
+      setError(e instanceof Error ? e.message : "Import failed. Try again.");
     } finally {
       setImporting(false);
     }
@@ -90,8 +97,9 @@ export function BulkImportTable({
                 </td>
                 <td className="p-2">{row.description ?? "—"}</td>
                 <td className="p-2 text-right">
-                  ₱
-                  {row.amount ?? (
+                  {row.amount != null ? (
+                    `₱${row.amount}`
+                  ) : (
                     <span className="text-amber-500">?</span>
                   )}
                 </td>
