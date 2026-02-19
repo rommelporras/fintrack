@@ -7,10 +7,12 @@ import {
   ScanLine,
   Wallet,
   CreditCard,
+  Receipt,
   FileText,
   Bell,
   Settings,
   LogOut,
+  PiggyBank,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,9 +21,11 @@ import { Button } from "@/components/ui/button";
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
+  { href: "/budgets", label: "Budgets", icon: PiggyBank },
   { href: "/scan", label: "Scan Receipt", icon: ScanLine },
   { href: "/accounts", label: "Accounts", icon: Wallet },
   { href: "/cards", label: "Credit Cards", icon: CreditCard },
+  { href: "/statements", label: "Statements", icon: Receipt },
   { href: "/documents", label: "Documents", icon: FileText },
   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/settings", label: "Settings", icon: Settings },
