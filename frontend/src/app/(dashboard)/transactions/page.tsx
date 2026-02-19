@@ -76,13 +76,21 @@ const TYPE_COLORS: Record<string, string> = {
   transfer: "bg-blue-100 text-blue-800",
 };
 
+interface TransactionListResponse {
+  items: Transaction[];
+  total: number;
+}
+
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [total, setTotal] = useState(0);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [offset, setOffset] = useState(0);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const LIMIT = 50;
 
   // Edit sheet state
@@ -105,6 +113,11 @@ export default function TransactionsPage() {
   const [filterAccountId, setFilterAccountId] = useState("all");
   const [filterCategoryId, setFilterCategoryId] = useState("all");
 
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -117,13 +130,14 @@ export default function TransactionsPage() {
       if (filterDateTo) params.set("date_to", filterDateTo);
       if (filterAccountId !== "all") params.set("account_id", filterAccountId);
       if (filterCategoryId !== "all") params.set("category_id", filterCategoryId);
-      setTransactions(
-        await api.get<Transaction[]>(`/transactions?${params}`)
-      );
+      if (debouncedSearch) params.set("search", debouncedSearch);
+      const data = await api.get<TransactionListResponse>(`/transactions?${params}`);
+      setTransactions(data.items);
+      setTotal(data.total);
     } finally {
       setLoading(false);
     }
-  }, [offset, typeFilter, filterDateFrom, filterDateTo, filterAccountId, filterCategoryId]);
+  }, [offset, typeFilter, filterDateFrom, filterDateTo, filterAccountId, filterCategoryId, debouncedSearch]);
 
   useEffect(() => {
     Promise.all([
@@ -178,6 +192,7 @@ export default function TransactionsPage() {
     setFilterAccountId("all");
     setFilterCategoryId("all");
     setTypeFilter("all");
+    setSearch("");
     setOffset(0);
   }
 
@@ -194,6 +209,15 @@ export default function TransactionsPage() {
             New
           </Link>
         </Button>
+      </div>
+
+      <div className="flex gap-2">
+        <Input
+          placeholder="Search transactions…"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setOffset(0); }}
+          className="max-w-xs"
+        />
       </div>
 
       <div className="flex gap-2">
@@ -265,7 +289,11 @@ export default function TransactionsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-sm text-muted-foreground">
-            {loading ? "Loading…" : `${transactions.length} transactions`}
+            {loading ? "Loading…" : (
+              <span className="text-sm text-muted-foreground">
+                {total > 0 ? `Showing ${transactions.length} of ${total}` : ""}
+              </span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>

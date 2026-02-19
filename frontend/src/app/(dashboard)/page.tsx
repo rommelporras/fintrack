@@ -42,13 +42,13 @@ export default function DashboardPage() {
   useEffect(() => {
     async function load() {
       try {
-        const [s, t, nw] = await Promise.all([
+        const [s, txnData, nw] = await Promise.all([
           api.get<Summary>("/dashboard/summary"),
-          api.get<Transaction[]>("/transactions?limit=10"),
+          api.get<{ items: Transaction[]; total: number }>("/transactions?limit=10"),
           api.get<NetWorthData>("/dashboard/net-worth"),
         ]);
         setSummary(s);
-        setTransactions(t);
+        setTransactions(txnData.items);
         setNetWorth(nw);
       } finally {
         setLoading(false);
