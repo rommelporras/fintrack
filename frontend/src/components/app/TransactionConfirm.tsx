@@ -5,15 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { api } from "@/lib/api";
-
-interface ParsedTransaction {
-  amount: string | null;
-  date: string | null;
-  description: string | null;
-  type: string | null;
-  confidence: "high" | "medium" | "low";
-}
+import type { ParsedTransaction } from "@/types/parse";
 
 interface TransactionConfirmProps {
   parsed: ParsedTransaction;
@@ -44,6 +44,17 @@ export function TransactionConfirm({
   const uncertain = parsed.confidence !== "high";
 
   const handleSubmit = async () => {
+    // Validate required fields before posting
+    const numericAmount = Number(amount);
+    if (!amount || isNaN(numericAmount) || numericAmount <= 0) {
+      setError("A valid amount is required.");
+      return;
+    }
+    if (!date) {
+      setError("A date is required.");
+      return;
+    }
+
     setSaving(true);
     setError(null);
     try {
@@ -57,8 +68,10 @@ export function TransactionConfirm({
         ...(documentId ? { document_id: documentId } : {}),
       });
       onSuccess();
-    } catch {
-      setError("Failed to save transaction. Check the fields and try again.");
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Failed to save transaction. Try again."
+      );
     } finally {
       setSaving(false);
     }
@@ -85,7 +98,11 @@ export function TransactionConfirm({
             id="tc-amount"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className={uncertain && !parsed.amount ? "border-amber-400 focus-visible:ring-amber-400" : ""}
+            className={
+              uncertain && !parsed.amount
+                ? "border-amber-400 focus-visible:ring-amber-400"
+                : ""
+            }
           />
         </div>
         <div>
@@ -95,7 +112,11 @@ export function TransactionConfirm({
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className={uncertain && !parsed.date ? "border-amber-400 focus-visible:ring-amber-400" : ""}
+            className={
+              uncertain && !parsed.date
+                ? "border-amber-400 focus-visible:ring-amber-400"
+                : ""
+            }
           />
         </div>
         <div>
@@ -104,21 +125,32 @@ export function TransactionConfirm({
             id="tc-desc"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className={uncertain && !parsed.description ? "border-amber-400 focus-visible:ring-amber-400" : ""}
+            className={
+              uncertain && !parsed.description
+                ? "border-amber-400 focus-visible:ring-amber-400"
+                : ""
+            }
           />
         </div>
         <div>
           <Label htmlFor="tc-type">Type</Label>
-          <select
-            id="tc-type"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            className={`w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${uncertain && !parsed.type ? "border-amber-400 focus-visible:ring-amber-400" : "border-input"}`}
-          >
-            <option value="expense">Expense</option>
-            <option value="income">Income</option>
-            <option value="transfer">Transfer</option>
-          </select>
+          <Select value={type} onValueChange={setType}>
+            <SelectTrigger
+              id="tc-type"
+              className={
+                uncertain && !parsed.type
+                  ? "border-amber-400 focus:ring-amber-400"
+                  : ""
+              }
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="expense">Expense</SelectItem>
+              <SelectItem value="income">Income</SelectItem>
+              <SelectItem value="transfer">Transfer</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

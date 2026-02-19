@@ -2,24 +2,12 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
-
-interface ParsedTransaction {
-  amount: string | null;
-  date: string | null;
-  description: string | null;
-  type: string | null;
-  category_hint: string | null;
-  confidence: "high" | "medium" | "low";
-}
-
-interface BulkParseResponse {
-  transactions: ParsedTransaction[];
-  count: number;
-}
+import type { ParsedTransaction, BulkParseResponse, PasteResult } from "@/types/parse";
 
 interface PasteInputProps {
-  onParsed: (result: ParsedTransaction | BulkParseResponse) => void;
+  onParsed: (result: PasteResult) => void;
   bulk?: boolean;
 }
 
@@ -33,13 +21,15 @@ export function PasteInput({ onParsed, bulk = false }: PasteInputProps) {
     setLoading(true);
     setError(null);
     try {
-      const endpoint = bulk ? "/parse/bulk" : "/parse/paste";
-      const result = bulk
-        ? await api.post<BulkParseResponse>(endpoint, { text })
-        : await api.post<ParsedTransaction>(endpoint, { text });
-      onParsed(result);
-    } catch {
-      setError("Failed to parse. Try again.");
+      if (bulk) {
+        const data = await api.post<BulkParseResponse>("/parse/bulk", { text });
+        onParsed({ kind: "bulk", data });
+      } else {
+        const data = await api.post<ParsedTransaction>("/parse/paste", { text });
+        onParsed({ kind: "single", data });
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to parse. Try again.");
     } finally {
       setLoading(false);
     }
@@ -47,7 +37,9 @@ export function PasteInput({ onParsed, bulk = false }: PasteInputProps) {
 
   return (
     <div className="space-y-3">
+      <Label htmlFor="paste-input">AI Response</Label>
       <textarea
+        id="paste-input"
         placeholder="Paste the AI response here (JSON or plain text)..."
         value={text}
         onChange={(e) => setText(e.target.value)}
