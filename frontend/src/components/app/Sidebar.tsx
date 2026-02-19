@@ -14,6 +14,7 @@ import {
   Settings,
   LogOut,
   PiggyBank,
+  BarChart2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/budgets", label: "Budgets", icon: PiggyBank },
+  { href: "/analytics", label: "Analytics", icon: BarChart2 },
   { href: "/scan", label: "Scan Receipt", icon: ScanLine },
   { href: "/accounts", label: "Accounts", icon: Wallet },
   { href: "/cards", label: "Credit Cards", icon: CreditCard },

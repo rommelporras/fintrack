@@ -1,3 +1,4 @@
+import uuid
 from collections import defaultdict
 from decimal import Decimal
 from fastapi import APIRouter, Depends, Query
@@ -10,14 +11,15 @@ from app.models.category import Category
 from app.models.user import User
 from app.models.credit_card import CreditCard
 from app.models.statement import Statement
+from app.schemas.analytics import CategorySpendingItem, CardHistoryItem
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
 
-@router.get("/spending-by-category")
+@router.get("/spending-by-category", response_model=list[CategorySpendingItem])
 async def spending_by_category(
-    year: int = Query(...),
-    month: int = Query(...),
+    year: int = Query(..., ge=2000, le=2099),
+    month: int = Query(..., ge=1, le=12),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -50,7 +52,7 @@ async def spending_by_category(
     ]
 
 
-@router.get("/statement-history")
+@router.get("/statement-history", response_model=list[CardHistoryItem])
 async def statement_history(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -81,7 +83,7 @@ async def statement_history(
     all_stmts = all_stmts_result.scalars().all()
 
     # Group by card_id, keep first 6 (most recent), then reverse to chronological
-    stmts_by_card: dict = defaultdict(list)
+    stmts_by_card: dict[uuid.UUID, list[Statement]] = defaultdict(list)
     for s in all_stmts:
         stmts_by_card[s.credit_card_id].append(s)
 
