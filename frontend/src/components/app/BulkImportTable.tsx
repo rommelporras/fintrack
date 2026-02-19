@@ -3,12 +3,27 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import type { ParsedTransaction } from "@/types/parse";
+
+interface Account {
+  id: string;
+  name: string;
+  type: string;
+}
 
 interface BulkImportTableProps {
   rows: ParsedTransaction[];
   accountId: string;
+  accounts?: Account[];
   documentId?: string;
   onSuccess: (count: number) => void;
 }
@@ -16,12 +31,14 @@ interface BulkImportTableProps {
 export function BulkImportTable({
   rows,
   accountId,
+  accounts,
   documentId,
   onSuccess,
 }: BulkImportTableProps) {
   const [selected, setSelected] = useState<Set<number>>(
     new Set(rows.map((_, i) => i))
   );
+  const [selectedAccountId, setSelectedAccountId] = useState(accountId);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,7 +56,7 @@ export function BulkImportTable({
       const results = await Promise.allSettled(
         toImport.map((row) =>
           api.post("/transactions", {
-            account_id: accountId,
+            account_id: selectedAccountId,
             amount: row.amount,
             date: row.date,
             description: row.description ?? "",
@@ -68,6 +85,21 @@ export function BulkImportTable({
 
   return (
     <div className="space-y-4">
+      {accounts && accounts.length > 1 && (
+        <div className="space-y-1">
+          <Label>Import to account</Label>
+          <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {accounts.map((a) => (
+                <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       <div className="rounded-md border overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/50">
