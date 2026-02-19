@@ -124,3 +124,71 @@ async def test_spending_by_category_cross_user_isolation(
     names = {item["category_name"] for item in r.json()}
     assert "OtherCat" not in names
     assert "PrimaryCat" in names
+
+
+async def test_statement_history_no_cards(auth_client: AsyncClient):
+    r = await auth_client.get("/analytics/statement-history")
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+async def test_statement_history_single_card(auth_client: AsyncClient):
+    acc = (await auth_client.post("/accounts", json={
+        "name": "BDO CC", "type": "bank", "currency": "PHP"
+    })).json()
+    card = (await auth_client.post("/credit-cards", json={
+        "account_id": acc["id"], "bank_name": "BDO",
+        "last_four": "1234", "statement_day": 1, "due_day": 25,
+    })).json()
+
+    await auth_client.post("/statements", json={
+        "credit_card_id": card["id"],
+        "period_start": "2026-01-01", "period_end": "2026-01-31",
+        "due_date": "2026-02-25", "total_amount": "15000.00", "minimum_due": "500.00",
+    })
+    await auth_client.post("/statements", json={
+        "credit_card_id": card["id"],
+        "period_start": "2026-02-01", "period_end": "2026-02-28",
+        "due_date": "2026-03-25", "total_amount": "22000.00", "minimum_due": "500.00",
+    })
+
+    r = await auth_client.get("/analytics/statement-history")
+    data = r.json()
+    assert len(data) == 1
+    assert data[0]["card_label"] == "BDO •••• 1234"
+    stmts = data[0]["statements"]
+    assert len(stmts) == 2
+    # Chronological order (oldest first)
+    assert stmts[0]["period"] == "Jan 2026"
+    assert stmts[0]["total"] == "15000.00"
+    assert stmts[1]["period"] == "Feb 2026"
+    assert stmts[1]["total"] == "22000.00"
+
+
+async def test_statement_history_limits_to_6(auth_client: AsyncClient):
+    acc = (await auth_client.post("/accounts", json={
+        "name": "BPI CC", "type": "bank", "currency": "PHP"
+    })).json()
+    card = (await auth_client.post("/credit-cards", json={
+        "account_id": acc["id"], "bank_name": "BPI",
+        "last_four": "5678", "statement_day": 5, "due_day": 28,
+    })).json()
+
+    for i in range(8):
+        month = i + 1
+        await auth_client.post("/statements", json={
+            "credit_card_id": card["id"],
+            "period_start": f"2025-{month:02d}-01",
+            "period_end": f"2025-{month:02d}-28",
+            "due_date": f"2025-{month:02d}-28",
+            "total_amount": str(1000 * (i + 1)),
+            "minimum_due": "300.00",
+        })
+
+    r = await auth_client.get("/analytics/statement-history")
+    card_data = next(d for d in r.json() if "5678" in d["card_label"])
+    # Only the 6 most recent statements returned
+    assert len(card_data["statements"]) == 6
+    # Chronological — first is month 3 (total 3000), last is month 8 (total 8000)
+    assert card_data["statements"][0]["total"] == "3000.00"
+    assert card_data["statements"][-1]["total"] == "8000.00"
