@@ -19,6 +19,16 @@ interface Transaction {
   date: string;
 }
 
+interface NetWorthTypeItem {
+  type: string;
+  total: string;
+}
+
+interface NetWorthData {
+  total: string;
+  by_type: NetWorthTypeItem[];
+}
+
 function formatPeso(amount: string | number) {
   return `₱${Number(amount).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
 }
@@ -26,17 +36,20 @@ function formatPeso(amount: string | number) {
 export default function DashboardPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [netWorth, setNetWorth] = useState<NetWorthData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const [s, t] = await Promise.all([
+        const [s, t, nw] = await Promise.all([
           api.get<Summary>("/dashboard/summary"),
           api.get<Transaction[]>("/transactions?limit=10"),
+          api.get<NetWorthData>("/dashboard/net-worth"),
         ]);
         setSummary(s);
         setTransactions(t);
+        setNetWorth(nw);
       } finally {
         setLoading(false);
       }
@@ -53,6 +66,7 @@ export default function DashboardPage() {
             <Skeleton key={i} className="h-28 w-full rounded-xl" />
           ))}
         </div>
+        <Skeleton className="h-24 w-full rounded-xl" />
         <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     );
@@ -109,6 +123,33 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Net Worth */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            Net Worth
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-2xl font-bold">
+            {netWorth ? formatPeso(netWorth.total) : "—"}
+          </p>
+          {netWorth && netWorth.by_type.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {netWorth.by_type.map((item) => (
+                <div
+                  key={item.type}
+                  className="flex justify-between text-sm text-muted-foreground"
+                >
+                  <span className="capitalize">{item.type.replaceAll("_", " ")}</span>
+                  <span>{formatPeso(item.total)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Recent Transactions */}
       <Card>
