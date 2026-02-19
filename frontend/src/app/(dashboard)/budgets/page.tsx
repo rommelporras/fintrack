@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, PiggyBank } from "lucide-react";
 
 interface BudgetResponse {
   id: string;
@@ -246,7 +246,19 @@ export default function BudgetsPage() {
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full" />)}
         </div>
       ) : budgetItems.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No budgets yet. Add one to start tracking.</p>
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center space-y-3">
+            <PiggyBank className="h-12 w-12 mx-auto text-muted-foreground" />
+            <p className="text-lg font-medium">No budgets yet</p>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+              Set a budget to track your spending against limits
+            </p>
+            <Button size="sm" onClick={() => setSheetOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Budget
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-3">
           {budgetItems.map((item) => (

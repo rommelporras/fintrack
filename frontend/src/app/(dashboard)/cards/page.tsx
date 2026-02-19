@@ -60,6 +60,8 @@ export default function CardsPage() {
   const [lastFour, setLastFour] = useState("");
   const [statementDay, setStatementDay] = useState("15");
   const [dueDay, setDueDay] = useState("3");
+  const [newAccountName, setNewAccountName] = useState("");
+  const [creditLimit, setCreditLimit] = useState("");
 
   async function loadData() {
     const [c, a] = await Promise.all([
@@ -73,15 +75,33 @@ export default function CardsPage() {
 
   useEffect(() => { loadData(); }, []);
 
+  useEffect(() => {
+    if (accountId === "__new__") {
+      setNewAccountName(bankName ? `${bankName} Credit Card` : "");
+    }
+  }, [bankName, accountId]);
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
     try {
+      let resolvedAccountId = accountId;
+
+      if (accountId === "__new__") {
+        const newAccount = await api.post<{ id: string }>("/accounts", {
+          name: newAccountName,
+          type: "credit_card",
+          opening_balance: "0",
+        });
+        resolvedAccountId = newAccount.id;
+      }
+
       await api.post("/credit-cards", {
-        account_id: accountId,
+        account_id: resolvedAccountId,
         bank_name: bankName,
         last_four: lastFour,
+        credit_limit: creditLimit ? Number(creditLimit) : null,
         statement_day: Number(statementDay),
         due_day: Number(dueDay),
       });
@@ -89,6 +109,8 @@ export default function CardsPage() {
       setBankName("");
       setLastFour("");
       setAccountId("");
+      setCreditLimit("");
+      setNewAccountName("");
       await loadData();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to create card");
@@ -120,12 +142,24 @@ export default function CardsPage() {
                     <SelectValue placeholder="Select account" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="__new__">+ Create new account</SelectItem>
                     {accounts.map((a) => (
                       <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+              {accountId === "__new__" && (
+                <div className="space-y-2">
+                  <Label>Account Name</Label>
+                  <Input
+                    value={newAccountName}
+                    onChange={(e) => setNewAccountName(e.target.value)}
+                    placeholder="e.g. BPI Credit Card"
+                    required
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>Bank</Label>
                 <Input value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="BPI" required />
@@ -133,6 +167,17 @@ export default function CardsPage() {
               <div className="space-y-2">
                 <Label>Last 4 Digits</Label>
                 <Input value={lastFour} onChange={(e) => setLastFour(e.target.value)} placeholder="1234" maxLength={4} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Credit Limit (₱)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={creditLimit}
+                  onChange={(e) => setCreditLimit(e.target.value)}
+                  placeholder="0.00"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -158,9 +203,17 @@ export default function CardsPage() {
           {[1, 2].map((i) => <Skeleton key={i} className="h-40 w-full rounded-xl" />)}
         </div>
       ) : cards.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            No credit cards yet.
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center space-y-3">
+            <CreditCardIcon className="h-12 w-12 mx-auto text-muted-foreground" />
+            <p className="text-lg font-medium">No credit cards yet</p>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+              Add a card to track statements and due dates
+            </p>
+            <Button size="sm" onClick={() => setOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Card
+            </Button>
           </CardContent>
         </Card>
       ) : (

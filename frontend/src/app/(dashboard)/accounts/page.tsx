@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Wallet } from "lucide-react";
 
 interface Account {
   id: string;
@@ -180,9 +180,17 @@ export default function AccountsPage() {
           ))}
         </div>
       ) : accounts.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            No accounts yet. Add your first account to get started.
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center space-y-3">
+            <Wallet className="h-12 w-12 mx-auto text-muted-foreground" />
+            <p className="text-lg font-medium">No accounts yet</p>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+              Add your first account to start tracking your finances
+            </p>
+            <Button size="sm" onClick={() => setOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Account
+            </Button>
           </CardContent>
         </Card>
       ) : (

@@ -4,6 +4,8 @@ import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
+import { CheckCircle2, Circle, ChevronRight, X } from "lucide-react";
 
 interface Summary {
   month: string;
@@ -30,6 +32,16 @@ interface NetWorthData {
   by_type: NetWorthTypeItem[];
 }
 
+interface AccountItem {
+  id: string;
+  name: string;
+}
+
+interface CardItem {
+  id: string;
+  bank_name: string;
+}
+
 function formatPeso(amount: string | number) {
   return `₱${Number(amount).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
 }
@@ -39,18 +51,25 @@ export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [netWorth, setNetWorth] = useState<NetWorthData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accounts, setAccounts] = useState<AccountItem[]>([]);
+  const [creditCards, setCreditCards] = useState<CardItem[]>([]);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(true); // default true to avoid flash
 
   useEffect(() => {
     async function load() {
       try {
-        const [s, txnData, nw] = await Promise.all([
+        const [s, txnData, nw, accs, cards] = await Promise.all([
           api.get<Summary>("/dashboard/summary"),
           api.get<{ items: Transaction[]; total: number }>("/transactions?limit=10"),
           api.get<NetWorthData>("/dashboard/net-worth"),
+          api.get<AccountItem[]>("/accounts"),
+          api.get<CardItem[]>("/credit-cards"),
         ]);
         setSummary(s);
         setTransactions(txnData.items);
         setNetWorth(nw);
+        setAccounts(accs);
+        setCreditCards(cards);
       } finally {
         setLoading(false);
       }
@@ -58,11 +77,18 @@ export default function DashboardPage() {
     load();
   }, []);
 
-  const hasData = !loading && summary && (
-    Number(summary.total_income) > 0 ||
-    Number(summary.total_expenses) > 0 ||
-    transactions.length > 0
-  );
+  useEffect(() => {
+    setOnboardingDismissed(localStorage.getItem("fintrack_onboarding_dismissed") === "true");
+  }, []);
+
+  const onboardingSteps = [
+    { label: "Create your first account", href: "/accounts", done: accounts.length > 0 },
+    { label: "Add a credit card", href: "/cards", done: creditCards.length > 0 },
+    { label: "Record a transaction", href: "/transactions/new", done: transactions.length > 0 },
+  ];
+  const completedCount = onboardingSteps.filter((s) => s.done).length;
+  const allComplete = completedCount === onboardingSteps.length;
+  const showOnboarding = !loading && !onboardingDismissed && !allComplete;
 
   if (loading) {
     return (
@@ -158,22 +184,45 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Welcome empty state */}
-      {!loading && !hasData && (
+      {/* Onboarding checklist */}
+      {showOnboarding && (
         <Card className="border-dashed">
-          <CardContent className="py-10 text-center space-y-3">
-            <p className="font-semibold text-lg">Welcome to FinTrack</p>
-            <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-              Get started by adding your accounts, then record your first transaction.
-            </p>
-            <div className="flex justify-center gap-3 pt-2">
-              <a href="/accounts">
-                <Button variant="default" size="sm">Add Accounts</Button>
-              </a>
-              <a href="/transactions/new">
-                <Button variant="outline" size="sm">Record Transaction</Button>
-              </a>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Get Started</CardTitle>
+              <button
+                onClick={() => {
+                  localStorage.setItem("fintrack_onboarding_dismissed", "true");
+                  setOnboardingDismissed(true);
+                }}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Dismiss onboarding"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            {onboardingSteps.map((step) => (
+              <Link
+                key={step.href}
+                href={step.href}
+                className="flex items-center gap-3 rounded-md px-2 py-2.5 hover:bg-muted transition-colors"
+              >
+                {step.done ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                ) : (
+                  <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
+                )}
+                <span className={step.done ? "text-sm text-muted-foreground line-through" : "text-sm"}>
+                  {step.label}
+                </span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto shrink-0" />
+              </Link>
+            ))}
+            <p className="text-xs text-muted-foreground pt-2">
+              {completedCount} of {onboardingSteps.length} complete
+            </p>
           </CardContent>
         </Card>
       )}
