@@ -104,3 +104,17 @@ async def test_patch_document_status(auth_client, tmp_path, monkeypatch):
     r = await auth_client.patch(f"/documents/{doc_id}", json={"status": "done"})
     assert r.status_code == 200
     assert r.json()["status"] == "done"
+
+
+async def test_get_prompt_for_receipt(auth_client, tmp_path, monkeypatch):
+    monkeypatch.setattr(cfg.settings, "upload_dir", str(tmp_path))
+    up = await auth_client.post(
+        "/documents/upload",
+        files={"file": ("r.jpg", io.BytesIO(b"x"), "image/jpeg")},
+        data={"document_type": "receipt"},
+    )
+    doc_id = up.json()["id"]
+    r = await auth_client.post(f"/documents/{doc_id}/prompt")
+    assert r.status_code == 200
+    assert "amount" in r.json()["prompt"]
+    assert "JSON" in r.json()["prompt"]
