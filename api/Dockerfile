@@ -5,8 +5,8 @@ WORKDIR /app
 RUN pip install uv
 
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev
+RUN UV_PROJECT_ENVIRONMENT=/opt/venv uv sync --frozen --no-dev
 
 COPY . .
 
-ENV PATH="/app/.venv/bin:$PATH"
+ENV PATH="/opt/venv/bin:$PATH"
