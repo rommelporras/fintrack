@@ -9,6 +9,7 @@ from app.dependencies import get_current_user
 from app.models.document import Document, DocumentStatus, DocumentType
 from app.models.user import User
 from app.schemas.document import DocumentResponse, DocumentUpdate
+from app.services.prompt import generate_prompt
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -103,3 +104,21 @@ async def update_document(
     await db.commit()
     await db.refresh(doc)
     return doc
+
+
+@router.post("/{document_id}/prompt")
+async def get_document_prompt(
+    document_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Document).where(
+            Document.id == document_id,
+            Document.user_id == current_user.id,
+        )
+    )
+    doc = result.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return {"prompt": generate_prompt(doc.document_type)}
