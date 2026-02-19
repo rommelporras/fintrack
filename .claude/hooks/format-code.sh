@@ -22,7 +22,7 @@ if [[ ! -f "$FILE_PATH" ]]; then
   exit 0
 fi
 
-PROJECT_DIR="/home/wsl/personal/expense-tracker"
+PROJECT_DIR="/home/wsl/personal/fintrack"
 API_DIR="$PROJECT_DIR/api"
 FRONTEND_DIR="$PROJECT_DIR/frontend"
 
@@ -58,13 +58,13 @@ if [[ "$FILE_PATH" == *.ts || "$FILE_PATH" == *.tsx ]]; then
 
     cd "$FRONTEND_DIR"
 
-    if pnpm exec prettier --write "$FILE_PATH" --loglevel=silent 2>/dev/null; then
+    if bunx prettier --write "$FILE_PATH" --loglevel=silent 2>/dev/null; then
       echo "   ✅ prettier"
     else
       echo "   ⚠️  prettier failed (non-blocking)"
     fi
 
-    if pnpm exec eslint --fix "$FILE_PATH" --quiet 2>/dev/null; then
+    if bunx eslint --fix "$FILE_PATH" --quiet 2>/dev/null; then
       : # success
     fi
   fi
@@ -81,7 +81,7 @@ if [[ "$FILE_PATH" == *.json ]]; then
         "$FILE_PATH" != *"__pycache__"* ]]; then
     if [[ -d "$FRONTEND_DIR/node_modules" ]]; then
       cd "$FRONTEND_DIR"
-      if pnpm exec prettier --write "$FILE_PATH" --loglevel=silent 2>/dev/null; then
+      if bunx prettier --write "$FILE_PATH" --loglevel=silent 2>/dev/null; then
         echo "✅ JSON formatted: $(basename "$FILE_PATH")"
       fi
     fi
