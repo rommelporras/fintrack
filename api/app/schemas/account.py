@@ -9,6 +9,7 @@ class AccountCreate(BaseModel):
     type: AccountType
     opening_balance: Decimal = Decimal("0.00")
     currency: str = "PHP"
+    is_active: bool = True
 
 
 class AccountUpdate(BaseModel):
