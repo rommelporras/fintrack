@@ -35,4 +35,19 @@ export const api = {
   patch: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  upload: async <T>(path: string, form: FormData): Promise<T> => {
+    const response = await fetch(`${getBaseUrl()}${path}`, {
+      method: "POST",
+      credentials: "include",
+      body: form,
+      // Do NOT set Content-Type — browser sets multipart boundary automatically
+    });
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ detail: "Upload failed" }));
+      throw new Error(error.detail || response.statusText);
+    }
+    return response.json();
+  },
 };
