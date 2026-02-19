@@ -8,6 +8,7 @@ from app.routers import accounts as accounts_router
 from app.routers import credit_cards as cc_router
 from app.routers import categories as categories_router
 from app.routers import transactions as transactions_router
+from app.routers import dashboard as dashboard_router
 
 
 @asynccontextmanager
@@ -33,6 +34,7 @@ app.include_router(accounts_router.router)
 app.include_router(cc_router.router)
 app.include_router(categories_router.router)
 app.include_router(transactions_router.router)
+app.include_router(dashboard_router.router)
 
 
 @app.get("/health")
