@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
-import { Camera, Upload, Copy, Check } from "lucide-react";
+import { Camera, Upload, Copy, Check, FileText } from "lucide-react";
 
 type DocType = "receipt" | "cc_statement" | "other";
 
@@ -25,6 +25,7 @@ export default function ScanPage() {
   const [docId, setDocId] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copying, setCopying] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +36,12 @@ export default function ScanPage() {
     setPrompt(null);
     setError(null);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
 
   const handleSave = async () => {
     if (!file) return;
@@ -55,6 +62,7 @@ export default function ScanPage() {
 
   const handleCopyPrompt = async () => {
     if (!docId) return;
+    setCopying(true);
     try {
       const data = await api.post<{ prompt: string }>(`/documents/${docId}/prompt`, {});
       await navigator.clipboard.writeText(data.prompt);
@@ -63,6 +71,8 @@ export default function ScanPage() {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       setError("Failed to copy prompt.");
+    } finally {
+      setCopying(false);
     }
   };
 
@@ -102,14 +112,21 @@ export default function ScanPage() {
         />
       </div>
 
-      {preview && (
+      {file && preview && (
         <Card>
           <CardContent className="pt-4">
-            <img
-              src={preview}
-              alt="Preview"
-              className="w-full rounded-md object-contain max-h-64"
-            />
+            {file.type === "application/pdf" ? (
+              <div className="flex items-center gap-3 p-4 bg-muted rounded-md">
+                <FileText className="h-8 w-8 text-muted-foreground" />
+                <p className="text-sm font-medium">{file.name}</p>
+              </div>
+            ) : (
+              <img
+                src={preview}
+                alt={file.name}
+                className="w-full rounded-md object-contain max-h-64"
+              />
+            )}
           </CardContent>
         </Card>
       )}
@@ -145,14 +162,19 @@ export default function ScanPage() {
       )}
 
       {docId && (
-        <Button className="w-full" variant="secondary" onClick={handleCopyPrompt}>
+        <Button
+          className="w-full"
+          variant="secondary"
+          onClick={handleCopyPrompt}
+          disabled={copying}
+        >
           {copied ? (
             <>
               <Check className="mr-2 h-4 w-4" /> Copied!
             </>
           ) : (
             <>
-              <Copy className="mr-2 h-4 w-4" /> Copy AI Prompt
+              <Copy className="mr-2 h-4 w-4" /> {copying ? "Copying..." : "Copy AI Prompt"}
             </>
           )}
         </Button>
