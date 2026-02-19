@@ -44,3 +44,12 @@ class BudgetResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class BudgetStatusItem(BaseModel):
+    budget: BudgetResponse
+    spent: Decimal
+    percent: float
+    status: str  # "ok" | "warning" | "exceeded"
+
+    model_config = {"from_attributes": True}

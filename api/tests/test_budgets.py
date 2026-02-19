@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 import pytest
 from httpx import AsyncClient
 
@@ -107,3 +108,132 @@ async def test_delete_budget_not_found(auth_client: AsyncClient):
 async def test_budget_requires_auth(client: AsyncClient):
     r = await client.get("/budgets")
     assert r.status_code == 401
+
+
+async def _create_expense(db, user_id: str, account_id: str, category_id: str,
+                           amount: str, txn_date: date | None = None) -> None:
+    """Insert an expense transaction directly into DB (bypasses budget check)."""
+    import uuid
+    from app.models.transaction import Transaction, TransactionType, TransactionSource
+    txn = Transaction(
+        user_id=uuid.UUID(user_id),
+        account_id=uuid.UUID(account_id),
+        category_id=uuid.UUID(category_id),
+        amount=amount,
+        description="test expense",
+        type=TransactionType.expense,
+        source=TransactionSource.manual,
+        date=txn_date or date.today(),
+        created_by=uuid.UUID(user_id),
+    )
+    db.add(txn)
+    await db.commit()
+
+
+async def test_budget_status_ok(auth_client: AsyncClient, db, account_id: str, category_id: str):
+    await auth_client.post("/budgets", json={
+        "type": "category", "category_id": category_id, "amount": "10000.00"
+    })
+    me = await auth_client.get("/auth/me")
+    user_id = me.json()["id"]
+
+    # Insert 7900 (79% of 10000 — should be ok)
+    await _create_expense(db, user_id, account_id, category_id, "7900.00")
+
+    r = await auth_client.get("/budgets/status")
+    assert r.status_code == 200
+    items = r.json()
+    assert len(items) == 1
+    assert items[0]["status"] == "ok"
+    assert float(items[0]["percent"]) == pytest.approx(79.0, abs=0.01)
+
+
+async def test_budget_status_warning(auth_client: AsyncClient, db, account_id: str, category_id: str):
+    await auth_client.post("/budgets", json={
+        "type": "category", "category_id": category_id, "amount": "10000.00"
+    })
+    me = await auth_client.get("/auth/me")
+    user_id = me.json()["id"]
+
+    # Insert 8000 (80% — should be warning)
+    await _create_expense(db, user_id, account_id, category_id, "8000.00")
+
+    r = await auth_client.get("/budgets/status")
+    items = r.json()
+    assert items[0]["status"] == "warning"
+    assert float(items[0]["percent"]) == pytest.approx(80.0, abs=0.01)
+
+
+async def test_budget_status_exceeded(auth_client: AsyncClient, db, account_id: str, category_id: str):
+    await auth_client.post("/budgets", json={
+        "type": "category", "category_id": category_id, "amount": "10000.00"
+    })
+    me = await auth_client.get("/auth/me")
+    user_id = me.json()["id"]
+
+    # Insert 10001 (100.01% — should be exceeded)
+    await _create_expense(db, user_id, account_id, category_id, "10001.00")
+
+    r = await auth_client.get("/budgets/status")
+    items = r.json()
+    assert items[0]["status"] == "exceeded"
+    assert float(items[0]["percent"]) > 100.0
+
+
+async def test_budget_status_zero_spent(auth_client: AsyncClient, category_id: str):
+    await auth_client.post("/budgets", json={
+        "type": "category", "category_id": category_id, "amount": "10000.00"
+    })
+    r = await auth_client.get("/budgets/status")
+    items = r.json()
+    assert items[0]["status"] == "ok"
+    assert float(items[0]["percent"]) == 0.0
+    assert items[0]["spent"] == "0.00"
+
+
+async def test_budget_status_only_counts_current_month(
+    auth_client: AsyncClient, db, account_id: str, category_id: str
+):
+    await auth_client.post("/budgets", json={
+        "type": "category", "category_id": category_id, "amount": "10000.00"
+    })
+    me = await auth_client.get("/auth/me")
+    user_id = me.json()["id"]
+
+    # Transaction last month should NOT count
+    last_month = date.today().replace(day=1) - timedelta(days=1)
+    await _create_expense(db, user_id, account_id, category_id, "9999.00", txn_date=last_month)
+
+    r = await auth_client.get("/budgets/status")
+    items = r.json()
+    assert items[0]["status"] == "ok"
+    assert items[0]["spent"] == "0.00"
+
+
+async def test_budget_status_wrong_category_not_counted(
+    auth_client: AsyncClient, db, account_id: str
+):
+    """Transaction in category B should not affect budget for category A."""
+    # Create two expense categories
+    cat_a_r = await auth_client.post("/categories", json={"name": "Category A", "type": "expense"})
+    assert cat_a_r.status_code == 201
+    cat_a_id = cat_a_r.json()["id"]
+
+    cat_b_r = await auth_client.post("/categories", json={"name": "Category B", "type": "expense"})
+    assert cat_b_r.status_code == 201
+    cat_b_id = cat_b_r.json()["id"]
+
+    # Budget on cat_a
+    await auth_client.post("/budgets", json={
+        "type": "category", "category_id": cat_a_id, "amount": "10000.00"
+    })
+    me = await auth_client.get("/auth/me")
+    user_id = me.json()["id"]
+
+    # Transaction in cat_b should not count toward cat_a budget
+    await _create_expense(db, user_id, account_id, cat_b_id, "9999.00")
+
+    r = await auth_client.get("/budgets/status")
+    items = r.json()
+    assert items[0]["status"] == "ok"
+    assert items[0]["spent"] == "0.00"
