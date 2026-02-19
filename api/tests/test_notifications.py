@@ -99,3 +99,10 @@ async def test_list_notifications_limit(auth_client: AsyncClient, db: AsyncSessi
 async def test_notifications_require_auth(client: AsyncClient):
     r = await client.get("/notifications")
     assert r.status_code == 401
+
+
+async def test_stream_returns_event_stream(auth_client: AsyncClient):
+    """Verify the SSE endpoint returns correct content-type and 200."""
+    async with auth_client.stream("GET", "/notifications/stream") as r:
+        assert r.status_code == 200
+        assert "text/event-stream" in r.headers["content-type"]
