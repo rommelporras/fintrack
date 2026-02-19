@@ -18,6 +18,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
 
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      window.location.href = "/login";
+      // Return a never-resolving promise — the redirect is already happening
+      return new Promise(() => {}) as Promise<T>;
+    }
     const error = await response
       .json()
       .catch(() => ({ detail: "Request failed" }));
