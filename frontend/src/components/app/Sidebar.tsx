@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -17,6 +18,13 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { api } from "@/lib/api";
+
+function getApiBaseUrl(): string {
+  if (typeof window === "undefined") return process.env.API_URL || "http://api:8000";
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+}
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -34,6 +42,84 @@ const NAV_ITEMS = [
 export function Sidebar() {
   const pathname = usePathname();
   const { logout } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+  const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
+
+  // Load initial unread count
+  useEffect(() => {
+    api.get<Array<{ is_read: boolean }>>("/notifications")
+      .then((items) => {
+        setUnreadCount(items.filter((n) => !n.is_read).length);
+      })
+      .catch(() => {
+        // Silently ignore errors (e.g. not authenticated yet)
+      });
+  }, []);
+
+  // Reset unread count when user navigates to notifications page
+  useEffect(() => {
+    if (pathname === "/notifications") {
+      setUnreadCount(0);
+    }
+  }, [pathname]);
+
+  // SSE connection for real-time notifications
+  useEffect(() => {
+    let cancelled = false;
+
+    async function connectSSE() {
+      try {
+        const response = await fetch(`${getApiBaseUrl()}/notifications/stream`, {
+          credentials: "include",
+        });
+
+        if (!response.ok || !response.body) return;
+
+        const reader = response.body.getReader();
+        readerRef.current = reader;
+
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (!cancelled) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            if (line.startsWith("data:")) {
+              const raw = line.slice(5).trim();
+              if (raw && raw !== "ping") {
+                // Only increment if not currently on notifications page
+                setUnreadCount((prev) => {
+                  if (typeof window !== "undefined" &&
+                      window.location.pathname === "/notifications") {
+                    return prev;
+                  }
+                  return prev + 1;
+                });
+              }
+            }
+          }
+        }
+      } catch {
+        // SSE connection failed — silently ignore (user may not be authenticated)
+      }
+    }
+
+    connectSSE();
+
+    return () => {
+      cancelled = true;
+      if (readerRef.current) {
+        readerRef.current.cancel().catch(() => {});
+        readerRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <aside className="flex flex-col w-64 min-h-screen border-r bg-background px-3 py-4">
@@ -54,7 +140,15 @@ export function Sidebar() {
             )}
           >
             <Icon className="h-4 w-4 shrink-0" />
-            {label}
+            <span className="flex-1">{label}</span>
+            {href === "/notifications" && unreadCount > 0 && (
+              <Badge
+                variant="destructive"
+                className="ml-auto h-5 min-w-5 px-1 text-xs flex items-center justify-center"
+              >
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </Badge>
+            )}
           </Link>
         ))}
       </nav>
