@@ -28,6 +28,13 @@ interface Document {
 interface Account {
   id: string;
   name: string;
+  type: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  type: string;
 }
 
 const statusVariant: Record<
@@ -55,6 +62,11 @@ export default function DocumentsPage() {
   const { data: accounts = [], isLoading: accountsLoading } = useQuery({
     queryKey: ["accounts"],
     queryFn: () => api.get<Account[]>("/accounts"),
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => api.get<Category[]>("/categories"),
   });
 
   const defaultAccountId = accounts[0]?.id ?? "";
@@ -192,6 +204,7 @@ export default function DocumentsPage() {
                     parsed={parsedSingle}
                     accountId={defaultAccountId}
                     documentId={selected.id}
+                    categories={categories}
                     onSuccess={() => { handleClose(); void refetch(); }}
                   />
                 )}
@@ -200,6 +213,7 @@ export default function DocumentsPage() {
                   <BulkImportTable
                     rows={parsedBulk.transactions}
                     accountId={defaultAccountId}
+                    accounts={accounts}
                     documentId={selected.id}
                     onSuccess={() => { handleClose(); void refetch(); }}
                   />
