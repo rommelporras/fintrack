@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     claude_api_key: str = ""
     discord_webhook_url: str = ""
 
+    upload_dir: str = "uploads"
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",")]

@@ -5,3 +5,5 @@ from app.models.category import Category  # noqa: F401
 from app.models.document import Document  # noqa: F401
 from app.models.statement import Statement  # noqa: F401
 from app.models.transaction import Transaction  # noqa: F401
+from app.models.budget import Budget  # noqa: F401
+from app.models.notification import Notification  # noqa: F401
