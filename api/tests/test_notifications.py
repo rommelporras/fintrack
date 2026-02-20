@@ -103,3 +103,51 @@ async def test_stream_returns_event_stream(auth_client: AsyncClient):
     async with auth_client.stream("GET", "/notifications/stream") as r:
         assert r.status_code == 200
         assert "text/event-stream" in r.headers["content-type"]
+
+
+async def test_push_subscribe(auth_client: AsyncClient):
+    r = await auth_client.post(
+        "/notifications/push-subscribe",
+        json={
+            "endpoint": "https://push.example.com/send/abc123",
+            "keys": {"p256dh": "testkey123", "auth": "testauthkey"},
+        },
+    )
+    assert r.status_code == 201
+    assert r.json()["ok"] is True
+
+
+async def test_push_subscribe_update_existing(auth_client: AsyncClient):
+    endpoint = "https://push.example.com/send/update-test"
+    await auth_client.post(
+        "/notifications/push-subscribe",
+        json={
+            "endpoint": endpoint,
+            "keys": {"p256dh": "key1", "auth": "auth1"},
+        },
+    )
+    r = await auth_client.post(
+        "/notifications/push-subscribe",
+        json={
+            "endpoint": endpoint,
+            "keys": {"p256dh": "key2", "auth": "auth2"},
+        },
+    )
+    assert r.status_code == 201
+
+
+async def test_push_unsubscribe(auth_client: AsyncClient):
+    endpoint = "https://push.example.com/send/unsub-test"
+    await auth_client.post(
+        "/notifications/push-subscribe",
+        json={
+            "endpoint": endpoint,
+            "keys": {"p256dh": "keyX", "auth": "authX"},
+        },
+    )
+    r = await auth_client.request(
+        "DELETE",
+        "/notifications/push-unsubscribe",
+        json={"endpoint": endpoint},
+    )
+    assert r.status_code == 204

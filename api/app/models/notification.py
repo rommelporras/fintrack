@@ -11,6 +11,7 @@ class NotificationType(str, enum.Enum):
     statement_due = "statement_due"
     budget_warning = "budget_warning"
     budget_exceeded = "budget_exceeded"
+    recurring_created = "recurring_created"
 
 
 class Notification(Base):

@@ -15,11 +15,19 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function login(email: string, password: string) {
+  async function login(
+    email: string,
+    password: string,
+    rememberMe: boolean = false,
+  ) {
     setLoading(true);
     setError(null);
     try {
-      await api.post<UserResponse>("/auth/login", { email, password });
+      await api.post<UserResponse>("/auth/login", {
+        email,
+        password,
+        remember_me: rememberMe,
+      });
       // Cookie is set by the server response — no localStorage needed
       router.push("/");
       router.refresh();

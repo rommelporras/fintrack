@@ -1,3 +1,5 @@
+import { enqueue } from "./sync-queue";
+
 function getBaseUrl(): string {
   // Server-side (SSR, RSC): use Docker service name
   if (typeof window === "undefined") {
@@ -7,20 +9,75 @@ function getBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${getBaseUrl()}${path}`, {
-    ...options,
-    credentials: "include", // send httpOnly cookies on every request
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-  });
+let isRefreshing = false;
+let refreshPromise: Promise<boolean> | null = null;
+
+async function tryRefresh(): Promise<boolean> {
+  try {
+    const res = await fetch(`${getBaseUrl()}/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+const WRITE_METHODS = new Set(["POST", "PATCH", "DELETE"]);
+
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const method = (options.method ?? "GET").toUpperCase();
+
+  let response: Response;
+  try {
+    response = await fetch(`${getBaseUrl()}${path}`, {
+      ...options,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  } catch (err) {
+    // Network error (offline)
+    if (
+      err instanceof TypeError &&
+      typeof window !== "undefined" &&
+      WRITE_METHODS.has(method)
+    ) {
+      await enqueue(
+        method,
+        path,
+        typeof options.body === "string" ? options.body : null,
+      );
+      return undefined as T;
+    }
+    throw err;
+  }
 
   if (!response.ok) {
     if (response.status === 401 && typeof window !== "undefined") {
+      // Don't try to refresh the refresh endpoint itself
+      if (path === "/auth/refresh") {
+        window.location.href = "/login";
+        return new Promise(() => {}) as Promise<T>;
+      }
+      // Mutex: only one refresh at a time
+      if (!isRefreshing) {
+        isRefreshing = true;
+        refreshPromise = tryRefresh().finally(() => {
+          isRefreshing = false;
+        });
+      }
+      const refreshed = await refreshPromise;
+      if (refreshed) {
+        return request<T>(path, options);
+      }
       window.location.href = "/login";
-      // Return a never-resolving promise — the redirect is already happening
       return new Promise(() => {}) as Promise<T>;
     }
     const error = await response
@@ -45,7 +102,6 @@ export const api = {
       method: "POST",
       credentials: "include",
       body: form,
-      // Do NOT set Content-Type — browser sets multipart boundary automatically
     });
     if (!response.ok) {
       const error = await response

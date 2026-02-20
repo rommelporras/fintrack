@@ -7,3 +7,5 @@ from app.models.statement import Statement  # noqa: F401
 from app.models.transaction import Transaction  # noqa: F401
 from app.models.budget import Budget  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
+from app.models.recurring_transaction import RecurringTransaction  # noqa: F401
+from app.models.push_subscription import PushSubscription  # noqa: F401

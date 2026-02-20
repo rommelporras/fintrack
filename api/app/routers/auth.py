@@ -1,10 +1,11 @@
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+import jwt
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token
+from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token, decode_token
 from app.models.user import User
 from app.schemas.auth import RegisterRequest, LoginRequest, UserResponse, UpdateProfileRequest, ChangePasswordRequest
 from app.dependencies import get_current_user
@@ -12,7 +13,7 @@ from app.dependencies import get_current_user
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def _set_auth_cookies(response: Response, user_id: uuid.UUID) -> None:
+def _set_auth_cookies(response: Response, user_id: uuid.UUID, remember_me: bool = True) -> None:
     access_token = create_access_token(str(user_id))
     refresh_token = create_refresh_token(str(user_id))
     cookie_kwargs = dict(
@@ -22,10 +23,16 @@ def _set_auth_cookies(response: Response, user_id: uuid.UUID) -> None:
     )
     if settings.cookie_domain and settings.cookie_domain != "localhost":
         cookie_kwargs["domain"] = settings.cookie_domain
-    response.set_cookie("access_token", access_token,
-                        max_age=settings.jwt_access_token_expire_minutes * 60, **cookie_kwargs)
-    response.set_cookie("refresh_token", refresh_token,
-                        max_age=settings.jwt_refresh_token_expire_days * 86400, **cookie_kwargs)
+    response.set_cookie(
+        "access_token",
+        access_token,
+        max_age=settings.jwt_access_token_expire_minutes * 60,
+        **cookie_kwargs,
+    )
+    refresh_kwargs = {**cookie_kwargs}
+    if remember_me:
+        refresh_kwargs["max_age"] = settings.jwt_refresh_token_expire_days * 86400
+    response.set_cookie("refresh_token", refresh_token, **refresh_kwargs)
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -47,7 +54,7 @@ async def login(data: LoginRequest, response: Response, db: AsyncSession = Depen
     user = result.scalar_one_or_none()
     if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    _set_auth_cookies(response, user.id)
+    _set_auth_cookies(response, user.id, remember_me=data.remember_me)
     return user
 
 
@@ -56,6 +63,36 @@ async def logout(response: Response):
     response.delete_cookie("access_token")
     response.delete_cookie("refresh_token")
     return {"message": "Logged out"}
+
+
+@router.post("/refresh", response_model=UserResponse)
+async def refresh(
+    response: Response,
+    refresh_token: str | None = Cookie(default=None),
+    db: AsyncSession = Depends(get_db),
+):
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="No refresh token")
+    try:
+        payload = decode_token(refresh_token, token_type="refresh")
+        user_id = uuid.UUID(payload["sub"])
+    except (jwt.PyJWTError, ValueError):
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    new_access = create_access_token(str(user.id))
+    cookie_kwargs = dict(httponly=True, secure=settings.cookie_secure, samesite="lax")
+    if settings.cookie_domain and settings.cookie_domain != "localhost":
+        cookie_kwargs["domain"] = settings.cookie_domain
+    response.set_cookie(
+        "access_token",
+        new_access,
+        max_age=settings.jwt_access_token_expire_minutes * 60,
+        **cookie_kwargs,
+    )
+    return user
 
 
 @router.get("/me", response_model=UserResponse)

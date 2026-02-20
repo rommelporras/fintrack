@@ -43,6 +43,16 @@ interface CardItem {
   bank_name: string;
 }
 
+interface RecurringTransaction {
+  id: string;
+  amount: string;
+  description: string;
+  frequency: string;
+  next_due_date: string;
+  is_active: boolean;
+  type: string;
+}
+
 function formatPeso(amount: string | number) {
   return `₱${Number(amount).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
 }
@@ -55,24 +65,27 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<AccountItem[]>([]);
   const [creditCards, setCreditCards] = useState<CardItem[]>([]);
+  const [upcoming, setUpcoming] = useState<RecurringTransaction[]>([]);
   const [onboardingDismissed, setOnboardingDismissed] = useState(true); // default true to avoid flash
 
   useEffect(() => {
     async function load() {
       setError(null);
       try {
-        const [s, txnData, nw, accs, cards] = await Promise.all([
+        const [s, txnData, nw, accs, cards, recurringData] = await Promise.all([
           api.get<Summary>("/dashboard/summary"),
           api.get<{ items: Transaction[]; total: number }>("/transactions?limit=10"),
           api.get<NetWorthData>("/dashboard/net-worth"),
           api.get<AccountItem[]>("/accounts"),
           api.get<CardItem[]>("/credit-cards"),
+          api.get<RecurringTransaction[]>("/recurring-transactions?active=true&limit=5"),
         ]);
         setSummary(s);
         setTransactions(txnData.items);
         setNetWorth(nw);
         setAccounts(accs);
         setCreditCards(cards);
+        setUpcoming(recurringData);
       } catch {
         setError("Failed to load dashboard data. Please check your connection.");
       } finally {
@@ -134,7 +147,7 @@ export default function DashboardPage() {
 
       {/* Monthly Overview */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="border-l-4 border-l-emerald-500">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Income
@@ -146,7 +159,7 @@ export default function DashboardPage() {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-l-4 border-l-red-500">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Expenses
@@ -158,7 +171,7 @@ export default function DashboardPage() {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-l-4 border-l-teal-500">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Net
@@ -204,6 +217,45 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Upcoming Recurring */}
+      {upcoming.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Upcoming Recurring</CardTitle>
+            <Link
+              href="/recurring"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              View all
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {upcoming.map((r) => (
+                <li
+                  key={r.id}
+                  className="flex items-center justify-between py-1.5 border-b last:border-0"
+                >
+                  <div>
+                    <p className="text-sm font-medium">
+                      {r.description || r.frequency}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Due {r.next_due_date}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-sm font-semibold ${r.type === "income" ? "text-green-600" : "text-red-500"}`}
+                  >
+                    {formatPeso(r.amount)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Onboarding checklist */}
       {showOnboarding && (

@@ -1,15 +1,17 @@
 import asyncio
 import json
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, func
 from app.core.database import get_db, AsyncSessionLocal
 from app.dependencies import get_current_user
 from app.models.notification import Notification
+from app.models.push_subscription import PushSubscription
 from app.models.user import User
 from app.schemas.notification import NotificationResponse, NotificationListResponse
+from app.schemas.push_subscription import PushSubscriptionCreate, PushSubscriptionDelete
 from app.services.pubsub import subscribe_notifications
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
@@ -86,6 +88,50 @@ async def notification_stream(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@router.post("/push-subscribe", status_code=status.HTTP_201_CREATED)
+async def push_subscribe(
+    data: PushSubscriptionCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    existing = await db.execute(
+        select(PushSubscription).where(PushSubscription.endpoint == data.endpoint)
+    )
+    sub = existing.scalar_one_or_none()
+    if sub:
+        sub.p256dh = data.keys.p256dh
+        sub.auth = data.keys.auth
+        sub.user_id = current_user.id
+    else:
+        sub = PushSubscription(
+            user_id=current_user.id,
+            endpoint=data.endpoint,
+            p256dh=data.keys.p256dh,
+            auth=data.keys.auth,
+        )
+        db.add(sub)
+    await db.commit()
+    return {"ok": True}
+
+
+@router.delete("/push-unsubscribe", status_code=status.HTTP_204_NO_CONTENT)
+async def push_unsubscribe(
+    data: PushSubscriptionDelete,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(PushSubscription).where(
+            PushSubscription.endpoint == data.endpoint,
+            PushSubscription.user_id == current_user.id,
+        )
+    )
+    sub = result.scalar_one_or_none()
+    if sub:
+        await db.delete(sub)
+        await db.commit()
 
 
 @router.patch("/{notification_id}/read", response_model=NotificationResponse)

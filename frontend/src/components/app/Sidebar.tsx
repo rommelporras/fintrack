@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import {
   LayoutDashboard,
   ArrowLeftRight,
+  Repeat,
   ScanLine,
   Wallet,
   CreditCard,
@@ -30,6 +31,7 @@ function getApiBaseUrl(): string {
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
+  { href: "/recurring", label: "Recurring", icon: Repeat },
   { href: "/budgets", label: "Budgets", icon: PiggyBank },
   { href: "/analytics", label: "Analytics", icon: BarChart2 },
   { href: "/scan", label: "Scan Receipt", icon: ScanLine },
@@ -49,7 +51,8 @@ export function Sidebar() {
 
   // Load initial unread count
   useEffect(() => {
-    api.get<{ items: Array<{ is_read: boolean }>; total: number }>("/notifications")
+    api
+      .get<{ items: Array<{ is_read: boolean }>; total: number }>("/notifications")
       .then((data) => {
         setUnreadCount(data.items.filter((n) => !n.is_read).length);
       })
@@ -97,8 +100,10 @@ export function Sidebar() {
               if (raw && raw !== "ping") {
                 // Only increment if not currently on notifications page
                 setUnreadCount((prev) => {
-                  if (typeof window !== "undefined" &&
-                      window.location.pathname === "/notifications") {
+                  if (
+                    typeof window !== "undefined" &&
+                    window.location.pathname === "/notifications"
+                  ) {
                     return prev;
                   }
                   return prev + 1;
@@ -124,7 +129,7 @@ export function Sidebar() {
   }, []);
 
   return (
-    <aside className="flex flex-col w-64 min-h-screen border-r bg-background px-3 py-4">
+    <aside className="flex flex-col w-64 min-h-screen border-r bg-sidebar px-3 py-4">
       <div className="mb-6 px-3">
         <h1 className="text-xl font-bold tracking-tight">FinTrack</h1>
         <p className="text-xs text-muted-foreground">Personal Finance</p>
@@ -138,7 +143,7 @@ export function Sidebar() {
               "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
               pathname === href
                 ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
             )}
           >
             <Icon className="h-4 w-4 shrink-0" />

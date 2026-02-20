@@ -1,5 +1,7 @@
 import { Sidebar } from "@/components/app/Sidebar";
 import { MobileSidebar } from "@/components/app/MobileSidebar";
+import { OfflineBanner } from "@/components/app/OfflineBanner";
+import { PushPrompt } from "@/components/app/PushPrompt";
 
 export default function DashboardLayout({
   children,
@@ -15,6 +17,8 @@ export default function DashboardLayout({
 
       {/* Main content */}
       <div className="flex-1 flex flex-col">
+        <OfflineBanner />
+        <PushPrompt />
         {/* Mobile top bar */}
         <header className="md:hidden flex items-center gap-3 border-b px-4 py-3">
           <MobileSidebar />

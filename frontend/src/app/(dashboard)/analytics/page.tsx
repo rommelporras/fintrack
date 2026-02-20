@@ -58,7 +58,7 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-type PieLabelProps = { name: string; percent: number };
+
 
 export default function AnalyticsPage() {
   const now = new Date();
@@ -173,8 +173,8 @@ export default function AnalyticsPage() {
                       cx="50%"
                       cy="50%"
                       outerRadius={110}
-                      label={({ name, percent }: PieLabelProps) =>
-                        `${name} ${(percent * 100).toFixed(0)}%`
+                      label={({ name, percent }: { name?: string; percent?: number }) =>
+                        `${name ?? ""} ${((percent ?? 0) * 100).toFixed(0)}%`
                       }
                     >
                       {pieData.map((entry) => (

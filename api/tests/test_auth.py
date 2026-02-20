@@ -94,3 +94,41 @@ async def test_change_password_wrong_current(client):
     })
     assert r.status_code == 400
     assert "incorrect" in r.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_refresh_issues_new_access_token(client):
+    await client.post("/auth/register", json={
+        "email": "refresh@test.com", "name": "R", "password": "password123"
+    })
+    r = await client.post("/auth/refresh")
+    assert r.status_code == 200
+    assert r.json()["email"] == "refresh@test.com"
+
+
+@pytest.mark.asyncio
+async def test_refresh_without_token(client):
+    r = await client.post("/auth/refresh")
+    assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_login_with_remember_me(client):
+    await client.post("/auth/register", json={
+        "email": "remember@test.com", "name": "Rem", "password": "password123"
+    })
+    r = await client.post("/auth/login", json={
+        "email": "remember@test.com", "password": "password123", "remember_me": True
+    })
+    assert r.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_login_without_remember_me(client):
+    await client.post("/auth/register", json={
+        "email": "norem@test.com", "name": "No", "password": "password123"
+    })
+    r = await client.post("/auth/login", json={
+        "email": "norem@test.com", "password": "password123", "remember_me": False
+    })
+    assert r.status_code == 200

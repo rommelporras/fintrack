@@ -45,6 +45,7 @@ describe("useAuth", () => {
     expect(mockPost).toHaveBeenCalledWith("/auth/login", {
       email: "user@test.com",
       password: "password123",
+      remember_me: false,
     });
     expect(mockPush).toHaveBeenCalledWith("/");
     expect(mockRefresh).toHaveBeenCalled();

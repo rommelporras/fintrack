@@ -17,10 +17,11 @@ export default function LoginPage() {
   const { login, error, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await login(email, password);
+    await login(email, password, rememberMe);
   }
 
   return (
@@ -53,6 +54,18 @@ export default function LoginPage() {
               required
               autoComplete="current-password"
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="remember"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 rounded border-input"
+            />
+            <Label htmlFor="remember" className="text-sm font-normal">
+              Remember me
+            </Label>
           </div>
           {error && (
             <p className="text-sm text-destructive">{error}</p>

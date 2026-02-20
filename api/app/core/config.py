@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     claude_api_key: str = ""
     discord_webhook_url: str = ""
 
+    vapid_private_key: str = ""
+    vapid_contact_email: str = "admin@fintrack.app"
+
     upload_dir: str = "uploads"
 
     @property

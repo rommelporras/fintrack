@@ -54,6 +54,7 @@ class TransactionSource(str, enum.Enum):
     paste_ai = "paste_ai"
     pdf = "pdf"
     csv_import = "csv_import"
+    recurring = "recurring"
 
 
 class Transaction(Base):
@@ -77,6 +78,9 @@ class Transaction(Base):
     )
     document_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("documents.id"), nullable=True
+    )
+    recurring_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("recurring_transactions.id"), nullable=True
     )
     amount: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False)
     description: Mapped[str] = mapped_column(Text, default="")
