@@ -3,14 +3,6 @@ import pytest
 import app.core.config as cfg
 
 
-@pytest.fixture
-async def auth_client(client):
-    await client.post("/auth/register", json={
-        "email": "doc@test.com", "name": "Doc User", "password": "password123"
-    })
-    return client
-
-
 async def test_upload_receipt(auth_client, tmp_path, monkeypatch):
     monkeypatch.setattr(cfg.settings, "upload_dir", str(tmp_path))
     r = await auth_client.post(

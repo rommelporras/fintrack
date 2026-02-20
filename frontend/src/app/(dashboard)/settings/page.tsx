@@ -18,6 +18,11 @@ export default function SettingsPage() {
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwMessage, setPwMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     api.get<User>("/auth/me").then((u) => {
@@ -35,6 +40,31 @@ export default function SettingsPage() {
       setTimeout(() => setSaved(false), 2000);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setPwMessage({ type: "error", text: "Passwords do not match" });
+      return;
+    }
+    setPwSaving(true);
+    setPwMessage(null);
+    try {
+      await api.post("/auth/change-password", {
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
+      setPwMessage({ type: "success", text: "Password updated" });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to change password";
+      setPwMessage({ type: "error", text: msg });
+    } finally {
+      setPwSaving(false);
     }
   }
 
@@ -63,6 +93,53 @@ export default function SettingsPage() {
             </div>
             <Button type="submit" disabled={saving}>
               {saved ? "Saved!" : saving ? "Saving…" : "Save Profile"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Change Password</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Current Password</Label>
+              <Input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>New Password</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                minLength={8}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Confirm New Password</Label>
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                minLength={8}
+                required
+              />
+            </div>
+            {pwMessage && (
+              <p className={pwMessage.type === "error" ? "text-sm text-destructive" : "text-sm text-green-600"}>
+                {pwMessage.text}
+              </p>
+            )}
+            <Button type="submit" disabled={pwSaving}>
+              {pwSaving ? "Changing…" : "Change Password"}
             </Button>
           </form>
         </CardContent>

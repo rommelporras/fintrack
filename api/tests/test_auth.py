@@ -63,3 +63,34 @@ async def test_patch_me_updates_name(client):
 async def test_patch_me_requires_auth(client):
     r = await client.patch("/auth/me", json={"name": "Updated"})
     assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_change_password_success(client):
+    await client.post("/auth/register", json={
+        "email": "changepw@example.com", "name": "PW User", "password": "oldpassword1"
+    })
+    r = await client.post("/auth/change-password", json={
+        "current_password": "oldpassword1",
+        "new_password": "newpassword1",
+    })
+    assert r.status_code == 200
+    # Verify new password works
+    await client.post("/auth/logout")
+    r2 = await client.post("/auth/login", json={
+        "email": "changepw@example.com", "password": "newpassword1"
+    })
+    assert r2.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_change_password_wrong_current(client):
+    await client.post("/auth/register", json={
+        "email": "wrongpw@example.com", "name": "Wrong PW", "password": "correctpass1"
+    })
+    r = await client.post("/auth/change-password", json={
+        "current_password": "wrongpassword",
+        "new_password": "newpassword1",
+    })
+    assert r.status_code == 400
+    assert "incorrect" in r.json()["detail"].lower()

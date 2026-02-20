@@ -1,13 +1,4 @@
 # api/tests/test_parse_endpoints.py
-import pytest
-
-
-@pytest.fixture
-async def auth_client(client):
-    await client.post("/auth/register", json={
-        "email": "parse@test.com", "name": "Parse User", "password": "password123"
-    })
-    return client
 
 
 async def test_parse_paste_json(auth_client):

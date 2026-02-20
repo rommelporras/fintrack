@@ -1,14 +1,4 @@
-import pytest
-import pytest_asyncio
 from httpx import AsyncClient
-
-
-@pytest_asyncio.fixture
-async def auth_client(client: AsyncClient):
-    await client.post("/auth/register", json={
-        "email": "dashboard@test.com", "name": "Dashboard User", "password": "password123"
-    })
-    return client
 
 
 async def test_net_worth_no_accounts(auth_client: AsyncClient):

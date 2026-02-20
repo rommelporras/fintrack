@@ -3,14 +3,6 @@ from httpx import AsyncClient
 
 
 @pytest_asyncio.fixture
-async def auth_client(client: AsyncClient):
-    await client.post("/auth/register", json={
-        "email": "analytics@test.com", "name": "Analytics User", "password": "password123"
-    })
-    return client
-
-
-@pytest_asyncio.fixture
 async def account_id(auth_client: AsyncClient) -> str:
     r = await auth_client.post("/accounts", json={
         "name": "BDO Checking", "type": "bank", "currency": "PHP"

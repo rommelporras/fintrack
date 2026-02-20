@@ -9,6 +9,9 @@ class BudgetCreate(BaseModel):
     category_id: uuid.UUID | None = None
     account_id: uuid.UUID | None = None
     amount: Decimal
+    period: str = "monthly"
+    alert_at_80: bool = True
+    alert_at_100: bool = True
 
     @model_validator(mode="after")
     def validate_target(self) -> "BudgetCreate":
@@ -20,11 +23,16 @@ class BudgetCreate(BaseModel):
             raise ValueError("account_id required for account budgets")
         if self.amount <= 0:
             raise ValueError("amount must be positive")
+        if self.period not in ("monthly", "weekly"):
+            raise ValueError("period must be 'monthly' or 'weekly'")
         return self
 
 
 class BudgetUpdate(BaseModel):
     amount: Decimal | None = None
+    period: str | None = None
+    alert_at_80: bool | None = None
+    alert_at_100: bool | None = None
 
     @field_validator("amount")
     @classmethod

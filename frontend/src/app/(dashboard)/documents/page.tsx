@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,20 +53,52 @@ export default function DocumentsPage() {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
 
-  const { data: docs = [], refetch } = useQuery({
-    queryKey: ["documents"],
-    queryFn: () => api.get<Document[]>("/documents"),
-  });
+  const [docs, setDocs] = useState<Document[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(true);
 
-  const { data: accounts = [], isLoading: accountsLoading } = useQuery({
-    queryKey: ["accounts"],
-    queryFn: () => api.get<Account[]>("/accounts"),
-  });
+  async function loadData() {
+    try {
+      const [d, a, c] = await Promise.all([
+        api.get<Document[]>("/documents"),
+        api.get<Account[]>("/accounts"),
+        api.get<Category[]>("/categories"),
+      ]);
+      setDocs(d);
+      setAccounts(a);
+      setCategories(c);
+    } finally {
+      setAccountsLoading(false);
+    }
+  }
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ["categories"],
-    queryFn: () => api.get<Category[]>("/categories"),
-  });
+  useEffect(() => { void loadData(); }, []);
+
+  // Poll for document status updates when any doc is pending/processing
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    const hasPending = docs.some(
+      (d) => d.status === "pending" || d.status === "processing"
+    );
+
+    if (hasPending && !pollingRef.current) {
+      pollingRef.current = setInterval(() => {
+        api.get<Document[]>("/documents").then(setDocs).catch(() => {});
+      }, 5000);
+    } else if (!hasPending && pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+  }, [docs]);
 
   const defaultAccountId = accounts[0]?.id ?? "";
 
@@ -205,7 +236,7 @@ export default function DocumentsPage() {
                     accountId={defaultAccountId}
                     documentId={selected.id}
                     categories={categories}
-                    onSuccess={() => { handleClose(); void refetch(); }}
+                    onSuccess={() => { handleClose(); void loadData(); }}
                   />
                 )}
 
@@ -215,7 +246,7 @@ export default function DocumentsPage() {
                     accountId={defaultAccountId}
                     accounts={accounts}
                     documentId={selected.id}
-                    onSuccess={() => { handleClose(); void refetch(); }}
+                    onSuccess={() => { handleClose(); void loadData(); }}
                   />
                 )}
               </div>

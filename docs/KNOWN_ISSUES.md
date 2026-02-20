@@ -122,115 +122,13 @@ These don't prevent use but make daily use annoying.
 
 ## Medium — Missing Features
 
-These should exist but their absence doesn't break core functionality.
-
----
-
-### [M1] No password change
-
-The Settings page has no password change form. There is no `/auth/change-password` endpoint.
-
----
-
-### [M2] Income sub-types missing from New Transaction form
-
-The database has 22+ sub-types including 13th month pay, overtime, SSS benefit, PhilHealth reimbursement, Pag-IBIG dividend, government aid, remittance received, etc. — all relevant to Philippine users. The UI only offers 4 income sub-types, 4 expense sub-types, 3 transfer sub-types.
-
-**Fix:** Update the sub-type options in `transactions/new/page.tsx` to include all values from the `TransactionSubType` enum.
-
----
-
-### [M3] Budget configuration not exposed in UI
-
-Budget records have `period` (monthly/weekly), `alert_at_80`, and `alert_at_100` fields. The create form defaults them silently. There is no way to change the budget period to weekly or disable specific alert thresholds from the UI.
-
----
-
-### [M4] Credit limit not in card creation form
-
-The `CreditCard` model has a `credit_limit` field (used for future utilization tracking). The creation form doesn't include it.
-
----
-
-### [M5] No filter for paid/unpaid on Statements page
-
-The `GET /statements` API supports `?is_paid=false`. The UI doesn't use it — you always see all statements mixed together. A "Unpaid only" filter would make it easier to see what's outstanding.
-
----
-
-### [M6] TransactionConfirm has no category selector
-
-When reviewing a single AI-parsed receipt transaction before saving, there is no way to assign a category. It saves with `category_id: null` every time. You then have to edit the transaction to add a category.
-
----
-
-### [M7] SSE notifications are one-shot, not real-time
-
-The `/notifications/stream` endpoint sends existing unread items once and closes. It is not a long-lived push connection. New budget alerts created after page load are never pushed — the badge count only updates on next navigation.
-
-**Fix:** Implement a proper SSE loop that keeps the connection open and pushes new notification events as they are created. Requires a pub/sub mechanism (Redis pub/sub is already available).
-
----
-
-### [M8] Dashboard shows no error states
-
-If the network fails on dashboard load, the page silently shows dashes. No error message, no retry button.
-
-**Fix:** Add try/catch with an error state and a retry mechanism to the dashboard data fetching.
+*All resolved — see Resolved table below.*
 
 ---
 
 ## Low — Polish and Consistency
 
----
-
-### [L1] Analytics uses native HTML form elements
-
-The month/year selectors on the Analytics page use a native `<select>` and `<input type="number">` instead of shadcn Select/Input components. Visually inconsistent with every other page.
-
----
-
-### [L2] Documents page uses react-query; all other pages use plain useEffect
-
-The Documents page uses `@tanstack/react-query` while every other data-fetching page uses `useState` + `useEffect`. The codebase should use one approach consistently.
-
----
-
-### [L3] Document status never auto-updates
-
-After uploading a document, its status stays "pending" until the page is refreshed. There is no polling or SSE update to reflect when processing completes.
-
----
-
-### [L4] Notifications capped at 50 with no pagination
-
-Older notifications are inaccessible. After 50 notifications, the oldest ones fall off the list permanently.
-
----
-
-### [L5] No mobile navigation
-
-The sidebar is hidden on mobile (`hidden md:flex`). A `MobileSidebar` hamburger component exists but its integration into the dashboard layout needs to be verified. On a phone, the app may have no navigation at all.
-
----
-
-### [L6] N+1 queries in accounts list and net worth endpoint
-
-`GET /accounts` calls `compute_current_balance()` per account in a loop — one SQL query per account. Same in `GET /dashboard/net-worth`. With 10 accounts, this is 10 extra queries on every page load.
-
-**Fix:** Replace with a single aggregation query using `GROUP BY account_id` across the transactions table.
-
----
-
-### [L7] No "view all transactions" link on dashboard
-
-The dashboard shows 10 recent transactions with no link to the full list. Users have to manually navigate to /transactions.
-
----
-
-### [L8] PATCH /transactions is semantically a PUT
-
-The transaction edit endpoint takes the full `TransactionCreate` schema, not a partial update. Every field must be provided even if only one changed. This is technically a PUT.
+*All resolved — see Resolved table below.*
 
 ---
 
@@ -253,3 +151,14 @@ The transaction edit endpoint takes the full `TransactionCreate` schema, not a p
 | [H2] No onboarding — blank dashboard | Fixed — onboarding checklist on dashboard with 3-step guide, dismiss + auto-hide; consistent empty states on Accounts/Cards/Budgets |
 | [H7] Credit card setup requires two pages | Fixed — "+ Create new account" option in card form auto-creates backing account |
 | [M4] Credit limit not in card creation form | Fixed — optional credit limit field added to card creation dialog |
+| [M1] No password change | Fixed — `POST /auth/change-password` endpoint + Change Password card on Settings page |
+| [M3] Budget configuration not exposed | Fixed — period selector (monthly/weekly) and alert threshold checkboxes added to budget form |
+| [M7] SSE notifications one-shot | Fixed — Redis pub/sub long-lived SSE stream replaces one-shot DB poll |
+| [M8] Dashboard shows no error states | Fixed — error UI with Alert component and retry button on dashboard |
+| [L2] Documents page uses react-query | Fixed — replaced with `useState` + `useEffect`; `@tanstack/react-query` removed |
+| [L3] Document status never auto-updates | Fixed — 5-second polling when any document is pending/processing |
+| [L4] Notifications capped at 50 | Fixed — `limit`/`offset` pagination with `{items, total}` response wrapper |
+| [L5] No mobile navigation | Already implemented — `MobileSidebar` exists and is wired into layout |
+| [L6] N+1 queries in accounts/net-worth | Fixed — `compute_balances_bulk()` uses 2 GROUP BY queries instead of 2*N |
+| [L7] No "view all" link on dashboard | Fixed — "View all" link added to Recent Transactions card header |
+| [L8] PATCH /transactions is a PUT | Fixed — `TransactionUpdate` schema with all Optional fields for proper partial updates |

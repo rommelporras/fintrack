@@ -8,7 +8,7 @@ from app.dependencies import get_current_user
 from app.models.account import Account
 from app.models.user import User
 from app.schemas.account import AccountCreate, AccountUpdate, AccountResponse
-from app.services.account import compute_current_balance
+from app.services.account import compute_current_balance, compute_balances_bulk
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
@@ -27,7 +27,11 @@ async def list_accounts(
         select(Account).where(Account.user_id == current_user.id, Account.is_active == True)
     )
     accounts = result.scalars().all()
-    return [await _to_response(db, a) for a in accounts]
+    balances = await compute_balances_bulk(db, accounts)
+    return [
+        AccountResponse.model_validate({**a.__dict__, "current_balance": balances[a.id]})
+        for a in accounts
+    ]
 
 
 @router.post("", response_model=AccountResponse, status_code=201)

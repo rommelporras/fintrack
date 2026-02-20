@@ -1,31 +1,35 @@
 import asyncio
 import json
 import uuid
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
-from app.core.database import get_db
+from sqlalchemy import select, update, func
+from app.core.database import get_db, AsyncSessionLocal
 from app.dependencies import get_current_user
 from app.models.notification import Notification
 from app.models.user import User
-from app.schemas.notification import NotificationResponse
+from app.schemas.notification import NotificationResponse, NotificationListResponse
+from app.services.pubsub import subscribe_notifications
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 
-@router.get("", response_model=list[NotificationResponse])
+@router.get("", response_model=NotificationListResponse)
 async def list_notifications(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    base = select(Notification).where(Notification.user_id == current_user.id)
+    count_result = await db.execute(select(func.count()).select_from(base.subquery()))
+    total = count_result.scalar_one()
     result = await db.execute(
-        select(Notification)
-        .where(Notification.user_id == current_user.id)
-        .order_by(Notification.is_read.asc(), Notification.created_at.desc())
-        .limit(50)
+        base.order_by(Notification.is_read.asc(), Notification.created_at.desc())
+        .limit(limit).offset(offset)
     )
-    return result.scalars().all()
+    return {"items": result.scalars().all(), "total": total}
 
 
 @router.patch("/read-all")
@@ -46,33 +50,36 @@ async def mark_all_read(
 @router.get("/stream")
 async def notification_stream(
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
 ):
-    """SSE stream: polls DB once for unread notifications."""
+    """SSE stream: sends initial unreads then yields from Redis pub/sub."""
     async def generator():
-        seen_ids: set[str] = set()
-        result = await db.execute(
-            select(Notification)
-            .where(
-                Notification.user_id == current_user.id,
-                Notification.is_read == False,  # noqa: E712
+        # Send initial unread notifications
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(
+                select(Notification)
+                .where(
+                    Notification.user_id == current_user.id,
+                    Notification.is_read == False,  # noqa: E712
+                )
+                .order_by(Notification.created_at.desc())
+                .limit(20)
             )
-            .order_by(Notification.created_at.desc())
-            .limit(20)
-        )
-        for n in result.scalars().all():
-            sid = str(n.id)
-            if sid not in seen_ids:
-                seen_ids.add(sid)
+            for n in result.scalars().all():
                 payload = {
-                    "id": sid,
+                    "id": str(n.id),
                     "type": n.type,
                     "title": n.title,
                     "message": n.message,
                 }
                 yield f"data: {json.dumps(payload)}\n\n"
-        await asyncio.sleep(0)  # yield control
-        yield ": keepalive\n\n"
+
+        # Keep connection open, yield from Redis pub/sub
+        try:
+            async for payload in subscribe_notifications(current_user.id):
+                yield f"data: {json.dumps(payload)}\n\n"
+        except (asyncio.CancelledError, Exception):
+            # Redis unavailable or client disconnected — end stream gracefully
+            return
 
     return StreamingResponse(
         generator(),

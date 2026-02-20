@@ -44,3 +44,23 @@ async def test_delete_account(client):
 async def test_accounts_require_auth(client):
     r = await client.get("/accounts")
     assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_get_account_by_id(client):
+    await client.post("/auth/register", json={"email": "getid@test.com", "name": "G", "password": "pw"})
+    r = await client.post("/accounts", json={"name": "Savings", "type": "bank", "opening_balance": "1000.00"})
+    account_id = r.json()["id"]
+    r2 = await client.get(f"/accounts/{account_id}")
+    assert r2.status_code == 200
+    assert r2.json()["name"] == "Savings"
+    assert r2.json()["id"] == account_id
+
+
+@pytest.mark.asyncio
+async def test_get_account_not_found(client):
+    await client.post("/auth/register", json={"email": "notfound@test.com", "name": "NF", "password": "pw"})
+    import uuid
+    fake_id = str(uuid.uuid4())
+    r = await client.get(f"/accounts/{fake_id}")
+    assert r.status_code == 404

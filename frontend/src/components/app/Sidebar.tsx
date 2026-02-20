@@ -49,9 +49,9 @@ export function Sidebar() {
 
   // Load initial unread count
   useEffect(() => {
-    api.get<Array<{ is_read: boolean }>>("/notifications")
-      .then((items) => {
-        setUnreadCount(items.filter((n) => !n.is_read).length);
+    api.get<{ items: Array<{ is_read: boolean }>; total: number }>("/notifications")
+      .then((data) => {
+        setUnreadCount(data.items.filter((n) => !n.is_read).length);
       })
       .catch(() => {
         // Silently ignore errors (e.g. not authenticated yet)

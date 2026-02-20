@@ -9,7 +9,7 @@ from app.models.account import Account, AccountType
 from app.models.transaction import Transaction, TransactionType
 from app.models.user import User
 from app.schemas.dashboard import NetWorthResponse
-from app.services.account import compute_current_balance
+from app.services.account import compute_balances_bulk
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -71,11 +71,11 @@ async def net_worth(
     )
     accounts = result.scalars().all()
 
+    balances = await compute_balances_bulk(db, accounts)
     by_type: dict[str, Decimal] = {}
     for account in accounts:
-        balance = await compute_current_balance(db, account.id, account.opening_balance)
         acc_type = account.type.value
-        by_type[acc_type] = by_type.get(acc_type, Decimal("0")) + balance
+        by_type[acc_type] = by_type.get(acc_type, Decimal("0")) + balances[account.id]
 
     grand_total = sum(by_type.values(), Decimal("0"))
     return {

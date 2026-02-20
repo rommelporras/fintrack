@@ -32,7 +32,8 @@ export default function NotificationsPage() {
   async function load() {
     setLoading(true);
     try {
-      setNotifications(await api.get<NotificationItem[]>("/notifications"));
+      const data = await api.get<{ items: NotificationItem[]; total: number }>("/notifications");
+      setNotifications(data.items);
     } finally {
       setLoading(false);
     }

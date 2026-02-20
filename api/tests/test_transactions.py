@@ -195,3 +195,29 @@ async def test_search_transactions_no_match(client, user_and_accounts):
     r = await client.get("/transactions?search=nonexistent")
     assert r.status_code == 200
     assert r.json()["items"] == []
+
+
+async def test_update_transaction(client, user_and_accounts):
+    ids = user_and_accounts
+    r = await client.post("/transactions", json={
+        "account_id": ids["bank_id"],
+        "amount": "100.00",
+        "type": "expense",
+        "date": "2026-02-01",
+        "description": "Original",
+    })
+    txn_id = r.json()["id"]
+    r2 = await client.patch(f"/transactions/{txn_id}", json={
+        "description": "Updated",
+    })
+    assert r2.status_code == 200
+    assert r2.json()["description"] == "Updated"
+
+
+async def test_update_transaction_not_found(client, user_and_accounts):
+    import uuid
+    fake_id = str(uuid.uuid4())
+    r = await client.patch(f"/transactions/{fake_id}", json={
+        "description": "Nope",
+    })
+    assert r.status_code == 404

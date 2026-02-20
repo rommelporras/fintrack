@@ -7,6 +7,7 @@ from app.models.budget import Budget
 from app.models.transaction import Transaction
 from app.models.notification import Notification, NotificationType
 from app.services.discord import send_discord_notification
+from app.services.pubsub import publish_notification
 
 
 async def check_budget_alerts(db: AsyncSession, user_id: uuid.UUID) -> None:
@@ -101,3 +102,4 @@ async def _maybe_notify(
     db.add(n)
     await db.commit()
     await send_discord_notification(title, message)
+    await publish_notification(user_id, {"id": str(n.id), "type": notif_type.value, "title": title, "message": message})

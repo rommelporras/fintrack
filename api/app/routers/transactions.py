@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.dependencies import get_current_user
 from app.models.transaction import Transaction, TransactionType
 from app.models.user import User
-from app.schemas.transaction import TransactionCreate, TransactionResponse, TransactionListResponse
+from app.schemas.transaction import TransactionCreate, TransactionUpdate, TransactionResponse, TransactionListResponse
 from app.services.budget_alerts import check_budget_alerts
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
@@ -71,7 +71,7 @@ async def create_transaction(
 @router.patch("/{transaction_id}", response_model=TransactionResponse)
 async def update_transaction(
     transaction_id: uuid.UUID,
-    data: TransactionCreate,
+    data: TransactionUpdate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):

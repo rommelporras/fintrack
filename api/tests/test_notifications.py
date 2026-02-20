@@ -1,16 +1,7 @@
-import pytest
 import uuid
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.notification import Notification, NotificationType
-
-
-@pytest.fixture
-async def auth_client(client: AsyncClient):
-    await client.post("/auth/register", json={
-        "email": "notif@test.com", "name": "Notif User", "password": "password123"
-    })
-    return client
 
 
 async def _get_user_id(auth_client: AsyncClient) -> str:
@@ -42,7 +33,9 @@ async def _create_notification(
 async def test_list_notifications_empty(auth_client: AsyncClient):
     r = await auth_client.get("/notifications")
     assert r.status_code == 200
-    assert r.json() == []
+    data = r.json()
+    assert data["items"] == []
+    assert data["total"] == 0
 
 
 async def test_list_notifications_unread_first(auth_client: AsyncClient, db: AsyncSession):
@@ -53,8 +46,10 @@ async def test_list_notifications_unread_first(auth_client: AsyncClient, db: Asy
 
     r = await auth_client.get("/notifications")
     assert r.status_code == 200
-    items = r.json()
+    data = r.json()
+    items = data["items"]
     assert len(items) == 2
+    assert data["total"] == 2
     # Unread comes first
     assert items[0]["title"] == "Unread one"
     assert items[1]["title"] == "Read one"
@@ -83,7 +78,7 @@ async def test_mark_all_read(auth_client: AsyncClient, db: AsyncSession):
     assert r.status_code == 200
 
     r2 = await auth_client.get("/notifications")
-    assert all(n["is_read"] for n in r2.json())
+    assert all(n["is_read"] for n in r2.json()["items"])
 
 
 async def test_list_notifications_limit(auth_client: AsyncClient, db: AsyncSession):
@@ -93,7 +88,9 @@ async def test_list_notifications_limit(auth_client: AsyncClient, db: AsyncSessi
 
     r = await auth_client.get("/notifications")
     assert r.status_code == 200
-    assert len(r.json()) == 50  # max 50
+    data = r.json()
+    assert len(data["items"]) == 50  # default limit
+    assert data["total"] == 55  # but total reflects all
 
 
 async def test_notifications_require_auth(client: AsyncClient):

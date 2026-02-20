@@ -10,6 +10,7 @@ from app.main import app
 from app.core.database import Base, get_db
 from app.core.config import settings
 
+
 TEST_DATABASE_URL = settings.test_database_url or settings.database_url.replace(
     "/finance_db", "/finance_test"
 )
@@ -54,3 +55,12 @@ async def client(db: AsyncSession):
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as c:
         yield c
     app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture
+async def auth_client(client: AsyncClient):
+    """Register a user and return an authenticated client."""
+    await client.post("/auth/register", json={
+        "email": "test@test.com", "name": "Test User", "password": "password123"
+    })
+    return client

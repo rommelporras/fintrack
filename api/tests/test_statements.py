@@ -3,14 +3,6 @@ from httpx import AsyncClient
 
 
 @pytest.fixture
-async def auth_client(client: AsyncClient):
-    await client.post("/auth/register", json={
-        "email": "stmt@test.com", "name": "Stmt User", "password": "password123"
-    })
-    return client
-
-
-@pytest.fixture
 async def credit_card_id(auth_client: AsyncClient) -> str:
     # Create account first
     acc = await auth_client.post("/accounts", json={

@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { CheckCircle2, Circle, ChevronRight, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Circle, ChevronRight, X } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface Summary {
   month: string;
@@ -51,12 +52,14 @@ export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [netWorth, setNetWorth] = useState<NetWorthData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<AccountItem[]>([]);
   const [creditCards, setCreditCards] = useState<CardItem[]>([]);
   const [onboardingDismissed, setOnboardingDismissed] = useState(true); // default true to avoid flash
 
   useEffect(() => {
     async function load() {
+      setError(null);
       try {
         const [s, txnData, nw, accs, cards] = await Promise.all([
           api.get<Summary>("/dashboard/summary"),
@@ -70,6 +73,8 @@ export default function DashboardPage() {
         setNetWorth(nw);
         setAccounts(accs);
         setCreditCards(cards);
+      } catch {
+        setError("Failed to load dashboard data. Please check your connection.");
       } finally {
         setLoading(false);
       }
@@ -101,6 +106,22 @@ export default function DashboardPage() {
         </div>
         <Skeleton className="h-24 w-full rounded-xl" />
         <Skeleton className="h-64 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <Button onClick={() => { setLoading(true); setError(null); window.location.reload(); }}>
+          Retry
+        </Button>
       </div>
     );
   }
@@ -229,8 +250,14 @@ export default function DashboardPage() {
 
       {/* Recent Transactions */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Recent Transactions</CardTitle>
+          <Link
+            href="/transactions"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            View all
+          </Link>
         </CardHeader>
         <CardContent>
           {transactions.length === 0 ? (

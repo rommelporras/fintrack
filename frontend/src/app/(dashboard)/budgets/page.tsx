@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, PiggyBank } from "lucide-react";
 
 interface BudgetResponse {
@@ -31,6 +32,9 @@ interface BudgetResponse {
   category_id: string | null;
   account_id: string | null;
   amount: string;
+  period: string;
+  alert_at_80: boolean;
+  alert_at_100: boolean;
   created_at: string;
 }
 
@@ -58,6 +62,9 @@ interface NewBudgetForm {
   category_id: string;
   account_id: string;
   amount: string;
+  period: "monthly" | "weekly";
+  alert_at_80: boolean;
+  alert_at_100: boolean;
 }
 
 function formatPeso(amount: string): string {
@@ -97,6 +104,9 @@ export default function BudgetsPage() {
     category_id: "",
     account_id: "",
     amount: "",
+    period: "monthly",
+    alert_at_80: true,
+    alert_at_100: true,
   });
 
   async function load() {
@@ -135,9 +145,12 @@ export default function BudgetsPage() {
         category_id: form.type === "category" ? form.category_id || null : null,
         account_id: form.type === "account" ? form.account_id || null : null,
         amount: form.amount,
+        period: form.period,
+        alert_at_80: form.alert_at_80,
+        alert_at_100: form.alert_at_100,
       });
       setSheetOpen(false);
-      setForm({ type: "category", category_id: "", account_id: "", amount: "" });
+      setForm({ type: "category", category_id: "", account_id: "", amount: "", period: "monthly", alert_at_80: true, alert_at_100: true });
       await load();
     } finally {
       setSubmitting(false);
@@ -222,7 +235,7 @@ export default function BudgetsPage() {
                 </div>
               )}
               <div className="space-y-1">
-                <Label>Monthly Limit (₱)</Label>
+                <Label>Limit (₱)</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -232,6 +245,50 @@ export default function BudgetsPage() {
                   onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
                   required
                 />
+              </div>
+              <div className="space-y-1">
+                <Label>Period</Label>
+                <Select
+                  value={form.period}
+                  onValueChange={(v) =>
+                    setForm((f) => ({ ...f, period: v as "monthly" | "weekly" }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-3">
+                <Label>Alert Thresholds</Label>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="alert80"
+                    checked={form.alert_at_80}
+                    onCheckedChange={(v) =>
+                      setForm((f) => ({ ...f, alert_at_80: v === true }))
+                    }
+                  />
+                  <label htmlFor="alert80" className="text-sm">
+                    Alert at 80% usage
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="alert100"
+                    checked={form.alert_at_100}
+                    onCheckedChange={(v) =>
+                      setForm((f) => ({ ...f, alert_at_100: v === true }))
+                    }
+                  />
+                  <label htmlFor="alert100" className="text-sm">
+                    Alert when exceeded
+                  </label>
+                </div>
               </div>
               <Button type="submit" className="w-full" disabled={submitting}>
                 {submitting ? "Saving…" : "Add Budget"}
