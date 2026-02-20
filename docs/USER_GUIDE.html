@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinTrack User Guide</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #111318;
+      --surface: #181c24;
+      --surface2: #1e2330;
+      --border: #2a3040;
+      --text: #e2e8f0;
+      --muted: #8492a6;
+      --green: #34d399;
+      --green-dim: #1a3d2f;
+      --teal: #22d3ee;
+      --amber: #fbbf24;
+      --red: #f87171;
+      --blue: #60a5fa;
+      --sidebar-w: 260px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    nav {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: #0d1017;
+      border-right: 1px solid var(--border);
+      position: fixed;
+      top: 0; left: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 0 0 2rem;
+      overflow-y: auto;
+      z-index: 100;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 1.5rem 1.25rem 1rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0.75rem;
+    }
+
+    .nav-logo svg {
+      width: 28px; height: 28px;
+      color: var(--green);
+      flex-shrink: 0;
+    }
+
+    .nav-logo-text {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    .nav-logo-sub {
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-weight: 400;
+      margin-top: 1px;
+    }
+
+    .nav-section {
+      padding: 0.5rem 1rem 0.25rem;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+
+    nav a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0.45rem 1.25rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-decoration: none;
+      border-radius: 0;
+      transition: color 0.15s, background 0.15s;
+      line-height: 1.4;
+    }
+
+    nav a::before {
+      content: '';
+      display: block;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--border);
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    nav a:hover, nav a.active {
+      color: var(--text);
+    }
+
+    nav a:hover::before {
+      background: var(--green);
+    }
+
+    nav a.active {
+      color: var(--green);
+      font-weight: 500;
+    }
+
+    nav a.active::before {
+      background: var(--green);
+    }
+
+    /* ── Main content ── */
+    main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      max-width: 860px;
+      padding: 3rem 3rem 6rem;
+    }
+
+    /* Header */
+    .page-header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .page-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      border-radius: 100px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      padding: 4px 12px;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-sub {
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    /* Sections */
+    section {
+      margin-bottom: 3.5rem;
+      scroll-margin-top: 2rem;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h2 .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px; height: 26px;
+      background: var(--green-dim);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      color: var(--green);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 1.5rem 0 0.5rem;
+    }
+
+    p { margin-bottom: 0.75rem; color: var(--text); }
+
+    /* Steps */
+    .steps {
+      counter-reset: step;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 0.6rem 0.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .steps li::before {
+      content: counter(step);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px; height: 22px;
+      background: var(--green);
+      color: #0d1017;
+      border-radius: 50%;
+      font-size: 0.7rem;
+      font-weight: 800;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* Bullet list */
+    ul.bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin: 0.5rem 0 0.75rem;
+    }
+
+    ul.bullets li {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    ul.bullets li::before {
+      content: '▸';
+      color: var(--green);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Tables */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin: 0.75rem 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    thead {
+      background: var(--surface2);
+    }
+
+    th {
+      padding: 0.65rem 1rem;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.025); }
+
+    td code, th code {
+      font-family: var(--font-mono);
+      font-size: 0.82em;
+      background: var(--surface2);
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: var(--teal);
+    }
+
+    /* Callouts */
+    .callout {
+      display: flex;
+      gap: 12px;
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      margin: 0.75rem 0;
+      font-size: 0.875rem;
+      line-height: 1.55;
+    }
+
+    .callout-icon { flex-shrink: 0; font-size: 1rem; margin-top: 1px; }
+
+    .callout.tip {
+      background: rgba(52, 211, 153, 0.08);
+      border: 1px solid rgba(52, 211, 153, 0.2);
+      color: #a7f3d0;
+    }
+
+    .callout.warning {
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px solid rgba(251, 191, 36, 0.2);
+      color: #fde68a;
+    }
+
+    .callout.info {
+      background: rgba(96, 165, 250, 0.08);
+      border: 1px solid rgba(96, 165, 250, 0.2);
+      color: #bfdbfe;
+    }
+
+    /* Code block */
+    pre {
+      background: #0a0d13;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: #a8b4c8;
+      margin: 0.75rem 0;
+    }
+
+    pre .cmd { color: var(--green); }
+    pre .str { color: #f9a8d4; }
+    pre .flag { color: var(--teal); }
+    pre .comment { color: #4a5568; font-style: italic; }
+
+    /* Inline code */
+    p code, li code {
+      font-family: var(--font-mono);
+      font-size: 0.83em;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: var(--teal);
+    }
+
+    /* Status badges */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 100px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .badge-green { background: rgba(52,211,153,0.15); color: var(--green); }
+    .badge-amber { background: rgba(251,191,36,0.15); color: var(--amber); }
+    .badge-red { background: rgba(248,113,113,0.15); color: var(--red); }
+    .badge-blue { background: rgba(96,165,250,0.15); color: var(--blue); }
+
+    /* Feature card grid */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+      margin: 0.75rem 0;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+
+    .feature-card-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.35rem;
+    }
+
+    .feature-card-desc {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    /* Divider */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 2rem 0;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 4rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      nav { display: none; }
+      main { margin-left: 0; padding: 1.5rem 1rem 4rem; }
+      h1 { font-size: 1.75rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar Navigation ── -->
+<nav id="sidebar">
+  <div class="nav-logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+    </svg>
+    <div>
+      <div class="nav-logo-text">FinTrack</div>
+      <div class="nav-logo-sub">User Guide</div>
+    </div>
+  </div>
+
+  <div class="nav-section">Getting Started</div>
+  <a href="#setup">First-Time Setup</a>
+  <a href="#model">Understanding the Data Model</a>
+
+  <div class="nav-section">Core Features</div>
+  <a href="#dashboard">Dashboard</a>
+  <a href="#daily">Daily Workflows</a>
+  <a href="#transactions">Recording Transactions</a>
+  <a href="#recurring">Recurring Transactions</a>
+  <a href="#ai-import">AI-Assisted Import</a>
+
+  <div class="nav-section">Finance Tools</div>
+  <a href="#cards">Credit Cards &amp; Statements</a>
+  <a href="#budgets">Budgets</a>
+  <a href="#analytics">Analytics</a>
+
+  <div class="nav-section">App Features</div>
+  <a href="#notifications">Notifications</a>
+  <a href="#pwa">Install as App (PWA)</a>
+  <a href="#tips">Tips &amp; Workarounds</a>
+</nav>
+
+<!-- ── Main Content ── -->
+<main>
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div class="page-badge">📖 User Guide</div>
+    <h1>FinTrack</h1>
+    <p class="page-sub">Personal finance tracker for income, expenses, credit cards, budgets, and recurring bills. This guide covers how to use the app day-to-day — it assumes the app is already running.</p>
+  </div>
+
+  <!-- ── 1. First-Time Setup ── -->
+  <section id="setup">
+    <h2><span class="num">1</span> First-Time Setup</h2>
+    <p>Complete these steps once before you start logging real transactions.</p>
+
+    <h3>1. Register</h3>
+    <p>Go to <code>/register</code>. Enter your name, email, and a password. There is no invite system — anyone who can reach the URL can register.</p>
+    <p>When you log in, check <strong>Remember me</strong> to stay logged in across browser restarts (up to 30 days). Without it, your session ends when you close the tab.</p>
+
+    <h3>2. Create Your Accounts</h3>
+    <p>Go to <strong>Accounts → New Account</strong>. Create one account for each real-world bucket where you hold money:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>What you have</th><th>Account type to choose</th></tr></thead>
+        <tbody>
+          <tr><td>BDO, BPI, UnionBank, etc.</td><td>Bank</td></tr>
+          <tr><td>GCash, Maya, ShopeePay</td><td>Digital Wallet</td></tr>
+          <tr><td>Physical cash / petty cash</td><td>Cash</td></tr>
+          <tr><td>Credit card (Metrobank, BDO, etc.)</td><td>Credit Card (then add to Cards page)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>Set <strong>Opening Balance</strong> to your actual current balance on the day you start using FinTrack. This is the baseline all future calculations build from.</div></div>
+
+    <h3>3. Set Up Categories</h3>
+    <p>System categories are pre-loaded. Common expense categories: Groceries, Dining Out, Transport, Utilities, Entertainment, Healthcare, Shopping, Subscriptions, Travel, and more. Common income categories: Salary, 13th Month, Bonus, Freelance, SSS/PhilHealth/Pag-IBIG benefits.</p>
+    <p>Custom categories can be added via the API — see <a href="#tips" style="color:var(--green)">Tips & Workarounds</a>.</p>
+
+    <h3>4. Add Your Credit Cards</h3>
+    <p>Go to <strong>Cards → Add Card</strong>. You'll need:</p>
+    <ul class="bullets">
+      <li><strong>Linked account</strong> — create a Credit Card type account first, then link it here</li>
+      <li><strong>Bank name</strong> — BDO, BPI, Metrobank, etc.</li>
+      <li><strong>Last 4 digits</strong> — shown on statements and in the UI</li>
+      <li><strong>Statement day</strong> — day the billing cycle closes (e.g. 3 = the 3rd of each month)</li>
+      <li><strong>Due day</strong> — day payment is due (e.g. 23)</li>
+    </ul>
+    <p>The app uses these two dates to automatically calculate billing periods and due date countdowns.</p>
+
+    <h3>5. Set Up Budgets <span class="badge badge-blue">Optional</span></h3>
+    <p>Go to <strong>Budgets → New Budget</strong>. Set a monthly peso limit per spending category (e.g. Groceries ₱8,000, Dining Out ₱4,000). The app alerts you at 80% and 100%.</p>
+
+    <h3>6. Add Recurring Transactions <span class="badge badge-blue">Optional</span></h3>
+    <p>Go to <strong>Recurring → New Recurring Transaction</strong> for fixed regular expenses (rent, subscriptions, loan payments) or income (salary). The app auto-generates these each morning. See <a href="#recurring" style="color:var(--green)">Recurring Transactions</a> for full details.</p>
+  </section>
+
+  <!-- ── 2. Data Model ── -->
+  <section id="model">
+    <h2><span class="num">2</span> Understanding the Data Model</h2>
+
+    <h3>Accounts vs Credit Cards</h3>
+    <p>An <strong>Account</strong> is any bucket that holds money — bank account, e-wallet, cash. It has a balance that goes up and down.</p>
+    <p>A <strong>Credit Card</strong> is a liability. It's not an account in the asset sense — it's what you owe. The card record stores your billing cycle settings and links to a backing Account. When you swipe your card, you record an <strong>Expense</strong> on the credit card's account. When you pay your bill, you record a <strong>Transfer</strong> from your bank to the credit card account.</p>
+    <div class="callout info"><span class="callout-icon">ℹ️</span><div>Your credit card account balance will go <strong>negative</strong> as you spend. That's correct — it represents what you owe the bank.</div></div>
+
+    <h3>Why Credit Card Payment Is a Transfer, Not an Expense</h3>
+    <p>When you pay your Metrobank bill, do NOT record it as an expense. The spending already happened when you swiped — recording it again as an expense double-counts it.</p>
+    <p>Instead: record a <strong>Transfer → Own Account</strong> from your BPI savings to your Metrobank credit card account. This moves money between your own buckets without creating new spending.</p>
+
+    <h3>Account Balance Calculation</h3>
+    <p>Every account balance is computed live from: opening balance + income deposits − expense debits ± transfers ± ATM fees. There's no separate stored balance field. Edit or delete any past transaction and the balance updates instantly.</p>
+  </section>
+
+  <!-- ── 3. Dashboard ── -->
+  <section id="dashboard">
+    <h2><span class="num">3</span> Dashboard</h2>
+    <p>The dashboard is your financial snapshot at a glance.</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-card-title">📈 Monthly Income</div>
+        <div class="feature-card-desc">Total income transactions this calendar month</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-title">📉 Monthly Expenses</div>
+        <div class="feature-card-desc">Total expense transactions this calendar month</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-title">⚖️ Net</div>
+        <div class="feature-card-desc">Income minus expenses. Green = positive cash flow, red = negative</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-title">💰 Net Worth</div>
+        <div class="feature-card-desc">Sum of all account balances (credit cards contribute negatively)</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-title">🔁 Upcoming Recurring</div>
+        <div class="feature-card-desc">Next 5 active recurring transactions by due date</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-title">🕐 Recent Transactions</div>
+        <div class="feature-card-desc">Last 10 transactions across all accounts</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 4. Daily Workflows ── -->
+  <section id="daily">
+    <h2><span class="num">4</span> Daily Workflows</h2>
+
+    <h3>Recording an Expense</h3>
+    <ol class="steps">
+      <li>Go to <strong>Transactions → New</strong></li>
+      <li>Type: <strong>Expense</strong></li>
+      <li>Sub-type: pick the most specific one (e.g. "Subscription" for Netflix, "Bill Payment" for utilities)</li>
+      <li>Account: which account the money came from</li>
+      <li>Category: e.g. Groceries, Dining Out, Transport</li>
+      <li>Amount: peso amount (positive number)</li>
+      <li>Date: today or the actual transaction date</li>
+      <li>Description: optional but useful (e.g. "SM Supermarket weekly")</li>
+    </ol>
+
+    <h3>Recording Income</h3>
+    <p>Same flow, Type: <strong>Income</strong>. Common sub-types: Salary, 13th Month, Overtime/Bonus, Freelance/Business, SSS Benefit, PhilHealth Benefit, Pag-IBIG Benefit.</p>
+
+    <h3>Recording a Transfer</h3>
+    <p>Use Type: <strong>Transfer</strong> when money moves between your own accounts.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Scenario</th><th>Sub-type</th></tr></thead>
+        <tbody>
+          <tr><td>Bank → GCash / Maya</td><td>Own Account</td></tr>
+          <tr><td>Send money to another person</td><td>Sent to Person</td></tr>
+          <tr><td>ATM withdrawal (bank → cash)</td><td>ATM Withdrawal</td></tr>
+          <tr><td>Credit card payment (bank → card)</td><td>Own Account</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>For ATM withdrawals: an <strong>ATM Fee</strong> field appears. Enter the bank's withdrawal fee — it's deducted from the source account as a separate fee transaction.</div></div>
+  </section>
+
+  <!-- ── 5. Recording Transactions ── -->
+  <section id="transactions">
+    <h2><span class="num">5</span> Recording Transactions</h2>
+
+    <h3>Editing a Transaction</h3>
+    <p>On the <strong>Transactions</strong> page, click any row to open an edit drawer. You can update the account, type, sub-type, category, amount, date, and description. Click <strong>Delete</strong> at the bottom to permanently remove it.</p>
+
+    <h3>Filtering</h3>
+    <p>Click the filter icon to filter by date range, account, or category. The type buttons (All / Income / Expense / Transfer) above the list filter instantly.</p>
+
+    <h3>Pagination</h3>
+    <p>The list shows 50 results per page. Use Previous/Next to navigate. The count shown is per-page, not your total transaction count.</p>
+  </section>
+
+  <!-- ── 6. Recurring Transactions ── -->
+  <section id="recurring">
+    <h2><span class="num">6</span> Recurring Transactions</h2>
+    <p>Set up recurring transactions for anything that happens on a fixed schedule — rent, subscriptions, loan EMIs, salary. The app generates each transaction automatically at <strong>00:05 every morning</strong>.</p>
+
+    <h3>Creating a Recurring Transaction</h3>
+    <p>Go to <strong>Recurring → New Recurring Transaction</strong>:</p>
+    <ul class="bullets">
+      <li><strong>Account</strong> — which account to debit or credit</li>
+      <li><strong>Type</strong> — Income or Expense</li>
+      <li><strong>Sub-type &amp; Category</strong> — e.g. Subscription / Entertainment</li>
+      <li><strong>Amount</strong> — fixed peso amount per occurrence</li>
+      <li><strong>Description</strong> — e.g. "Netflix subscription", "BDO home loan EMI"</li>
+      <li><strong>Frequency</strong> — Daily / Weekly / Biweekly / Monthly / Yearly</li>
+      <li><strong>Start date</strong> — first occurrence date</li>
+      <li><strong>End date</strong> — optional; auto-deactivates when exceeded</li>
+    </ul>
+
+    <h3>Managing</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Action</th><th>How</th></tr></thead>
+        <tbody>
+          <tr><td>Pause / resume</td><td>Toggle the active switch on the Recurring page</td></tr>
+          <tr><td>Edit amount, description, frequency</td><td>Click the edit icon</td></tr>
+          <tr><td>Delete</td><td>Delete removes the template; already-generated transactions are unaffected</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>What Happens Each Morning</h3>
+    <p>At 00:05, the Celery Beat worker:</p>
+    <ol class="steps">
+      <li>Finds all active recurring transactions where <code>next_due_date ≤ today</code></li>
+      <li>Creates a new transaction linked to the template</li>
+      <li>Creates an in-app notification: "Recurring Transaction Created — ₱X — [description]"</li>
+      <li>Advances <code>next_due_date</code> to the next occurrence</li>
+      <li>If <code>next_due_date</code> would exceed <code>end_date</code>, deactivates the template</li>
+    </ol>
+
+    <div class="callout info"><span class="callout-icon">ℹ️</span><div>If the app is offline on a due date, the worker catches up all past-due items the next time it runs — you won't miss any transactions.</div></div>
+  </section>
+
+  <!-- ── 7. AI-Assisted Import ── -->
+  <section id="ai-import">
+    <h2><span class="num">7</span> AI-Assisted Import</h2>
+    <p>Use this for receipts with many line items, or credit card PDFs you want to bulk-import.</p>
+
+    <h3>Single Receipt</h3>
+    <ol class="steps">
+      <li>Go to <strong>Scan</strong></li>
+      <li>Tap <strong>Take Photo</strong> (mobile) or <strong>Upload File</strong> (desktop)</li>
+      <li>Document type: <strong>Receipt</strong></li>
+      <li>Click <strong>Save Document</strong></li>
+      <li>Click <strong>Copy AI Prompt</strong></li>
+      <li>Open Claude.ai in a new tab → start a new conversation</li>
+      <li>Attach your receipt image</li>
+      <li>Paste the copied prompt → send</li>
+      <li>Copy the entire JSON response from the AI</li>
+      <li>Go to <strong>Documents</strong> → click your document → paste JSON → click <strong>Parse</strong></li>
+      <li>Review the pre-filled fields — amber fields have low confidence</li>
+      <li>Click <strong>Save Transaction</strong></li>
+    </ol>
+
+    <h3>Credit Card PDF Statement (Bulk)</h3>
+    <p>Same flow, but: select <strong>CC Statement</strong> as document type, attach the PDF. After parsing, you'll see a table — check/uncheck rows to choose which transactions to import → click <strong>Import N transactions</strong>.</p>
+
+    <div class="callout tip"><span class="callout-icon">💡</span><div>Password-protected PDFs are handled automatically — you'll be prompted to enter the password.</div></div>
+    <div class="callout warning"><span class="callout-icon">⚠️</span><div>All bulk-imported transactions are assigned to your first account by default. If importing a credit card statement, make sure the correct credit card account is first on the Accounts page — or reassign after import.</div></div>
+  </section>
+
+  <!-- ── 8. Credit Cards & Statements ── -->
+  <section id="cards">
+    <h2><span class="num">8</span> Credit Cards &amp; Statements</h2>
+
+    <h3>How Billing Periods Work</h3>
+    <p>FinTrack calculates billing periods from the <code>statement_day</code> and <code>due_day</code> you set when creating a card. On the <strong>Cards</strong> page, each card shows:</p>
+    <ul class="bullets">
+      <li><strong>Current period</strong> — open billing window accumulating charges now</li>
+      <li><strong>Previous period</strong> — most recently closed period</li>
+      <li><strong>Due date</strong> — with a days-remaining badge (turns red at ≤5 days)</li>
+    </ul>
+
+    <h3>Creating a Statement</h3>
+    <p>When you receive your statement: go to <strong>Statements → New Statement</strong>. Enter the card, period start/end dates, due date, total amount due, and minimum due.</p>
+
+    <h3>Marking a Statement Paid</h3>
+    <p>Click <strong>Mark Paid</strong> after making the payment. This records the payment date and clears the notification.</p>
+    <div class="callout warning"><span class="callout-icon">⚠️</span><div>Marking paid does NOT auto-record the bank transfer. Go to <strong>Transactions → New → Transfer → Own Account</strong> and log the payment from your bank to the card account separately.</div></div>
+
+    <h3>Due Date Notifications</h3>
+    <p>Every morning at 09:00, the app sends a notification for any statement due within the next 7 days. If Discord is configured, the same alert goes there too.</p>
+  </section>
+
+  <!-- ── 9. Budgets ── -->
+  <section id="budgets">
+    <h2><span class="num">9</span> Budgets</h2>
+
+    <h3>Setting Up</h3>
+    <p>Go to <strong>Budgets → New Budget</strong>. Choose Category budget (e.g. limit Groceries to ₱8,000/month) or Account budget (e.g. limit GCash spending to ₱5,000/month). Set the monthly peso limit.</p>
+
+    <h3>Reading Budget Cards</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Status</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-green">On Track</span></td><td>Under 80% of the monthly limit</td></tr>
+          <tr><td><span class="badge badge-amber">Warning</span></td><td>80–100% of the monthly limit</td></tr>
+          <tr><td><span class="badge badge-red">Exceeded</span></td><td>Over 100% of the monthly limit</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Alerts</h3>
+    <p>When a transaction pushes a category over 80% or 100%: an in-app notification is created automatically. If a Discord webhook is configured, the same alert is sent there. Budgets reset on the 1st of each month.</p>
+  </section>
+
+  <!-- ── 10. Analytics ── -->
+  <section id="analytics">
+    <h2><span class="num">10</span> Analytics</h2>
+
+    <h3>Spending by Category (Pie Chart)</h3>
+    <p>Shows your expense breakdown by category for the selected month. Use the month/year selectors to view past months. Transfers are excluded — only expenses appear. Each slice shows the category name, percentage, and peso total.</p>
+
+    <h3>Statement History (Bar Chart)</h3>
+    <p>Shows the last 6 statements per credit card as a grouped bar chart, in chronological order. Each color represents one card. Hover a bar to see the exact statement total. Use this to spot whether your card spending is trending up or down.</p>
+  </section>
+
+  <!-- ── 11. Notifications ── -->
+  <section id="notifications">
+    <h2><span class="num">11</span> Notifications</h2>
+    <p>The bell icon in the sidebar shows your unread count.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Type</th><th>When it fires</th></tr></thead>
+        <tbody>
+          <tr><td>Budget Warning</td><td>A transaction pushes a category to 80% of its monthly limit</td></tr>
+          <tr><td>Budget Exceeded</td><td>A transaction pushes a category over 100% of its limit</td></tr>
+          <tr><td>Statement Due</td><td>A credit card statement is due within 7 days (daily at 09:00)</td></tr>
+          <tr><td>Recurring Created</td><td>A recurring transaction was auto-generated this morning</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Click any notification to mark it read. Use <strong>Mark All Read</strong> to clear the list.</p>
+
+    <h3>Push Notifications</h3>
+    <p>The app supports native browser push notifications. When prompted, accept the permission request. Budget alerts and recurring transaction notifications will then appear as native OS notifications even when the browser is minimized.</p>
+    <p>To disable: Browser Settings → Site Settings → Notifications → find the FinTrack URL → set to Block.</p>
+
+    <h3>Discord Integration</h3>
+    <p>Set <code>DISCORD_WEBHOOK_URL</code> in your <code>.env</code> to a Discord incoming webhook URL. Budget alerts and statement due reminders will be sent as formatted Discord messages.</p>
+    <p>To create: Discord server → Channel Settings → Integrations → Webhooks → New Webhook → Copy URL.</p>
+  </section>
+
+  <!-- ── 12. PWA ── -->
+  <section id="pwa">
+    <h2><span class="num">12</span> Install as App (PWA)</h2>
+    <p>FinTrack can be installed as a standalone app — it opens without browser chrome, like a native app.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Platform</th><th>Steps</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Desktop</strong><br><small style="color:var(--muted)">Chrome / Edge</small></td>
+            <td>Look for the install icon (⊕) in the address bar → click it → Install</td>
+          </tr>
+          <tr>
+            <td><strong>Android</strong><br><small style="color:var(--muted)">Chrome</small></td>
+            <td>Tap three-dot menu → Add to Home Screen → Install</td>
+          </tr>
+          <tr>
+            <td><strong>iOS</strong><br><small style="color:var(--muted)">Safari</small></td>
+            <td>Tap share icon (□↑) → scroll down → Add to Home Screen → Add</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Offline Access</h3>
+    <p>Previously visited pages load from cache when you're offline. A banner at the top indicates you're viewing cached data. If you create a transaction while offline, it's queued locally and replayed automatically when your connection returns.</p>
+  </section>
+
+  <!-- ── 13. Tips ── -->
+  <section id="tips">
+    <h2><span class="num">13</span> Tips &amp; Workarounds</h2>
+
+    <h3>Session Management</h3>
+    <p>Access tokens auto-refresh silently every 30 minutes. If you checked <strong>Remember me</strong> at login, you stay logged in for up to 30 days across browser restarts. If pages suddenly look empty, log out and log back in.</p>
+
+    <h3>Renaming an Account</h3>
+    <p>There's no rename UI yet. Use the Swagger UI at <code>http://localhost:8000/docs</code>:</p>
+    <ol class="steps">
+      <li>Authenticate via <code>POST /auth/login</code> in Swagger</li>
+      <li>Get your account ID from <code>GET /accounts</code></li>
+      <li>Use <code>PATCH /accounts/{account_id}</code> with <code>{"name": "New Name"}</code></li>
+    </ol>
+
+    <h3>Adding Custom Categories</h3>
+    <pre><span class="cmd">curl</span> <span class="flag">-X POST</span> http://localhost:8000/categories \
+  <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> \
+  <span class="flag">-b</span> <span class="str">"access_token=YOUR_TOKEN"</span> \
+  <span class="flag">-d</span> <span class="str">'{"name": "Home Repair", "type": "expense", "icon": "🔨", "color": "#8b5cf6"}'</span></pre>
+
+    <h3>Checking the Celery Worker</h3>
+    <p>Recurring transactions and statement notifications are processed by Celery Beat. If transactions aren't generating:</p>
+    <pre><span class="cmd">docker compose</span> logs celery <span class="flag">--tail=50</span></pre>
+    <p>Look for <code>generate_recurring_transactions_task</code> and <code>send_statement_due_notifications_task</code>.</p>
+
+    <h3>Finding Account IDs</h3>
+    <p>Go to <code>http://localhost:8000/docs</code> → <code>GET /accounts</code> → Execute. The response includes all account IDs and current balances.</p>
+  </section>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>FinTrack User Guide — Updated February 2026 · Phase 7 (recurring transactions, session refresh, dark theme, PWA, push notifications)</p>
+  </div>
+
+</main>
+
+<script>
+  // Active nav highlighting
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('nav a');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(a => a.classList.remove('active'));
+        const active = document.querySelector(`nav a[href="#${e.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-10% 0px -80% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

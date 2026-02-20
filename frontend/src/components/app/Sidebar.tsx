@@ -16,6 +16,7 @@ import {
   LogOut,
   PiggyBank,
   BarChart2,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -41,6 +42,7 @@ const NAV_ITEMS = [
   { href: "/documents", label: "Documents", icon: FileText },
   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/guide", label: "User Guide", icon: BookOpen },
 ];
 
 export function Sidebar() {
