@@ -229,3 +229,7 @@ Full list with priorities: [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md)
 ## License
 
 Private. Not open source.
+
+## Claude Code
+
+This project uses [Claude Code](https://claude.ai/code) with a shared global config — see [rommelporras/claude-config](https://github.com/rommelporras/claude-config) for setup instructions before working on a new machine.

@@ -48,7 +48,6 @@
   },
   "enabledPlugins": {
     "document-skills@anthropic-agent-skills": true,
-    "playwright@claude-plugins-official": true,
     "elements-of-style@superpowers-marketplace": true
   }
 }
