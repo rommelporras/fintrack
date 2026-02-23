@@ -3,7 +3,7 @@ from datetime import date
 from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func as sa_func, extract
+from sqlalchemy import select, func as sa_func
 from app.core.database import get_db
 from app.dependencies import get_current_user
 from app.models.budget import Budget
@@ -66,8 +66,6 @@ async def get_budget_status(
             Transaction.user_id == current_user.id,
             Transaction.type == TransactionType.expense,
             Transaction.date >= month_start,
-            extract("month", Transaction.date) == month_start.month,
-            extract("year", Transaction.date) == month_start.year,
         )
         .group_by(Transaction.category_id, Transaction.account_id)
     )
