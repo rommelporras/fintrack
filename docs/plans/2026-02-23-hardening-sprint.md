@@ -632,7 +632,7 @@ throw new Error(message);
 
 ### Task C6: Pin Docker image versions
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `docker-compose.yml:3,19`
