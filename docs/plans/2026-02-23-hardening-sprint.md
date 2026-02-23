@@ -438,7 +438,7 @@ engine = create_async_engine(
 
 ### Task B3: Add CHECK constraints (migration)
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Create: migration via alembic
