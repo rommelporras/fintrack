@@ -300,7 +300,7 @@ ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf", ".csv", 
 
 ### Task A8: Remove file_path from DocumentResponse
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/schemas/document.py:11`
