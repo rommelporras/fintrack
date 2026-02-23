@@ -91,7 +91,7 @@ async def update_transaction(
     txn = result.scalar_one_or_none()
     if not txn:
         raise HTTPException(status_code=404, detail="Transaction not found")
-    for field, value in data.model_dump(exclude_none=True).items():
+    for field, value in data.model_dump(exclude_unset=True).items():
         setattr(txn, field, value)
     await db.commit()
     await db.refresh(txn)

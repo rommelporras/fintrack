@@ -67,7 +67,7 @@ async def update_credit_card(
     card = result.scalar_one_or_none()
     if not card:
         raise HTTPException(status_code=404, detail="Credit card not found")
-    for field, value in data.model_dump(exclude_none=True).items():
+    for field, value in data.model_dump(exclude_unset=True).items():
         setattr(card, field, value)
     await db.commit()
     await db.refresh(card)

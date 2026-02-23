@@ -102,7 +102,7 @@ async def update_document(
     doc = result.scalar_one_or_none()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    for field, value in data.model_dump(exclude_none=True).items():
+    for field, value in data.model_dump(exclude_unset=True).items():
         setattr(doc, field, value)
     await db.commit()
     await db.refresh(doc)

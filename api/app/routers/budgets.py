@@ -88,7 +88,7 @@ async def update_budget(
     budget = result.scalar_one_or_none()
     if not budget:
         raise HTTPException(status_code=404, detail="Budget not found")
-    for field, value in data.model_dump(exclude_none=True).items():
+    for field, value in data.model_dump(exclude_unset=True).items():
         setattr(budget, field, value)
     await db.commit()
     await db.refresh(budget)

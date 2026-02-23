@@ -474,7 +474,7 @@ def downgrade() -> None:
 
 ### Task B4: Fix exclude_none → exclude_unset in update endpoints
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/routers/transactions.py:87`
