@@ -1,3 +1,4 @@
+import re
 import uuid
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -9,6 +10,12 @@ from app.models.transaction import Transaction, TransactionType
 from app.models.user import User
 from app.schemas.transaction import TransactionCreate, TransactionUpdate, TransactionResponse, TransactionListResponse
 from app.services.budget_alerts import check_budget_alerts
+
+
+def _escape_like(s: str) -> str:
+    """Escape LIKE/ILIKE special characters so user input is treated as literals."""
+    return re.sub(r"([%_\\])", r"\\\1", s)
+
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
@@ -38,7 +45,7 @@ async def list_transactions(
     if date_to:
         base = base.where(Transaction.date <= date_to)
     if search:
-        base = base.where(Transaction.description.ilike(f"%{search}%"))
+        base = base.where(Transaction.description.ilike(f"%{_escape_like(search)}%"))
 
     count_result = await db.execute(select(func.count()).select_from(base.subquery()))
     total = count_result.scalar_one()

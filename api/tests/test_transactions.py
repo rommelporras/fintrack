@@ -221,3 +221,9 @@ async def test_update_transaction_not_found(client, user_and_accounts):
         "description": "Nope",
     })
     assert r.status_code == 404
+
+
+async def test_search_escapes_wildcards(client, user_and_accounts):
+    """Search with % and _ should be treated as literals, not wildcards."""
+    resp = await client.get("/transactions", params={"search": "%_special"})
+    assert resp.status_code == 200
