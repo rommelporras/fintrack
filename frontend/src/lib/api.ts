@@ -84,7 +84,11 @@ async function request<T>(
     const error = await response
       .json()
       .catch(() => ({ detail: "Request failed" }));
-    throw new Error(error.detail || response.statusText);
+    const detail = error.detail;
+    const message = Array.isArray(detail)
+      ? detail.map((e: { msg: string }) => e.msg).join("; ")
+      : (detail as string) || response.statusText;
+    throw new Error(message);
   }
 
   if (response.status === 204) return undefined as T;

@@ -577,7 +577,7 @@ Then in each of these files, remove the local `formatPeso` and add `import { for
 
 ### Task C4: Fix Pydantic validation error rendering
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/lib/api.ts` — inside the `request` function error handling

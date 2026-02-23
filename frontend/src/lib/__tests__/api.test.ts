@@ -76,6 +76,25 @@ describe("api", () => {
     await expect(api.post("/fail", {})).rejects.toThrow("Validation error");
   });
 
+  it("joins array detail from Pydantic validation errors", async () => {
+    server.use(
+      http.post(`${BASE}/validate`, () =>
+        HttpResponse.json(
+          {
+            detail: [
+              { msg: "field required", loc: ["body", "amount"] },
+              { msg: "value is not a valid number", loc: ["body", "amount"] },
+            ],
+          },
+          { status: 422 }
+        )
+      )
+    );
+    await expect(api.post("/validate", {})).rejects.toThrow(
+      "field required; value is not a valid number"
+    );
+  });
+
   it("handles 204 with no body", async () => {
     server.use(
       http.post(`${BASE}/empty`, () => new HttpResponse(null, { status: 204 }))
