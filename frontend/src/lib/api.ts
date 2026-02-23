@@ -99,16 +99,34 @@ export const api = {
     request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
   upload: async <T>(path: string, form: FormData): Promise<T> => {
-    const response = await fetch(`${getBaseUrl()}${path}`, {
-      method: "POST",
-      credentials: "include",
-      body: form,
-    });
+    const url = `${getBaseUrl()}${path}`;
+    const doUpload = async (): Promise<Response> => {
+      return fetch(url, {
+        method: "POST",
+        credentials: "include",
+        body: form,
+      });
+    };
+
+    let response = await doUpload();
+
+    if (response.status === 401) {
+      const refreshed = await tryRefresh();
+      if (refreshed) {
+        response = await doUpload();
+      } else {
+        window.location.href = "/login";
+        return undefined as T;
+      }
+    }
+
     if (!response.ok) {
-      const error = await response
-        .json()
-        .catch(() => ({ detail: "Upload failed" }));
-      throw new Error(error.detail || response.statusText);
+      const error = await response.json().catch(() => ({ detail: "Upload failed" }));
+      const detail = error.detail;
+      const message = Array.isArray(detail)
+        ? detail.map((e: { msg: string }) => e.msg).join("; ")
+        : (detail as string) || response.statusText;
+      throw new Error(message);
     }
     return response.json();
   },
