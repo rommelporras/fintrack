@@ -1118,7 +1118,7 @@ for budget in budgets:
 
 ### Task E3: Add SSE heartbeat
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/routers/notifications.py:57-84`

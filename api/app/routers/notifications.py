@@ -12,7 +12,7 @@ from app.models.push_subscription import PushSubscription
 from app.models.user import User
 from app.schemas.notification import NotificationResponse, NotificationListResponse
 from app.schemas.push_subscription import PushSubscriptionCreate, PushSubscriptionDelete
-from app.services.pubsub import subscribe_notifications
+from app.services.pubsub import get_redis, _channel
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -75,13 +75,43 @@ async def notification_stream(
                 }
                 yield f"data: {json.dumps(payload)}\n\n"
 
-        # Keep connection open, yield from Redis pub/sub
+        # Keep connection open, yield from Redis pub/sub with 30s keepalive
+        r = None
+        pubsub = None
+        channel = _channel(current_user.id)
         try:
-            async for payload in subscribe_notifications(current_user.id):
-                yield f"data: {json.dumps(payload)}\n\n"
+            r = await get_redis()
+            pubsub = r.pubsub()
+            await pubsub.subscribe(channel)
+            while True:
+                try:
+                    message = await asyncio.wait_for(
+                        pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0),
+                        timeout=30.0,
+                    )
+                except asyncio.TimeoutError:
+                    yield ": keepalive\n\n"
+                    continue
+                if message and message["type"] == "message":
+                    data = message["data"]
+                    if isinstance(data, bytes):
+                        data = data.decode()
+                    yield f"data: {data}\n\n"
         except (asyncio.CancelledError, Exception):
             # Redis unavailable or client disconnected — end stream gracefully
             return
+        finally:
+            if pubsub is not None:
+                try:
+                    await pubsub.unsubscribe(channel)
+                    await pubsub.aclose()
+                except Exception:
+                    pass
+            if r is not None:
+                try:
+                    await r.aclose()
+                except Exception:
+                    pass
 
     return StreamingResponse(
         generator(),
