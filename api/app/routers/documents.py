@@ -16,6 +16,7 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 ALLOWED_TYPES = {
     "image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"
 }
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf", ".csv", ".txt"}
 MAX_SIZE = 10 * 1024 * 1024  # 10MB
 
 
@@ -32,7 +33,9 @@ async def upload_document(
     if file.content_type not in ALLOWED_TYPES:
         raise HTTPException(status_code=415, detail="Unsupported file type")
 
-    ext = Path(file.filename or "file").suffix or ".bin"
+    ext = Path(file.filename or "file").suffix.lower() or ".bin"
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"File type '{ext}' is not allowed")
     file_name = f"{uuid.uuid4()}{ext}"
     user_dir = Path(settings.upload_dir) / str(current_user.id)
     user_dir.mkdir(parents=True, exist_ok=True)

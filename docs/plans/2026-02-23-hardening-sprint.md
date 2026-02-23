@@ -274,7 +274,7 @@ async def logout(response: Response):
 
 ### Task A7: File upload extension allowlist
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/routers/documents.py:35-40`
