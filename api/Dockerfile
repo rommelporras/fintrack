@@ -1,8 +1,8 @@
-FROM python:3.14.0rc3-slim
+FROM python:3.14.3-slim
 
 WORKDIR /app
 
-RUN pip install uv==0.7.2
+RUN pip install uv==0.10.4
 
 COPY pyproject.toml uv.lock ./
 RUN UV_PROJECT_ENVIRONMENT=/opt/venv uv sync --frozen --no-dev
