@@ -528,7 +528,7 @@ _Priority: medium. These make the codebase self-documenting for AI agents and fi
 
 ### Task C2: Add bun.lock to protect-sensitive.sh
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `.claude/hooks/protect-sensitive.sh:18-38`
