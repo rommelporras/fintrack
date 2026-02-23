@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 import jwt
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,8 +14,8 @@ from app.dependencies import get_current_user
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def _cookie_kwargs() -> dict:
-    kwargs: dict = {"httponly": True, "secure": settings.cookie_secure, "samesite": "lax"}
+def _cookie_kwargs() -> dict[str, Any]:
+    kwargs: dict[str, Any] = {"httponly": True, "secure": settings.cookie_secure, "samesite": "lax"}
     if settings.cookie_domain and settings.cookie_domain != "localhost":
         kwargs["domain"] = settings.cookie_domain
     return kwargs
