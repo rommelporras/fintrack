@@ -29,8 +29,8 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_constraint("ck_credit_cards_due_day", "credit_cards")
-    op.drop_constraint("ck_credit_cards_statement_day", "credit_cards")
-    op.drop_constraint("ck_credit_cards_limit_positive", "credit_cards")
-    op.drop_constraint("ck_budgets_amount_positive", "budgets")
-    op.drop_constraint("ck_transactions_amount_positive", "transactions")
+    op.drop_constraint("ck_credit_cards_due_day", "credit_cards", type_="check")
+    op.drop_constraint("ck_credit_cards_statement_day", "credit_cards", type_="check")
+    op.drop_constraint("ck_credit_cards_limit_positive", "credit_cards", type_="check")
+    op.drop_constraint("ck_budgets_amount_positive", "budgets", type_="check")
+    op.drop_constraint("ck_transactions_amount_positive", "transactions", type_="check")
