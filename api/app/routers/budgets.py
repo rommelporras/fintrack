@@ -1,4 +1,5 @@
 import uuid
+from calendar import monthrange
 from datetime import date
 from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException
@@ -47,6 +48,8 @@ async def get_budget_status(
 ):
     today = date.today()
     month_start = today.replace(day=1)
+    days_in_month = monthrange(today.year, today.month)[1]
+    month_end = month_start.replace(day=days_in_month)
 
     budgets_result = await db.execute(
         select(Budget).where(Budget.user_id == current_user.id)
@@ -66,11 +69,11 @@ async def get_budget_status(
             Transaction.user_id == current_user.id,
             Transaction.type == TransactionType.expense,
             Transaction.date >= month_start,
+            Transaction.date <= month_end,
         )
         .group_by(Transaction.category_id, Transaction.account_id)
     )
-    # Build a nested map: category_id -> account_id -> spent
-    # Both keys are stored as strings (or None) for easy lookup.
+    # Build a flat map keyed by (category_id, account_id) str-or-None tuples → spent.
     spending_map: dict[tuple[str | None, str | None], Decimal] = {}
     for row in spending_result.all():
         cat_key = str(row.category_id) if row.category_id is not None else None
