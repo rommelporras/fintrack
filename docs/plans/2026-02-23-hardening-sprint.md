@@ -410,7 +410,7 @@ cd api && DATABASE_URL="postgresql+asyncpg://finance:changeme@127.0.0.1:5435/fin
 
 ### Task B2: Configure connection pool
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/core/database.py:9`
