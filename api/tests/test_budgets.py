@@ -236,12 +236,14 @@ from unittest.mock import AsyncMock, patch
 from sqlalchemy import select
 import app.core.config as cfg
 from app.models.notification import Notification, NotificationType
+from app.services.budget_alerts import check_budget_alerts
 
 
 async def test_budget_alert_fires_at_80_percent(
     auth_client: AsyncClient, db, account_id: str, category_id: str, monkeypatch
 ):
     monkeypatch.setattr(cfg.settings, "discord_webhook_url", "")
+    monkeypatch.setattr("app.tasks.check_budget_alerts_task.delay", lambda *a, **kw: None)
 
     # Create budget ₱10,000
     await auth_client.post("/budgets", json={
@@ -263,6 +265,8 @@ async def test_budget_alert_fires_at_80_percent(
         "description": "coffee",
     })
     assert r.status_code == 201
+    # Run the alert check synchronously using the test db (simulates Celery task)
+    await check_budget_alerts(db, uuid.UUID(user_id))
 
     notifs_result = await db.execute(
         select(Notification).where(Notification.user_id == uuid.UUID(user_id))
@@ -276,6 +280,7 @@ async def test_budget_alert_not_duplicated(
     auth_client: AsyncClient, db, account_id: str, category_id: str, monkeypatch
 ):
     monkeypatch.setattr(cfg.settings, "discord_webhook_url", "")
+    monkeypatch.setattr("app.tasks.check_budget_alerts_task.delay", lambda *a, **kw: None)
 
     await auth_client.post("/budgets", json={
         "type": "category", "category_id": category_id, "amount": "10000.00"
@@ -295,6 +300,8 @@ async def test_budget_alert_not_duplicated(
         "date": str(date.today()),
         "description": "first",
     })
+    # Run alert check synchronously (simulates Celery task)
+    await check_budget_alerts(db, uuid.UUID(user_id))
 
     # Second API transaction: total = 8100 (81%) → should NOT create another warning
     await auth_client.post("/transactions", json={
@@ -305,6 +312,8 @@ async def test_budget_alert_not_duplicated(
         "date": str(date.today()),
         "description": "second",
     })
+    # Run alert check again — idempotency check
+    await check_budget_alerts(db, uuid.UUID(user_id))
 
     notifs_result = await db.execute(
         select(Notification).where(Notification.user_id == uuid.UUID(user_id))
@@ -318,6 +327,7 @@ async def test_budget_exceeded_alert(
     auth_client: AsyncClient, db, account_id: str, category_id: str, monkeypatch
 ):
     monkeypatch.setattr(cfg.settings, "discord_webhook_url", "")
+    monkeypatch.setattr("app.tasks.check_budget_alerts_task.delay", lambda *a, **kw: None)
 
     await auth_client.post("/budgets", json={
         "type": "category", "category_id": category_id, "amount": "10000.00"
@@ -337,6 +347,8 @@ async def test_budget_exceeded_alert(
         "date": str(date.today()),
         "description": "over budget",
     })
+    # Run alert check synchronously (simulates Celery task)
+    await check_budget_alerts(db, uuid.UUID(user_id))
 
     notifs_result = await db.execute(
         select(Notification).where(Notification.user_id == uuid.UUID(user_id))
@@ -350,6 +362,7 @@ async def test_budget_alert_discord_called(
     auth_client: AsyncClient, db, account_id: str, category_id: str, monkeypatch
 ):
     monkeypatch.setattr(cfg.settings, "discord_webhook_url", "https://discord.com/api/webhooks/test")
+    monkeypatch.setattr("app.tasks.check_budget_alerts_task.delay", lambda *a, **kw: None)
 
     await auth_client.post("/budgets", json={
         "type": "category", "category_id": category_id, "amount": "10000.00"
@@ -359,13 +372,15 @@ async def test_budget_alert_discord_called(
 
     await _create_expense(db, user_id, account_id, category_id, "7900.00")
 
+    await auth_client.post("/transactions", json={
+        "account_id": account_id,
+        "category_id": category_id,
+        "amount": "100.00",
+        "type": "expense",
+        "date": str(date.today()),
+        "description": "webhook test",
+    })
     with patch("app.services.discord.httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
-        await auth_client.post("/transactions", json={
-            "account_id": account_id,
-            "category_id": category_id,
-            "amount": "100.00",
-            "type": "expense",
-            "date": str(date.today()),
-            "description": "webhook test",
-        })
+        # Run alert check synchronously inside the patch context (simulates Celery task)
+        await check_budget_alerts(db, uuid.UUID(user_id))
         mock_post.assert_called_once()

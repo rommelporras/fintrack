@@ -9,7 +9,7 @@ from app.dependencies import get_current_user
 from app.models.transaction import Transaction, TransactionType
 from app.models.user import User
 from app.schemas.transaction import TransactionCreate, TransactionUpdate, TransactionResponse, TransactionListResponse
-from app.services.budget_alerts import check_budget_alerts
+from app.tasks import check_budget_alerts_task
 
 
 def _escape_like(s: str) -> str:
@@ -71,7 +71,7 @@ async def create_transaction(
     db.add(txn)
     await db.commit()
     await db.refresh(txn)
-    await check_budget_alerts(db, current_user.id)
+    check_budget_alerts_task.delay(str(current_user.id))
     return txn
 
 
@@ -95,7 +95,7 @@ async def update_transaction(
         setattr(txn, field, value)
     await db.commit()
     await db.refresh(txn)
-    await check_budget_alerts(db, current_user.id)
+    check_budget_alerts_task.delay(str(current_user.id))
     return txn
 
 
