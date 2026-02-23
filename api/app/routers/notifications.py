@@ -86,7 +86,7 @@ async def notification_stream(
             while True:
                 try:
                     message = await asyncio.wait_for(
-                        pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0),
+                        pubsub.get_message(ignore_subscribe_messages=True, timeout=None),
                         timeout=30.0,
                     )
                 except asyncio.TimeoutError:
