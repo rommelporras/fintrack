@@ -72,7 +72,6 @@
             justify-content: flex-end;
             height: 100%;
             cursor: pointer;
-            group: chart-bar;
         }
 
         .chart-bar-income,
@@ -121,11 +120,15 @@
             background-color: var(--bg-card-hover);
         }
 
+        .accordion-row.open {
+            background-color: var(--bg-muted);
+        }
+
         .accordion-content {
             display: grid;
             grid-template-rows: 0fr;
             transition: grid-template-rows 0.3s ease;
-            background-color: rgba(24, 24, 27, 0.4);
+            background-color: var(--bg-muted);
         }
 
         .accordion-content.open {
@@ -140,7 +143,6 @@
             transition: transform 0.3s ease;
         }
 
-        .accordion-content.open+tr .chevron,
         .accordion-row.open .chevron {
             transform: rotate(180deg);
         }
@@ -348,20 +350,22 @@
                     class="w-full flex items-center justify-between gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors group">
                     <div class="flex items-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dark:hidden">
-                            <circle cx="12" cy="12" r="5" fill="currentColor"/>
-                            <line x1="12" y1="1" x2="12" y2="3"/>
-                            <line x1="12" y1="21" x2="12" y2="23"/>
-                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                            <line x1="1" y1="12" x2="3" y2="12"/>
-                            <line x1="21" y1="12" x2="23" y2="12"/>
-                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="dark:hidden">
+                            <circle cx="12" cy="12" r="5" fill="currentColor" />
+                            <line x1="12" y1="1" x2="12" y2="3" />
+                            <line x1="12" y1="21" x2="12" y2="23" />
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                            <line x1="1" y1="12" x2="3" y2="12" />
+                            <line x1="21" y1="12" x2="23" y2="12" />
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
                         </svg>
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden dark:block">
-                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="hidden dark:block">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                         </svg>
                         <span class="dark:hidden">Light Mode</span>
                         <span class="hidden dark:inline">Dark Mode</span>
@@ -459,7 +463,8 @@
                                     class="absolute -bottom-7 text-[10px] sm:text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
                                     Jan</div>
                                 <div class="chart-tooltip">
-                                    <div class="font-semibold text-foreground mb-2 pb-2 border-b border-border/50 text-xs">
+                                    <div
+                                        class="font-semibold text-foreground mb-2 pb-2 border-b border-border/50 text-xs">
                                         January 2026</div>
                                     <div class="flex justify-between gap-4 text-xs mb-1">
                                         <span class="text-muted-foreground">Income</span>
@@ -482,7 +487,8 @@
                                     class="absolute -bottom-7 text-[10px] sm:text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
                                     Feb</div>
                                 <div class="chart-tooltip">
-                                    <div class="font-semibold text-foreground mb-2 pb-2 border-b border-border/50 text-xs">
+                                    <div
+                                        class="font-semibold text-foreground mb-2 pb-2 border-b border-border/50 text-xs">
                                         February 2026</div>
                                     <div class="flex justify-between gap-4 text-xs mb-1">
                                         <span class="text-muted-foreground">Income</span>
@@ -505,7 +511,8 @@
                                     class="absolute -bottom-7 text-[10px] sm:text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
                                     Mar</div>
                                 <div class="chart-tooltip">
-                                    <div class="font-semibold text-foreground mb-2 pb-2 border-b border-border/50 text-xs">
+                                    <div
+                                        class="font-semibold text-foreground mb-2 pb-2 border-b border-border/50 text-xs">
                                         March 2026 (Projcetion)</div>
                                     <div class="flex justify-between gap-4 text-xs mb-1">
                                         <span class="text-muted-foreground">Income</span>
@@ -633,131 +640,319 @@
                             <p class="text-xs text-muted-foreground mt-1">Click a row to expand top expenses</p>
                         </div>
 
-                        <table class="w-full text-left text-sm whitespace-nowrap">
-                            <thead class="bg-card/50 text-xs text-muted-foreground uppercase tracking-wider">
-                                <tr>
-                                    <th class="px-6 py-3 font-semibold">Month</th>
-                                    <th class="px-6 py-3 font-semibold text-right">Income</th>
-                                    <th class="px-6 py-3 font-semibold text-right">Expenses</th>
-                                    <th class="px-6 py-3 font-semibold text-right">Net</th>
-                                    <th class="px-4 py-3"></th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-border border-b border-border">
+                        <div class="overflow-x-auto w-full">
+                            <table class="w-full text-left text-sm whitespace-nowrap">
+                                <thead class="bg-card/50 text-xs text-muted-foreground uppercase tracking-wider">
+                                    <tr>
+                                        <th class="px-6 py-3 font-semibold">Month</th>
+                                        <th class="px-6 py-3 font-semibold text-right">Income</th>
+                                        <th class="px-6 py-3 font-semibold text-right">Expenses</th>
+                                        <th class="px-6 py-3 font-semibold text-right">Net</th>
+                                        <th class="px-4 py-3"></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-border border-b border-border">
 
-                                <!-- Feb Row -->
-                                <tr class="accordion-row" onclick="toggleRow(this)">
-                                    <td class="px-6 py-4 font-medium text-foreground">Feb 2026</td>
-                                    <td class="px-6 py-4 text-right font-medium text-[#10b981]">₱45,200</td>
-                                    <td class="px-6 py-4 text-right font-medium text-[#ef4444]">₱28,750</td>
-                                    <td class="px-6 py-4 text-right font-medium text-[#10b981]">+₱16,450</td>
-                                    <td class="px-4 py-4 text-right text-muted-foreground">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none"
-                                            stroke="currentColor" stroke-width="2" class="chevron inline-block">
-                                            <polyline points="6 9 12 15 18 9" />
-                                        </svg>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td colspan="5" class="p-0 border-0">
-                                        <div class="accordion-content">
-                                            <div class="accordion-inner">
-                                                <div
-                                                    class="px-6 py-4 my-2 mx-6 rounded-lg bg-card border border-border/50">
-                                                    <p
-                                                        class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                                                        Top Expenses</p>
-                                                    <div class="flex justify-between text-sm mb-2"><span
-                                                            class="text-foreground">Food & Dining</span><span
-                                                            class="text-[#ef4444]">₱8,500</span></div>
-                                                    <div class="flex justify-between text-sm mb-2"><span
-                                                            class="text-foreground">Utilities</span><span
-                                                            class="text-[#ef4444]">₱5,099</span></div>
-                                                    <div class="flex justify-between text-sm"><span
-                                                            class="text-foreground">Shopping</span><span
-                                                            class="text-[#ef4444]">₱4,200</span></div>
+                                    <!-- Feb Row -->
+                                    <tr class="accordion-row" onclick="toggleRow(this)">
+                                        <td class="px-6 py-4 font-medium text-foreground">Feb 2026</td>
+                                        <td class="px-6 py-4 text-right font-medium text-[#10b981]">₱45,200</td>
+                                        <td class="px-6 py-4 text-right font-medium text-[#ef4444]">₱28,750</td>
+                                        <td class="px-6 py-4 text-right font-medium text-[#10b981]">+₱16,450</td>
+                                        <td class="px-4 py-4 text-right text-muted-foreground">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none"
+                                                stroke="currentColor" stroke-width="2" class="chevron inline-block">
+                                                <polyline points="6 9 12 15 18 9" />
+                                            </svg>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="5" class="p-0 border-0">
+                                            <div class="accordion-content">
+                                                <div class="accordion-inner">
+                                                    <div
+                                                        class="px-6 py-5 mx-2 md:mx-6 mb-4 mt-2 bg-background dark:bg-card border border-border rounded-xl shadow-sm whitespace-normal">
+                                                        <h4
+                                                            class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14"
+                                                                height="14" viewBox="0 0 24 24" fill="none"
+                                                                stroke="currentColor" stroke-width="2"
+                                                                stroke-linecap="round" stroke-linejoin="round">
+                                                                <path d="M12 2v20" />
+                                                                <path
+                                                                    d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                                                            </svg>
+                                                            Top Expenses Breakdown
+                                                        </h4>
+                                                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                                            <div>
+                                                                <div class="flex justify-between items-end mb-1.5">
+                                                                    <span
+                                                                        class="text-sm font-medium text-foreground">Food
+                                                                        &amp; Dining</span>
+                                                                    <span
+                                                                        class="text-sm font-semibold text-foreground">₱8,500
+                                                                        <span
+                                                                            class="text-xs text-muted-foreground font-normal ml-1">30%</span></span>
+                                                                </div>
+                                                                <div
+                                                                    class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                                    <div class="h-full bg-[#f59e0b] rounded-full"
+                                                                        style="width: 30%;"></div>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div class="flex justify-between items-end mb-1.5">
+                                                                    <span
+                                                                        class="text-sm font-medium text-foreground">Utilities</span>
+                                                                    <span
+                                                                        class="text-sm font-semibold text-foreground">₱5,099
+                                                                        <span
+                                                                            class="text-xs text-muted-foreground font-normal ml-1">18%</span></span>
+                                                                </div>
+                                                                <div
+                                                                    class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                                    <div class="h-full bg-[#3b82f6] rounded-full"
+                                                                        style="width: 18%;"></div>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div class="flex justify-between items-end mb-1.5">
+                                                                    <span
+                                                                        class="text-sm font-medium text-foreground">Shopping</span>
+                                                                    <span
+                                                                        class="text-sm font-semibold text-foreground">₱4,200
+                                                                        <span
+                                                                            class="text-xs text-muted-foreground font-normal ml-1">15%</span></span>
+                                                                </div>
+                                                                <div
+                                                                    class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                                    <div class="h-full bg-[#8b5cf6] rounded-full"
+                                                                        style="width: 15%;"></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="mt-6 pt-4 border-t border-border flex justify-end">
+                                                            <a href="transactions.html?month=feb-2026"
+                                                                class="text-xs font-medium text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1 group">
+                                                                View all transactions
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="12"
+                                                                    height="12" viewBox="0 0 24 24" fill="none"
+                                                                    stroke="currentColor" stroke-width="2"
+                                                                    stroke-linecap="round" stroke-linejoin="round"
+                                                                    class="transition-transform group-hover:translate-x-0.5">
+                                                                    <path d="M5 12h14" />
+                                                                    <path d="m12 5 7 7-7 7" />
+                                                                </svg>
+                                                            </a>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                </tr>
+                                        </td>
+                                    </tr>
 
-                                <!-- Jan Row -->
-                                <tr class="accordion-row" onclick="toggleRow(this)">
-                                    <td class="px-6 py-4 font-medium text-foreground">Jan 2026</td>
-                                    <td class="px-6 py-4 text-right font-medium text-[#10b981]">₱45,200</td>
-                                    <td class="px-6 py-4 text-right font-medium text-[#ef4444]">₱31,200</td>
-                                    <td class="px-6 py-4 text-right font-medium text-[#10b981]">+₱14,000</td>
-                                    <td class="px-4 py-4 text-right text-muted-foreground">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none"
-                                            stroke="currentColor" stroke-width="2" class="chevron inline-block">
-                                            <polyline points="6 9 12 15 18 9" />
-                                        </svg>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td colspan="5" class="p-0 border-0">
-                                        <div class="accordion-content">
-                                            <div class="accordion-inner">
-                                                <div
-                                                    class="px-6 py-4 my-2 mx-6 rounded-lg bg-card border border-border/50">
-                                                    <p
-                                                        class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                                                        Top Expenses</p>
-                                                    <div class="flex justify-between text-sm mb-2"><span
-                                                            class="text-foreground">Food & Dining</span><span
-                                                            class="text-[#ef4444]">₱9,200</span></div>
-                                                    <div class="flex justify-between text-sm mb-2"><span
-                                                            class="text-foreground">Shopping</span><span
-                                                            class="text-[#ef4444]">₱6,100</span></div>
-                                                    <div class="flex justify-between text-sm"><span
-                                                            class="text-foreground">Utilities</span><span
-                                                            class="text-[#ef4444]">₱5,800</span></div>
+                                    <!-- Jan Row -->
+                                    <tr class="accordion-row" onclick="toggleRow(this)">
+                                        <td class="px-6 py-4 font-medium text-foreground">Jan 2026</td>
+                                        <td class="px-6 py-4 text-right font-medium text-[#10b981]">₱45,200</td>
+                                        <td class="px-6 py-4 text-right font-medium text-[#ef4444]">₱31,200</td>
+                                        <td class="px-6 py-4 text-right font-medium text-[#10b981]">+₱14,000</td>
+                                        <td class="px-4 py-4 text-right text-muted-foreground">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none"
+                                                stroke="currentColor" stroke-width="2" class="chevron inline-block">
+                                                <polyline points="6 9 12 15 18 9" />
+                                            </svg>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="5" class="p-0 border-0">
+                                            <div class="accordion-content">
+                                                <div class="accordion-inner">
+                                                    <div
+                                                        class="px-6 py-5 mx-2 md:mx-6 mb-4 mt-2 bg-background dark:bg-card border border-border rounded-xl shadow-sm whitespace-normal">
+                                                        <h4
+                                                            class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14"
+                                                                height="14" viewBox="0 0 24 24" fill="none"
+                                                                stroke="currentColor" stroke-width="2"
+                                                                stroke-linecap="round" stroke-linejoin="round">
+                                                                <path d="M12 2v20" />
+                                                                <path
+                                                                    d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                                                            </svg>
+                                                            Top Expenses Breakdown
+                                                        </h4>
+                                                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                                            <div>
+                                                                <div class="flex justify-between items-end mb-1.5">
+                                                                    <span
+                                                                        class="text-sm font-medium text-foreground">Food
+                                                                        &amp; Dining</span>
+                                                                    <span
+                                                                        class="text-sm font-semibold text-foreground">₱9,200
+                                                                        <span
+                                                                            class="text-xs text-muted-foreground font-normal ml-1">29%</span></span>
+                                                                </div>
+                                                                <div
+                                                                    class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                                    <div class="h-full bg-[#f59e0b] rounded-full"
+                                                                        style="width: 29%;"></div>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div class="flex justify-between items-end mb-1.5">
+                                                                    <span
+                                                                        class="text-sm font-medium text-foreground">Shopping</span>
+                                                                    <span
+                                                                        class="text-sm font-semibold text-foreground">₱6,100
+                                                                        <span
+                                                                            class="text-xs text-muted-foreground font-normal ml-1">20%</span></span>
+                                                                </div>
+                                                                <div
+                                                                    class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                                    <div class="h-full bg-[#8b5cf6] rounded-full"
+                                                                        style="width: 20%;"></div>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div class="flex justify-between items-end mb-1.5">
+                                                                    <span
+                                                                        class="text-sm font-medium text-foreground">Utilities</span>
+                                                                    <span
+                                                                        class="text-sm font-semibold text-foreground">₱5,800
+                                                                        <span
+                                                                            class="text-xs text-muted-foreground font-normal ml-1">19%</span></span>
+                                                                </div>
+                                                                <div
+                                                                    class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                                    <div class="h-full bg-[#3b82f6] rounded-full"
+                                                                        style="width: 19%;"></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="mt-6 pt-4 border-t border-border flex justify-end">
+                                                            <a href="transactions.html?month=jan-2026"
+                                                                class="text-xs font-medium text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1 group">
+                                                                View all transactions
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="12"
+                                                                    height="12" viewBox="0 0 24 24" fill="none"
+                                                                    stroke="currentColor" stroke-width="2"
+                                                                    stroke-linecap="round" stroke-linejoin="round"
+                                                                    class="transition-transform group-hover:translate-x-0.5">
+                                                                    <path d="M5 12h14" />
+                                                                    <path d="m12 5 7 7-7 7" />
+                                                                </svg>
+                                                            </a>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                </tr>
+                                        </td>
+                                    </tr>
 
-                                <!-- Dec Row -->
-                                <tr class="accordion-row" onclick="toggleRow(this)">
-                                    <td class="px-6 py-4 font-medium text-foreground">Dec 2025</td>
-                                    <td class="px-6 py-4 text-right font-medium text-[#10b981]">₱52,400</td>
-                                    <td class="px-6 py-4 text-right font-medium text-[#ef4444]">₱38,500</td>
-                                    <td class="px-6 py-4 text-right font-medium text-[#10b981]">+₱13,900</td>
-                                    <td class="px-4 py-4 text-right text-muted-foreground">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none"
-                                            stroke="currentColor" stroke-width="2" class="chevron inline-block">
-                                            <polyline points="6 9 12 15 18 9" />
-                                        </svg>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td colspan="5" class="p-0 border-0">
-                                        <div class="accordion-content">
-                                            <div class="accordion-inner">
-                                                <div
-                                                    class="px-6 py-4 my-2 mx-6 rounded-lg bg-card border border-border/50">
-                                                    <p
-                                                        class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                                                        Top Expenses</p>
-                                                    <div class="flex justify-between text-sm mb-2"><span
-                                                            class="text-foreground">Shopping</span><span
-                                                            class="text-[#ef4444]">₱14,200</span></div>
-                                                    <div class="flex justify-between text-sm mb-2"><span
-                                                            class="text-foreground">Food & Dining</span><span
-                                                            class="text-[#ef4444]">₱10,500</span></div>
-                                                    <div class="flex justify-between text-sm"><span
-                                                            class="text-foreground">Travel</span><span
-                                                            class="text-[#ef4444]">₱5,800</span></div>
+                                    <!-- Dec Row -->
+                                    <tr class="accordion-row" onclick="toggleRow(this)">
+                                        <td class="px-6 py-4 font-medium text-foreground">Dec 2025</td>
+                                        <td class="px-6 py-4 text-right font-medium text-[#10b981]">₱52,400</td>
+                                        <td class="px-6 py-4 text-right font-medium text-[#ef4444]">₱38,500</td>
+                                        <td class="px-6 py-4 text-right font-medium text-[#10b981]">+₱13,900</td>
+                                        <td class="px-4 py-4 text-right text-muted-foreground">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none"
+                                                stroke="currentColor" stroke-width="2" class="chevron inline-block">
+                                                <polyline points="6 9 12 15 18 9" />
+                                            </svg>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="5" class="p-0 border-0">
+                                            <div class="accordion-content">
+                                                <div class="accordion-inner">
+                                                    <div
+                                                        class="px-6 py-5 mx-2 md:mx-6 mb-4 mt-2 bg-background dark:bg-card border border-border rounded-xl shadow-sm whitespace-normal">
+                                                        <h4
+                                                            class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14"
+                                                                height="14" viewBox="0 0 24 24" fill="none"
+                                                                stroke="currentColor" stroke-width="2"
+                                                                stroke-linecap="round" stroke-linejoin="round">
+                                                                <path d="M12 2v20" />
+                                                                <path
+                                                                    d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                                                            </svg>
+                                                            Top Expenses Breakdown
+                                                        </h4>
+                                                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                                            <div>
+                                                                <div class="flex justify-between items-end mb-1.5">
+                                                                    <span
+                                                                        class="text-sm font-medium text-foreground">Shopping</span>
+                                                                    <span
+                                                                        class="text-sm font-semibold text-foreground">₱14,200
+                                                                        <span
+                                                                            class="text-xs text-muted-foreground font-normal ml-1">37%</span></span>
+                                                                </div>
+                                                                <div
+                                                                    class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                                    <div class="h-full bg-[#8b5cf6] rounded-full"
+                                                                        style="width: 37%;"></div>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div class="flex justify-between items-end mb-1.5">
+                                                                    <span
+                                                                        class="text-sm font-medium text-foreground">Food
+                                                                        &amp; Dining</span>
+                                                                    <span
+                                                                        class="text-sm font-semibold text-foreground">₱10,500
+                                                                        <span
+                                                                            class="text-xs text-muted-foreground font-normal ml-1">27%</span></span>
+                                                                </div>
+                                                                <div
+                                                                    class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                                    <div class="h-full bg-[#f59e0b] rounded-full"
+                                                                        style="width: 27%;"></div>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div class="flex justify-between items-end mb-1.5">
+                                                                    <span
+                                                                        class="text-sm font-medium text-foreground">Travel</span>
+                                                                    <span
+                                                                        class="text-sm font-semibold text-foreground">₱5,800
+                                                                        <span
+                                                                            class="text-xs text-muted-foreground font-normal ml-1">15%</span></span>
+                                                                </div>
+                                                                <div
+                                                                    class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                                    <div class="h-full bg-[#0ea5e9] rounded-full"
+                                                                        style="width: 15%;"></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="mt-6 pt-4 border-t border-border flex justify-end">
+                                                            <a href="transactions.html?month=dec-2025"
+                                                                class="text-xs font-medium text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1 group">
+                                                                View all transactions
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="12"
+                                                                    height="12" viewBox="0 0 24 24" fill="none"
+                                                                    stroke="currentColor" stroke-width="2"
+                                                                    stroke-linecap="round" stroke-linejoin="round"
+                                                                    class="transition-transform group-hover:translate-x-0.5">
+                                                                    <path d="M5 12h14" />
+                                                                    <path d="m12 5 7 7-7 7" />
+                                                                </svg>
+                                                            </a>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                </tr>
+                                        </td>
+                                    </tr>
 
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                 </div>

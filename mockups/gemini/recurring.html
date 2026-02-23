@@ -269,20 +269,22 @@
                     class="w-full flex items-center justify-between gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors group">
                     <div class="flex items-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dark:hidden">
-                            <circle cx="12" cy="12" r="5" fill="currentColor"/>
-                            <line x1="12" y1="1" x2="12" y2="3"/>
-                            <line x1="12" y1="21" x2="12" y2="23"/>
-                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                            <line x1="1" y1="12" x2="3" y2="12"/>
-                            <line x1="21" y1="12" x2="23" y2="12"/>
-                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="dark:hidden">
+                            <circle cx="12" cy="12" r="5" fill="currentColor" />
+                            <line x1="12" y1="1" x2="12" y2="3" />
+                            <line x1="12" y1="21" x2="12" y2="23" />
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                            <line x1="1" y1="12" x2="3" y2="12" />
+                            <line x1="21" y1="12" x2="23" y2="12" />
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
                         </svg>
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden dark:block">
-                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="hidden dark:block">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                         </svg>
                         <span class="dark:hidden">Light Mode</span>
                         <span class="hidden dark:inline">Dark Mode</span>
@@ -301,14 +303,16 @@
 
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                         <div>
-                            <h1 class="text-3xl font-bold tracking-tight text-foreground mb-1">Recurring Transactions</h1>
+                            <h1 class="text-3xl font-bold tracking-tight text-foreground mb-1">Recurring Transactions
+                            </h1>
                             <p class="text-sm text-muted-foreground">Manage your auto-generated schedules and
-                                subscriptions. <span class="text-foreground font-medium ml-1">₱50,448/mo</span> projected
+                                subscriptions. <span class="text-foreground font-medium ml-1">₱50,448/mo</span>
+                                projected
                                 net.</p>
                         </div>
                         <button
                             class="btn-primary flex items-center justify-center gap-2 shadow-sm shadow-sm w-full sm:w-auto"
-                            onclick="openSheet('add-sheet')">
+                            onclick="openAddSheet()">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                                 stroke-linejoin="round">
@@ -327,7 +331,8 @@
                                 class="ml-1.5 px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-bold">4</span>
                             <div class="filter-indicator"></div>
                         </button>
-                        <button class="filter-btn pb-3 text-sm font-semibold text-muted-foreground hover:text-foreground"
+                        <button
+                            class="filter-btn pb-3 text-sm font-semibold text-muted-foreground hover:text-foreground"
                             onclick="setFilter('all', this)">
                             All Rules
                             <div class="filter-indicator"></div>
@@ -452,8 +457,8 @@
                             <div
                                 class="flex items-center justify-between sm:justify-end gap-6 sm:gap-8 ml-16 sm:ml-0 mt-2 sm:mt-0">
                                 <div class="text-left sm:text-right">
-                                    <div class="text-lg font-bold text-foreground tabular-nums tracking-tight">-₱549<span
-                                            class="text-sm font-semibold text-muted-foreground">.00</span></div>
+                                    <div class="text-lg font-bold text-foreground tabular-nums tracking-tight">
+                                        -₱549<span class="text-sm font-semibold text-muted-foreground">.00</span></div>
                                     <div class="text-xs font-medium text-muted-foreground mt-0.5">Next: <span
                                             class="text-foreground label-next-due">Mar 1, 2026</span></div>
                                 </div>
@@ -522,8 +527,9 @@
                             <div
                                 class="flex items-center justify-between sm:justify-end gap-6 sm:gap-8 ml-16 sm:ml-0 mt-2 sm:mt-0">
                                 <div class="text-left sm:text-right">
-                                    <div class="text-lg font-bold text-foreground tabular-nums tracking-tight">-₱1,500<span
-                                            class="text-sm font-semibold text-muted-foreground">.00</span></div>
+                                    <div class="text-lg font-bold text-foreground tabular-nums tracking-tight">
+                                        -₱1,500<span class="text-sm font-semibold text-muted-foreground">.00</span>
+                                    </div>
                                     <div class="text-xs font-medium text-muted-foreground mt-0.5">Next: <span
                                             class="text-foreground label-next-due">Mar 1, 2026</span></div>
                                 </div>
@@ -656,8 +662,9 @@
                             <div
                                 class="flex items-center justify-between sm:justify-end gap-6 sm:gap-8 ml-16 sm:ml-0 mt-2 sm:mt-0">
                                 <div class="text-left sm:text-right">
-                                    <div class="text-lg font-bold text-foreground tabular-nums tracking-tight">-₱3,200<span
-                                            class="text-sm font-semibold text-muted-foreground">.00</span></div>
+                                    <div class="text-lg font-bold text-foreground tabular-nums tracking-tight">
+                                        -₱3,200<span class="text-sm font-semibold text-muted-foreground">.00</span>
+                                    </div>
                                     <div class="text-xs font-medium text-muted-foreground mt-0.5">Next: <span
                                             class="text-foreground label-next-due">Mar 15, 2026</span></div>
                                 </div>
@@ -689,13 +696,14 @@
     </div>
 
 
-    <!-- Gloabl Backdrop for Modals and Sheets -->
-    <div id="modal-backdrop" class="fixed inset-0 bg-background/80 z-50 backdrop flex items-center justify-center"
+    <!-- Modals & Sheets -->
+    <div id="modal-backdrop"
+        class="fixed inset-0 bg-background/80 z-50 backdrop flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none"
         onclick="closeAll()">
 
         <!-- Delete Confirmation Modal -->
         <div id="delete-modal"
-            class="modal-dialog bg-card border border-border rounded-xl shadow-2xl p-6 w-full max-w-sm mx-4 relative"
+            class="modal-dialog bg-card border border-border rounded-xl shadow-2xl p-6 w-full max-w-sm mx-4 opacity-0 scale-95 transition-all duration-300 pointer-events-none"
             onclick="event.stopPropagation()">
             <div
                 class="w-12 h-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-4">
@@ -709,7 +717,8 @@
             </div>
             <h3 class="text-lg font-bold text-foreground mb-2">Delete Rule</h3>
             <p class="text-sm text-muted-foreground mb-6">Are you sure you want to delete <span
-                    class="font-semibold text-foreground">this recurring rule</span>? This will stop future transactions from
+                    class="font-semibold text-foreground">this recurring rule</span>? This will stop future transactions
+                from
                 generating.</p>
             <div class="flex gap-3">
                 <button class="btn-outline flex-1" onclick="closeAll()">Cancel</button>
@@ -721,8 +730,8 @@
 
 
     <!-- Add/Edit Sheet (Combined) -->
-    <div id="side-sheet"
-        class="fixed inset-y-0 right-0 w-full md:w-[440px] bg-card border-l border-border shadow-2xl z-50 side-sheet flex flex-col">
+    <div id="edit-sheet"
+        class="fixed inset-y-0 right-0 w-full md:w-[440px] bg-card border-l border-border shadow-2xl z-50 transform translate-x-full transition-transform duration-400 flex flex-col sheet">
         <!-- Header -->
         <div class="flex items-center justify-between px-6 py-5 border-b border-border">
             <div>
@@ -854,8 +863,8 @@
 
         <!-- Footer -->
         <div class="p-6 border-t border-border flex justify-end gap-3 bg-card/50">
-            <button class="btn-outline px-6" onclick="closeAll()">Cancel</button>
-            <button class="btn-primary px-8" onclick="closeAll()">Save Rule</button>
+            <button class="btn-outline px-6" onclick="closeSheet()">Cancel</button>
+            <button class="btn-primary px-8" onclick="closeSheet()">Save Rule</button>
         </div>
     </div>
 
@@ -947,7 +956,7 @@
 
         // Modal & Sheet Logic
         const backdrop = document.getElementById('modal-backdrop');
-        const sideSheet = document.getElementById('side-sheet');
+        const editSheet = document.getElementById('edit-sheet');
         const deleteModal = document.getElementById('delete-modal');
         const deleteBtnSheet = document.getElementById('delete-btn-sheet');
 
@@ -957,45 +966,58 @@
         const formDate = document.getElementById('form-date');
         const formFreq = document.getElementById('form-frequency');
 
-        function closeAll() {
-            backdrop.classList.remove('open');
-            sideSheet.classList.remove('open');
-            deleteModal.classList.remove('open');
+        function openSheet(id) {
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById(id).classList.remove('translate-x-full');
         }
 
-        function openSheet(mode, desc = '', amount = '', account = 'BPI Checking', date = '', freq = 'Monthly') {
-            document.getElementById('sheet-title').textContent = mode === 'add' ? 'New Recurring Rule' : 'Edit Recurring Rule';
-            document.getElementById('sheet-subtitle').textContent = mode === 'add' ? 'Automate your finances.' : 'Update existing rule values.';
+        function closeSheet() {
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
+            editSheet.classList.add('translate-x-full');
+            closeDeleteConfirm();
+        }
 
-            if (mode === 'edit') {
-                formDesc.value = desc;
-                formAmount.value = amount;
-                formAccount.value = account;
-                formFreq.value = freq;
-                if (date) formDate.value = date;
-            } else {
-                formDesc.value = '';
-                formAmount.value = '';
+        function closeAll() {
+            closeSheet();
+            closeDeleteConfirm();
+        }
+
+        function openDeleteConfirm() {
+            deleteModal.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        function closeDeleteConfirm() {
+            deleteModal.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+            if (editSheet.classList.contains('translate-x-full')) {
+                backdrop.classList.add('opacity-0', 'pointer-events-none');
             }
+        }
 
-            if (mode === 'edit') {
-                deleteBtnSheet.classList.remove('hidden');
-            } else {
-                deleteBtnSheet.classList.add('hidden');
-            }
-
-            deleteModal.classList.remove('open');
-            backdrop.classList.add('open');
-            setTimeout(() => sideSheet.classList.add('open'), 10);
+        function openAddSheet() {
+            document.getElementById('sheet-title').textContent = 'New Recurring Rule';
+            document.getElementById('sheet-subtitle').textContent = 'Automate your finances.';
+            formDesc.value = '';
+            formAmount.value = '';
+            deleteBtnSheet.classList.add('hidden');
+            openSheet('edit-sheet');
         }
 
         window.openEditSheet = function (desc, amount, account, date, freq) {
-            openSheet('edit', desc, amount, account, date, freq);
+            document.getElementById('sheet-title').textContent = 'Edit Recurring Rule';
+            document.getElementById('sheet-subtitle').textContent = 'Update existing rule values.';
+            formDesc.value = desc;
+            formAmount.value = amount;
+            formAccount.value = account;
+            formFreq.value = freq;
+            if (date) formDate.value = date;
+            deleteBtnSheet.classList.remove('hidden');
+            openSheet('edit-sheet');
         };
 
         function confirmDeleteFromSheet() {
-            sideSheet.classList.remove('open');
-            setTimeout(() => deleteModal.classList.add('open'), 300);
+            editSheet.classList.add('translate-x-full');
+            setTimeout(() => openDeleteConfirm(), 300);
         }
 
         // Initialize list filter

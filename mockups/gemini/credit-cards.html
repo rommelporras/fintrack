@@ -85,45 +85,6 @@
             cursor: pointer;
         }
 
-        /* Forms & Sheets */
-        .sheet {
-            position: fixed;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            width: 100%;
-            max-width: 440px;
-            background: var(--bg-card);
-            border-left: 1px solid var(--border);
-            z-index: 50;
-            transform: translateX(100%);
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
-            display: flex;
-            flex-direction: column;
-            box-shadow: none;
-        }
-
-        .sheet.open {
-            transform: translateX(0);
-            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
-        }
-
-        .dark .sheet.open {
-            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.7);
-        }
-
-        .sheet-body {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1.5rem;
-        }
-
-        .sheet-footer {
-            padding: 1.25rem 1.5rem;
-            border-top: 1px solid var(--border);
-            background: var(--card);
-        }
-
         .color-swatch {
             width: 32px;
             height: 32px;
@@ -140,47 +101,6 @@
         .color-swatch.selected {
             border-color: var(--foreground);
             box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--foreground);
-        }
-
-        /* Modals / Dialogs */
-        .backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-            z-index: 40;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-
-        .backdrop.open {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .dialog {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.95);
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            width: 90%;
-            max-width: 400px;
-            z-index: 50;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-        }
-
-        .dialog.open {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-            pointer-events: auto;
         }
     </style>
 </head>
@@ -368,7 +288,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             class="dark:hidden">
-                            <circle cx="12" cy="12" r="5" fill="currentColor"/>
+                            <circle cx="12" cy="12" r="5" fill="currentColor" />
                             <line x1="12" y1="1" x2="12" y2="3" />
                             <line x1="12" y1="21" x2="12" y2="23" />
                             <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
@@ -398,7 +318,7 @@
                     <h1 class="text-3xl font-bold tracking-tight text-foreground mb-1">Credit Cards</h1>
                     <p class="text-sm text-muted-foreground">Manage your cards, limits, and billing cycles.</p>
                 </div>
-                <button onclick="openSheet('add')"
+                <button onclick="openAddSheet()"
                     class="btn-primary w-full sm:w-auto flex items-center justify-center gap-2 py-2.5">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2">
@@ -415,7 +335,8 @@
                 <!-- BDO Visa Platinum -->
                 <div class="flex flex-col gap-4">
                     <!-- Premium Card Visual -->
-                    <div class="cc-visual cc-bdo" onclick="openSheet('edit-bdo')">
+                    <div class="cc-visual cc-bdo"
+                        onclick="openEditSheet('BDO Visa Platinum', 'BDO Unibank', '3892', 'Visa', '150000', '1', '25')">
                         <div class="flex justify-between items-start z-10 relative">
                             <div class="text-white font-medium drop-shadow-sm truncate pr-4">BDO Visa Platinum
                             </div>
@@ -450,9 +371,9 @@
                             <div class="flex gap-1 -mt-1 -mr-2">
                                 <button
                                     class="p-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
-                                    onclick="openSheet('edit-bdo')" title="Edit"><svg xmlns="http://www.w3.org/2000/svg"
-                                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
+                                    onclick="openEditSheet('BDO Visa Platinum', 'BDO Unibank', '3892', 'Visa', '150000', '1', '25')"
+                                    title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M12 20h9" />
                                         <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                                     </svg></button>
@@ -500,7 +421,8 @@
                 <!-- BPI Mastercard Gold -->
                 <div class="flex flex-col gap-4">
                     <!-- Premium Card Visual -->
-                    <div class="cc-visual cc-bpi" onclick="openSheet('edit-bpi')">
+                    <div class="cc-visual cc-bpi"
+                        onclick="openEditSheet('BPI Mastercard Gold', 'BPI (Bank of the Philippine Islands)', '5517', 'Mastercard', '80000', '10', '5')">
                         <div class="flex justify-between items-start z-10 relative">
                             <div class="text-white font-medium drop-shadow-sm truncate pr-4">BPI Mastercard Gold
                             </div>
@@ -535,9 +457,9 @@
                             <div class="flex gap-1 -mt-1 -mr-2">
                                 <button
                                     class="p-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
-                                    onclick="openSheet('edit-bpi')" title="Edit"><svg xmlns="http://www.w3.org/2000/svg"
-                                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
+                                    onclick="openEditSheet('BPI Mastercard Gold', 'BPI (Bank of the Philippine Islands)', '5517', 'Mastercard', '80000', '10', '5')"
+                                    title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M12 20h9" />
                                         <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                                     </svg></button>
@@ -585,7 +507,8 @@
                 <!-- Metrobank World Mastercard -->
                 <div class="flex flex-col gap-4">
                     <!-- Premium Card Visual -->
-                    <div class="cc-visual cc-metro" onclick="openSheet('edit-metro')">
+                    <div class="cc-visual cc-metro"
+                        onclick="openEditSheet('Metrobank World Mastercard', 'Metrobank', '1100', 'Mastercard', '200000', '1', '28')">
                         <div class="flex justify-between items-start z-10 relative">
                             <div class="text-white font-medium drop-shadow-sm truncate pr-4">Metrobank World MC
                             </div>
@@ -620,9 +543,9 @@
                             <div class="flex gap-1 -mt-1 -mr-2">
                                 <button
                                     class="p-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
-                                    onclick="openSheet('edit-metro')" title="Edit"><svg
-                                        xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2">
+                                    onclick="openEditSheet('Metrobank World Mastercard', 'Metrobank', '1100', 'Mastercard', '200000', '1', '28')"
+                                    title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M12 20h9" />
                                         <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                                     </svg></button>
@@ -673,14 +596,44 @@
 
 
     <!-- ==================== OVERLAYS & MODALS ==================== -->
-    <div id="backdrop" class="backdrop" onclick="closeOverlays()"></div>
+    <div id="modal-backdrop"
+        class="fixed inset-0 bg-background/80 z-50 backdrop flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none"
+        onclick="closeAll()">
 
-    <!-- ADD CARD SHEET -->
-    <div id="sheet-add" class="sheet flex flex-col">
+        <!-- Delete Confirmation Modal -->
+        <div id="delete-modal"
+            class="modal-dialog bg-card border border-border rounded-xl shadow-2xl p-6 w-full max-w-sm mx-4 opacity-0 scale-95 transition-all duration-300 pointer-events-none"
+            onclick="event.stopPropagation()">
+            <div
+                class="w-12 h-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18" />
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                    <path d="M10 11v6" />
+                    <path d="M14 11v6" />
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold text-foreground mb-2">Delete Credit Card?</h3>
+            <p class="text-sm text-muted-foreground mb-6">Are you sure you want to remove <strong id="delete-card-name"
+                    class="text-foreground font-semibold"></strong>? This action cannot be undone.</p>
+            <div class="flex gap-3 w-full">
+                <button class="btn-outline flex-1 py-2.5" onclick="closeAll()">Cancel</button>
+                <button
+                    class="bg-destructive hover:bg-red-600 text-foreground font-medium rounded-lg flex-1 py-2.5 transition-colors"
+                    onclick="closeAll()">Delete Data</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Sheet (Combined) -->
+    <div id="edit-sheet"
+        class="fixed inset-y-0 right-0 w-full md:w-[440px] bg-card border-l border-border shadow-2xl z-50 transform translate-x-full transition-transform duration-400 flex flex-col sheet">
         <div
             class="px-6 py-5 border-b border-border flex justify-between items-center bg-card/80 backdrop-blur-sm z-10 sticky top-0">
-            <h2 class="text-lg font-semibold text-foreground">Add Credit Card</h2>
-            <button onclick="closeOverlays()"
+            <h2 id="sheet-title" class="text-lg font-semibold text-foreground">Add Credit Card</h2>
+            <button onclick="closeAll()"
                 class="text-muted-foreground hover:text-foreground transition-colors bg-muted/50 hover:bg-muted p-1.5 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2">
@@ -689,17 +642,17 @@
                 </svg>
             </button>
         </div>
-        <div class="sheet-body space-y-5">
+        <div class="flex-1 overflow-y-auto p-6 space-y-5">
             <div class="space-y-1.5">
                 <label class="block text-sm font-medium text-muted-foreground">Card Name</label>
-                <input
-                    class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                <input id="form-card-name"
+                    class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all"
                     type="text" placeholder="e.g. BDO Visa Platinum" />
             </div>
             <div class="space-y-1.5">
                 <label class="block text-sm font-medium text-muted-foreground">Bank</label>
-                <select
-                    class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none">
+                <select id="form-bank"
+                    class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all appearance-none">
                     <option>BDO Unibank</option>
                     <option>BPI (Bank of the Philippine Islands)</option>
                     <option>Metrobank</option>
@@ -713,13 +666,13 @@
             <div class="flex gap-4">
                 <div class="space-y-1.5 flex-1">
                     <label class="block text-sm font-medium text-muted-foreground">Last 4 Digits</label>
-                    <input
+                    <input id="form-last4"
                         class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all font-mono"
                         type="text" placeholder="3892" maxlength="4" />
                 </div>
                 <div class="space-y-1.5 flex-1">
                     <label class="block text-sm font-medium text-muted-foreground">Network</label>
-                    <select
+                    <select id="form-network"
                         class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all appearance-none">
                         <option>Visa</option>
                         <option>Mastercard</option>
@@ -733,7 +686,7 @@
                 <div class="relative">
                     <span
                         class="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">&#8369;</span>
-                    <input
+                    <input id="form-limit"
                         class="w-full bg-muted/50 border border-border rounded-lg pl-8 pr-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all font-mono"
                         type="number" placeholder="150000" />
                 </div>
@@ -741,13 +694,13 @@
             <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-1.5">
                     <label class="block text-sm font-medium text-muted-foreground">Statement Day</label>
-                    <input
+                    <input id="form-statement"
                         class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all"
                         type="number" min="1" max="31" placeholder="1" />
                 </div>
                 <div class="space-y-1.5">
                     <label class="block text-sm font-medium text-muted-foreground">Due Day</label>
-                    <input
+                    <input id="form-due"
                         class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all"
                         type="number" min="1" max="31" placeholder="25" />
                 </div>
@@ -769,143 +722,103 @@
                         onclick="selectColor(this)"></div>
                 </div>
             </div>
-        </div>
-        <div class="sheet-footer flex gap-3">
-            <button class="btn-outline flex-1 py-2" onclick="closeOverlays()">Cancel</button>
-            <button class="btn-primary flex-1 py-2" onclick="closeOverlays()">Add Card</button>
-        </div>
-    </div>
-
-    <!-- EDIT SHEET (BDO Template) -->
-    <div id="sheet-edit-bdo" class="sheet flex flex-col">
-        <div
-            class="px-6 py-5 border-b border-border flex justify-between items-center bg-card/80 backdrop-blur-sm z-10 sticky top-0">
-            <h2 class="text-lg font-semibold text-foreground">Edit Credit Card</h2>
-            <button onclick="closeOverlays()"
-                class="text-muted-foreground hover:text-foreground transition-colors bg-muted/50 hover:bg-muted p-1.5 rounded-full">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-            </button>
-        </div>
-        <div class="sheet-body space-y-5">
-            <div class="space-y-1.5">
-                <label class="block text-sm font-medium text-muted-foreground">Card Name</label>
-                <input
-                    class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all"
-                    type="text" value="BDO Visa Platinum" />
-            </div>
-            <div class="space-y-1.5">
-                <label class="block text-sm font-medium text-muted-foreground">Bank</label>
-                <select
-                    class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all appearance-none">
-                    <option selected>BDO Unibank</option>
-                    <option>BPI</option>
-                    <option>Metrobank</option>
-                </select>
-            </div>
-            <div class="flex gap-4">
-                <div class="space-y-1.5 flex-1">
-                    <label class="block text-sm font-medium text-muted-foreground">Last 4 Digits</label>
-                    <input
-                        class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all font-mono"
-                        type="text" value="3892" maxlength="4" />
-                </div>
-                <div class="space-y-1.5 flex-1">
-                    <label class="block text-sm font-medium text-muted-foreground">Network</label>
-                    <select
-                        class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all appearance-none">
-                        <option selected>Visa</option>
-                        <option>Mastercard</option>
-                    </select>
-                </div>
-            </div>
-            <div class="space-y-1.5">
-                <label class="block text-sm font-medium text-muted-foreground">Credit Limit (&#8369;)</label>
-                <div class="relative">
-                    <span
-                        class="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">&#8369;</span>
-                    <input
-                        class="w-full bg-muted/50 border border-border rounded-lg pl-8 pr-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all font-mono"
-                        type="number" value="150000" />
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1.5">
-                    <label class="block text-sm font-medium text-muted-foreground">Statement Day</label>
-                    <input
-                        class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all"
-                        type="number" min="1" max="31" value="1" />
-                </div>
-                <div class="space-y-1.5">
-                    <label class="block text-sm font-medium text-muted-foreground">Due Day</label>
-                    <input
-                        class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all"
-                        type="number" min="1" max="31" value="25" />
-                </div>
+            <div class="pt-2">
+                <button id="delete-btn-sheet"
+                    class="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors hidden"
+                    onclick="confirmDeleteFromSheet()">Delete this card</button>
             </div>
         </div>
-        <div class="sheet-footer flex gap-3">
-            <button class="btn-outline flex-1 py-2" onclick="closeOverlays()">Cancel</button>
-            <button class="btn-primary flex-1 py-2" onclick="closeOverlays()">Save Changes</button>
-        </div>
-    </div>
-
-    <!-- DELETE DIALOG -->
-    <div id="dialog-delete" class="dialog">
-        <div class="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 6h18" />
-                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                <path d="M10 11v6" />
-                <path d="M14 11v6" />
-            </svg>
-        </div>
-        <h3 class="text-xl font-bold text-foreground mb-2">Delete Credit Card?</h3>
-        <p class="text-sm text-muted-foreground mb-6">Are you sure you want to remove <strong id="delete-card-name"
-                class="text-foreground font-semibold"></strong>? This action cannot be undone and will unlink associated
-            transactions.</p>
-        <div class="flex gap-3 w-full">
-            <button class="btn-outline flex-1 py-2.5" onclick="closeOverlays()">Cancel</button>
-            <button
-                class="bg-destructive hover:bg-red-600 text-foreground font-medium rounded-lg flex-1 py-2.5 transition-colors"
-                onclick="closeOverlays()">Delete Data</button>
+        <div class="p-6 border-t border-border flex justify-end gap-3 bg-card/50">
+            <button class="btn-outline px-6" onclick="closeAll()">Cancel</button>
+            <button id="sheet-submit-btn" class="btn-primary px-8" onclick="closeAll()">Add Card</button>
         </div>
     </div>
 
 
     <script>
-        const backdrop = document.getElementById('backdrop');
+        const backdrop = document.getElementById('modal-backdrop');
+        const editSheet = document.getElementById('edit-sheet');
+        const deleteModal = document.getElementById('delete-modal');
+        const deleteBtnSheet = document.getElementById('delete-btn-sheet');
 
-        function openSheet(id) {
-            closeOverlays();
-            const sheet = document.getElementById('sheet-' + id);
-            if (sheet) {
-                backdrop.classList.add('open');
-                sheet.classList.add('open');
-                document.body.style.overflow = 'hidden';
+        const formCardName = document.getElementById('form-card-name');
+        const formBank = document.getElementById('form-bank');
+        const formLast4 = document.getElementById('form-last4');
+        const formNetwork = document.getElementById('form-network');
+        const formLimit = document.getElementById('form-limit');
+        const formStatement = document.getElementById('form-statement');
+        const formDue = document.getElementById('form-due');
+
+        function openSheet() {
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            editSheet.classList.remove('translate-x-full');
+        }
+
+        function closeSheet() {
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
+            editSheet.classList.add('translate-x-full');
+            closeDeleteConfirm();
+        }
+
+        function closeAll() {
+            closeSheet();
+            closeDeleteConfirm();
+        }
+
+        function openDeleteConfirm() {
+            deleteModal.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        function closeDeleteConfirm() {
+            deleteModal.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+            if (editSheet.classList.contains('translate-x-full')) {
+                backdrop.classList.add('opacity-0', 'pointer-events-none');
             }
         }
 
-        function showDeleteDialog(cardName) {
-            closeOverlays();
-            document.getElementById('delete-card-name').textContent = cardName;
-            const dialog = document.getElementById('dialog-delete');
-            backdrop.classList.add('open');
-            dialog.classList.add('open');
-            document.body.style.overflow = 'hidden';
+        function showDeleteDialog(name) {
+            document.getElementById('delete-card-name').textContent = name;
+            openDeleteConfirm();
         }
 
-        function closeOverlays() {
-            backdrop.classList.remove('open');
-            document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
-            document.querySelectorAll('.dialog').forEach(d => d.classList.remove('open'));
-            document.body.style.overflow = '';
+        function confirmDeleteFromSheet() {
+            editSheet.classList.add('translate-x-full');
+            showDeleteDialog(formCardName.value);
         }
+
+        function openAddSheet() {
+            document.getElementById('sheet-title').textContent = 'Add Credit Card';
+            document.getElementById('sheet-submit-btn').textContent = 'Add Card';
+            formCardName.value = '';
+            formBank.selectedIndex = 0;
+            formLast4.value = '';
+            formNetwork.selectedIndex = 0;
+            formLimit.value = '';
+            formStatement.value = '';
+            formDue.value = '';
+            deleteBtnSheet.classList.add('hidden');
+            openSheet();
+        }
+
+        window.openEditSheet = function (name, bank, last4, network, limit, statement, due) {
+            document.getElementById('sheet-title').textContent = 'Edit Credit Card';
+            document.getElementById('sheet-submit-btn').textContent = 'Save Changes';
+            formCardName.value = name;
+            // Best effort select picking for mocks:
+            for (let i = 0; i < formBank.options.length; i++) {
+                if (formBank.options[i].text.includes(bank)) { formBank.selectedIndex = i; break; }
+            }
+            formLast4.value = last4;
+            for (let i = 0; i < formNetwork.options.length; i++) {
+                if (formNetwork.options[i].text.includes(network)) { formNetwork.selectedIndex = i; break; }
+            }
+            formLimit.value = limit;
+            formStatement.value = statement;
+            formDue.value = due;
+            deleteBtnSheet.classList.remove('hidden');
+            openSheet();
+        };
 
         function selectColor(element) {
             const swatches = element.parentElement.querySelectorAll('.color-swatch');

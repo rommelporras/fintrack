@@ -12,41 +12,7 @@
 
     <!-- Custom Design System -->
     <link rel="stylesheet" href="index.css">
-    <style>
-        /* Sheet & Dialog specific transitions */
-        .sheet-overlay,
-        .dialog-backdrop {
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-        }
 
-        .sheet-panel {
-            transform: translateX(100%);
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .dialog-box {
-            transform: scale(0.95) translateY(10px);
-            opacity: 0;
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
-        }
-
-        .sheet-overlay.open,
-        .dialog-backdrop.open {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .sheet-overlay.open .sheet-panel {
-            transform: translateX(0);
-        }
-
-        .dialog-backdrop.open .dialog-box {
-            transform: scale(1) translateY(0);
-            opacity: 1;
-        }
-    </style>
 </head>
 
 <body class="bg-background text-foreground antialiased selection:bg-primary selection:text-foreground">
@@ -243,7 +209,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             class="dark:hidden">
-                            <circle cx="12" cy="12" r="5" fill="currentColor"/>
+                            <circle cx="12" cy="12" r="5" fill="currentColor" />
                             <line x1="12" y1="1" x2="12" y2="3" />
                             <line x1="12" y1="21" x2="12" y2="23" />
                             <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
@@ -275,7 +241,7 @@
                         <h1 class="text-3xl font-bold tracking-tight text-foreground mb-1">Budgets</h1>
                         <p class="text-sm text-muted-foreground">Manage your spending limits for February 2026</p>
                     </div>
-                    <button class="btn-primary w-full sm:w-auto shadow-lg shadow-sm" onclick="openSheet()">
+                    <button class="btn-primary w-full sm:w-auto shadow-lg shadow-sm" onclick="openAddSheet()">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -336,7 +302,8 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="budget-list">
 
                     <!-- Food & Dining -->
-                    <div class="card card-interactive p-5 flex flex-col group" data-name="Food & Dining">
+                    <div class="card card-interactive p-5 flex flex-col group cursor-pointer" data-name="Food & Dining"
+                        onclick="openEditSheet('Food &amp; Dining', 10000, 80)">
                         <div class="flex justify-between items-start mb-4">
                             <div class="flex items-center gap-3">
                                 <div
@@ -386,7 +353,8 @@
                     </div>
 
                     <!-- Transportation -->
-                    <div class="card card-interactive p-5 flex flex-col group" data-name="Transportation">
+                    <div class="card card-interactive p-5 flex flex-col group cursor-pointer" data-name="Transportation"
+                        onclick="openEditSheet('Transportation', 3000, 80)">
                         <div class="flex justify-between items-start mb-4">
                             <div class="flex items-center gap-3">
                                 <div
@@ -436,8 +404,8 @@
                     </div>
 
                     <!-- Entertainment (Exceeded) -->
-                    <div class="card card-interactive p-5 flex flex-col group border-[#ef4444]/30 shadow-[0_4px_24px_-8px_rgba(239,68,68,0.15)] overflow-hidden relative"
-                        data-name="Entertainment">
+                    <div class="card card-interactive p-5 flex flex-col group border-[#ef4444]/30 shadow-[0_4px_24px_-8px_rgba(239,68,68,0.15)] overflow-hidden relative cursor-pointer"
+                        data-name="Entertainment" onclick="openEditSheet('Entertainment', 1500, 100)">
                         <div class="absolute left-0 top-0 bottom-0 w-1 bg-[#ef4444]"></div>
                         <div class="flex justify-between items-start mb-4 ml-2">
                             <div class="flex items-center gap-3">
@@ -494,7 +462,8 @@
                     </div>
 
                     <!-- Utilities -->
-                    <div class="card card-interactive p-5 flex flex-col group" data-name="Utilities">
+                    <div class="card card-interactive p-5 flex flex-col group cursor-pointer" data-name="Utilities"
+                        onclick="openEditSheet('Utilities', 5000, 80)">
                         <div class="flex justify-between items-start mb-4">
                             <div class="flex items-center gap-3">
                                 <div
@@ -544,7 +513,8 @@
                     </div>
 
                     <!-- Shopping -->
-                    <div class="card card-interactive p-5 flex flex-col group" data-name="Shopping">
+                    <div class="card card-interactive p-5 flex flex-col group cursor-pointer" data-name="Shopping"
+                        onclick="openEditSheet('Shopping', 6000, 80)">
                         <div class="flex justify-between items-start mb-4">
                             <div class="flex items-center gap-3">
                                 <div
@@ -598,9 +568,15 @@
         </main>
     </div>
 
-    <!-- Delete Confirmation Dialog -->
-    <div id="delete-dialog" class="dialog-backdrop fixed inset-0 z-50 flex items-center justify-center glass">
-        <div class="dialog-box bg-card border border-border rounded-xl p-6 w-full max-w-sm mx-4 shadow-2xl">
+    <!-- Modals & Sheets -->
+    <div id="modal-backdrop"
+        class="fixed inset-0 bg-background/80 z-50 backdrop flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none"
+        onclick="closeAll()">
+
+        <!-- Delete Confirmation Modal -->
+        <div id="delete-modal"
+            class="modal-dialog bg-card border border-border rounded-xl shadow-2xl p-6 w-full max-w-sm mx-4 opacity-0 scale-95 transition-all duration-300 pointer-events-none"
+            onclick="event.stopPropagation()">
             <div
                 class="w-12 h-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -609,107 +585,96 @@
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                 </svg>
             </div>
-            <h3 class="text-lg font-semibold text-foreground mb-2">Delete Budget?</h3>
-            <p class="text-sm text-muted-foreground mb-6">
-                Are you sure you want to delete the <strong id="delete-name"
-                    class="text-foreground font-medium"></strong>
-                budget? This action cannot be undone.
-            </p>
-            <div class="flex gap-3 w-full">
-                <button class="btn-ghost flex-1 border border-border hover:bg-muted"
-                    onclick="closeDeleteDialog()">Cancel</button>
-                <button class="btn-danger flex-1" onclick="confirmDelete()">Delete</button>
+            <h3 class="text-lg font-bold text-foreground mb-2">Delete Budget?</h3>
+            <p class="text-sm text-muted-foreground mb-6">Are you sure you want to delete the <strong id="delete-name"
+                    class="text-foreground font-medium"></strong> budget? This action cannot be undone.</p>
+            <div class="flex gap-3">
+                <button class="btn-outline flex-1" onclick="closeDeleteConfirm()">Cancel</button>
+                <button class="btn-primary flex-1 bg-destructive hover:bg-destructive/90 text-foreground border-none"
+                    onclick="confirmDelete()">Delete</button>
             </div>
         </div>
     </div>
 
-    <!-- Add Budget Sheet -->
-    <div id="sheet-overlay" class="sheet-overlay fixed inset-0 z-50 glass" onclick="closeSheet()">
-        <div id="budget-sheet"
-            class="sheet-panel absolute right-0 top-0 bottom-0 w-full sm:w-[420px] bg-card border-l border-border p-6 flex flex-col shadow-2xl"
-            onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-semibold text-foreground">New Budget</h2>
-                <button
-                    class="p-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
-                    onclick="closeSheet()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                </button>
+    <!-- Edit/Add Budget Sheet -->
+    <div id="edit-sheet"
+        class="fixed inset-y-0 right-0 w-full md:w-[440px] bg-card border-l border-border shadow-2xl z-50 transform translate-x-full transition-transform duration-400 flex flex-col sheet">
+        <div class="flex items-center justify-between px-6 py-5 border-b border-border">
+            <div>
+                <h2 id="sheet-title" class="text-xl font-bold text-foreground tracking-tight">New Budget</h2>
+                <p id="sheet-subtitle" class="text-sm text-muted-foreground mt-0.5">Track your spending for a category.
+                </p>
             </div>
-            <p class="text-sm text-muted-foreground mb-6 -mt-4">Track your spending for a specific category.</p>
+            <button onclick="closeSheet()"
+                class="p-2 -mr-2 rounded-full hover:bg-muted text-muted-foreground transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
 
-            <div class="space-y-5 flex-1 overflow-y-auto pr-2">
-
-                <div>
-                    <label class="form-label">Category</label>
-                    <div class="relative">
-                        <select class="form-select appearance-none pr-10 cursor-pointer">
-                            <option value="" disabled selected>Select category...</option>
-                            <option>Food &amp; Dining</option>
-                            <option>Transportation</option>
-                            <option>Entertainment</option>
-                            <option>Utilities</option>
-                            <option>Shopping</option>
-                            <option>Travel</option>
-                        </select>
-                        <div
-                            class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-muted-foreground">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="6 9 12 15 18 9" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="form-label">Monthly Limit (₱)</label>
-                    <div class="relative">
-                        <span
-                            class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">₱</span>
-                        <input type="number" class="form-input pl-8" placeholder="0.00" step="0.01" />
-                    </div>
-                </div>
-
-                <div>
-                    <label class="form-label mb-1.5">Alert Threshold</label>
-                    <p class="text-xs text-muted-foreground mb-3">When should we warn you about your spending?</p>
-                    <div class="grid grid-cols-2 gap-3">
-                        <label
-                            class="relative flex items-center justify-center p-3 border border-border rounded-lg cursor-pointer hover:bg-muted transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                            <input type="radio" name="threshold" value="75" class="sr-only">
-                            <span class="text-sm font-medium text-foreground">75%</span>
-                        </label>
-                        <label
-                            class="relative flex items-center justify-center p-3 border border-border rounded-lg cursor-pointer hover:bg-muted transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                            <input type="radio" name="threshold" value="80" class="sr-only" checked>
-                            <span class="text-sm font-medium text-foreground">80%</span>
-                        </label>
-                        <label
-                            class="relative flex items-center justify-center p-3 border border-border rounded-lg cursor-pointer hover:bg-muted transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                            <input type="radio" name="threshold" value="90" class="sr-only">
-                            <span class="text-sm font-medium text-foreground">90%</span>
-                        </label>
-                        <label
-                            class="relative flex items-center justify-center p-3 border border-border rounded-lg cursor-pointer hover:bg-muted transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                            <input type="radio" name="threshold" value="100" class="sr-only">
-                            <span class="text-sm font-medium text-foreground">Exceeded</span>
-                        </label>
-                    </div>
-                </div>
-
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+            <div class="space-y-2">
+                <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Category</label>
+                <select id="edit-category" class="form-input">
+                    <option value="" disabled selected>Select category...</option>
+                    <option>Food & Dining</option>
+                    <option>Transportation</option>
+                    <option>Entertainment</option>
+                    <option>Utilities</option>
+                    <option>Shopping</option>
+                    <option>Travel</option>
+                </select>
             </div>
 
-            <div class="flex gap-3 pt-6 mt-auto border-t border-border bg-card">
-                <button class="btn-ghost flex-1 border border-border bg-card hover:bg-muted"
-                    onclick="closeSheet()">Cancel</button>
-                <button class="btn-primary flex-1 shadow-lg shadow-sm" onclick="closeSheet()">Create
-                    Budget</button>
+            <div class="space-y-2">
+                <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Monthly Limit
+                    (₱)</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">₱</span>
+                    <input type="number" id="edit-limit" class="form-input pl-8" placeholder="0.00" step="0.01" />
+                </div>
             </div>
+
+            <div class="space-y-3">
+                <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Alert
+                    Threshold</label>
+                <p class="text-[13px] text-muted-foreground -mt-3 mb-3">When should we warn you about your spending?</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <label
+                        class="relative flex items-center justify-center p-3 border border-border rounded-lg cursor-pointer hover:bg-muted transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                        <input type="radio" name="threshold" value="75" class="sr-only">
+                        <span class="text-sm font-medium text-foreground">75%</span>
+                    </label>
+                    <label
+                        class="relative flex items-center justify-center p-3 border border-border rounded-lg cursor-pointer hover:bg-muted transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                        <input type="radio" name="threshold" value="80" class="sr-only" checked>
+                        <span class="text-sm font-medium text-foreground">80%</span>
+                    </label>
+                    <label
+                        class="relative flex items-center justify-center p-3 border border-border rounded-lg cursor-pointer hover:bg-muted transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                        <input type="radio" name="threshold" value="90" class="sr-only">
+                        <span class="text-sm font-medium text-foreground">90%</span>
+                    </label>
+                    <label
+                        class="relative flex items-center justify-center p-3 border border-border rounded-lg cursor-pointer hover:bg-muted transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                        <input type="radio" name="threshold" value="100" class="sr-only">
+                        <span class="text-sm font-medium text-foreground">Exceeded</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="pt-4 hidden" id="sheet-delete-container">
+                <button class="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors"
+                    onclick="openDeleteConfirm()">Delete budget</button>
+            </div>
+        </div>
+
+        <div class="p-6 border-t border-border flex justify-end gap-3 bg-card/50">
+            <button class="btn-outline px-6" onclick="closeSheet()">Cancel</button>
+            <button class="btn-primary px-8" onclick="closeSheet()">Save</button>
         </div>
     </div>
 
@@ -718,6 +683,12 @@
         const mobileBtn = document.getElementById('mobile-menu-btn');
         const sidebar = document.getElementById('sidebar');
         const navOverlay = document.getElementById('sidebar-overlay');
+        const backdrop = document.getElementById('modal-backdrop');
+        const editSheet = document.getElementById('edit-sheet');
+        const deleteModal = document.getElementById('delete-modal');
+
+        let targetCard = null;
+        let currentBudgetName = '';
 
         function toggleSidebar() {
             sidebar.classList.toggle('open');
@@ -727,20 +698,74 @@
         mobileBtn.addEventListener('click', toggleSidebar);
         navOverlay.addEventListener('click', toggleSidebar);
 
-        // Dialog & Sheet Logic
-        const deleteDialog = document.getElementById('delete-dialog');
-        const sheetOverlay = document.getElementById('sheet-overlay');
-        let targetCard = null;
-
-        function openDeleteDialog(name) {
-            document.getElementById('delete-name').textContent = name;
-            deleteDialog.classList.add('open');
-            targetCard = document.querySelector(`[data-name="${name}"]`);
+        // Sheet open/close helpers
+        function openSheet(id) {
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById(id).classList.remove('translate-x-full');
         }
 
-        function closeDeleteDialog() {
-            deleteDialog.classList.remove('open');
-            setTimeout(() => targetCard = null, 300);
+        function closeSheet() {
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
+            editSheet.classList.add('translate-x-full');
+            closeDeleteConfirm();
+        }
+
+        function closeAll() {
+            closeSheet();
+            closeDeleteConfirm();
+        }
+
+        // Open Add sheet with empty data
+        function openAddSheet() {
+            document.getElementById('sheet-title').innerText = 'New Budget';
+            document.getElementById('sheet-subtitle').innerText = 'Track your spending for a category.';
+
+            document.getElementById('edit-category').selectedIndex = 0;
+            document.getElementById('edit-limit').value = '';
+
+            // Set default threshold 80%
+            document.querySelector('input[name="threshold"][value="80"]').checked = true;
+
+            document.getElementById('sheet-delete-container').classList.add('hidden');
+            openSheet('edit-sheet');
+        }
+
+        // Open Edit sheet pre-filled with row data
+        function openEditSheet(category, limit, threshold) {
+            document.getElementById('sheet-title').innerText = 'Edit Budget';
+            document.getElementById('sheet-subtitle').innerText = 'Update budget limits and alerts.';
+
+            // Set category select
+            var catSelect = document.getElementById('edit-category');
+            var catDecoded = category.replace(/&amp;/g, '&');
+            for (var i = 0; i < catSelect.options.length; i++) {
+                if (catSelect.options[i].text === catDecoded) { catSelect.selectedIndex = i; break; }
+            }
+
+            document.getElementById('edit-limit').value = limit;
+
+            // Set threshold radio
+            document.querySelector(`input[name="threshold"][value="${threshold}"]`).checked = true;
+
+            currentBudgetName = catDecoded;
+            targetCard = document.querySelector(`[data-name="${catDecoded}"]`);
+
+            document.getElementById('sheet-delete-container').classList.remove('hidden');
+            openSheet('edit-sheet');
+        }
+
+        // Delete confirmation modal
+        function openDeleteConfirm() {
+            document.getElementById('delete-name').textContent = currentBudgetName;
+            deleteModal.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        function closeDeleteConfirm() {
+            deleteModal.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+            if (editSheet.classList.contains('translate-x-full')) {
+                backdrop.classList.add('opacity-0', 'pointer-events-none');
+            }
         }
 
         function confirmDelete() {
@@ -749,26 +774,15 @@
                 targetCard.style.opacity = '0';
                 setTimeout(() => targetCard.remove(), 300);
             }
-            closeDeleteDialog();
+            closeAll();
         }
 
-        function openSheet() {
-            sheetOverlay.classList.add('open');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeSheet() {
-            sheetOverlay.classList.remove('open');
-            document.body.style.overflow = '';
-        }
-
-        // Close on escape
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeDeleteDialog();
-                closeSheet();
-            }
-        });
+        // Keep the old global delete wrapper for the inline garbage cans
+        window.openDeleteDialog = function (name) {
+            currentBudgetName = name;
+            targetCard = document.querySelector(`[data-name="${name}"]`);
+            openDeleteConfirm();
+        };
     </script>
 </body>
 
