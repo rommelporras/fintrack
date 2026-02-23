@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, CheckCircle2 } from "lucide-react";
+import { Plus, CheckCircle2, Receipt } from "lucide-react";
 
 interface Statement {
   id: string;
@@ -247,7 +247,19 @@ export default function StatementsPage() {
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full" />)}
         </div>
       ) : Object.keys(grouped).length === 0 ? (
-        <p className="text-sm text-muted-foreground">No statements yet.</p>
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center space-y-3">
+            <Receipt className="h-12 w-12 mx-auto text-muted-foreground" />
+            <p className="text-lg font-medium">No statements yet</p>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+              Add a statement to track credit card payments and due dates
+            </p>
+            <Button size="sm" onClick={() => setSheetOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Statement
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         Object.entries(grouped).map(([cardId, cardStatements]) => {
           const card = cardMap.get(cardId);
