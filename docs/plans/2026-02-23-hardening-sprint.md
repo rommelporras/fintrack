@@ -757,7 +757,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
 ### Task D3: Budget delete confirmation dialog
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/app/(dashboard)/budgets/page.tsx:130-137,340`
