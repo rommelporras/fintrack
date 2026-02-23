@@ -322,7 +322,7 @@ ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf", ".csv", 
 
 ### Task A9: Remove inert API key inputs from settings
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/app/(dashboard)/settings/page.tsx:153-175`
