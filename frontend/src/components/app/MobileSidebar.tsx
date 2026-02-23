@@ -16,7 +16,7 @@ export function MobileSidebar() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="p-0 w-64">
-        <Sidebar />
+        <Sidebar onNavigate={() => setOpen(false)} />
       </SheetContent>
     </Sheet>
   );

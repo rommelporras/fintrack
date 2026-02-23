@@ -72,6 +72,20 @@ services:
       redis:
         condition: service_healthy
 
+  beat:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    command: celery -A app.tasks.celery beat --loglevel=info
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://finance:changeme@postgres:5432/finance_db}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - APP_ENV=${APP_ENV:-development}
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend

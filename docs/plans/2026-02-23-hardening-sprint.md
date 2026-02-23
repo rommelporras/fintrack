@@ -601,7 +601,7 @@ throw new Error(message);
 
 ### Task C5: Add Celery beat service to docker-compose
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `docker-compose.yml`
