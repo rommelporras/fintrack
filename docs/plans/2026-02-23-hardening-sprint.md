@@ -180,7 +180,7 @@ cd api && DATABASE_URL="postgresql+asyncpg://finance:changeme@127.0.0.1:5435/fin
 
 ### Task A5: Route api.upload through 401 refresh logic
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/lib/api.ts:100-113`

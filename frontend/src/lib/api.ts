@@ -115,7 +115,9 @@ export const api = {
       if (refreshed) {
         response = await doUpload();
       } else {
-        window.location.href = "/login";
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
         return undefined as T;
       }
     }
