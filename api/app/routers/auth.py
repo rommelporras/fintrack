@@ -13,26 +13,27 @@ from app.dependencies import get_current_user
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+def _cookie_kwargs() -> dict:
+    kwargs: dict = {"httponly": True, "secure": settings.cookie_secure, "samesite": "lax"}
+    if settings.cookie_domain and settings.cookie_domain != "localhost":
+        kwargs["domain"] = settings.cookie_domain
+    return kwargs
+
+
 def _set_auth_cookies(response: Response, user_id: uuid.UUID, remember_me: bool = True) -> None:
     access_token = create_access_token(str(user_id))
     refresh_token = create_refresh_token(str(user_id))
-    cookie_kwargs = dict(
-        httponly=True,
-        secure=settings.cookie_secure,
-        samesite="lax",
-    )
-    if settings.cookie_domain and settings.cookie_domain != "localhost":
-        cookie_kwargs["domain"] = settings.cookie_domain
+    kw = _cookie_kwargs()
     response.set_cookie(
         "access_token",
         access_token,
         max_age=settings.jwt_access_token_expire_minutes * 60,
-        **cookie_kwargs,
+        **kw,
     )
-    refresh_kwargs = {**cookie_kwargs}
+    refresh_kw = {**kw}
     if remember_me:
-        refresh_kwargs["max_age"] = settings.jwt_refresh_token_expire_days * 86400
-    response.set_cookie("refresh_token", refresh_token, **refresh_kwargs)
+        refresh_kw["max_age"] = settings.jwt_refresh_token_expire_days * 86400
+    response.set_cookie("refresh_token", refresh_token, **refresh_kw)
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -60,8 +61,9 @@ async def login(data: LoginRequest, response: Response, db: AsyncSession = Depen
 
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
+    kw = _cookie_kwargs()
+    response.delete_cookie("access_token", **kw)
+    response.delete_cookie("refresh_token", **kw)
     return {"message": "Logged out"}
 
 
@@ -83,14 +85,12 @@ async def refresh(
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
     new_access = create_access_token(str(user.id))
-    cookie_kwargs = dict(httponly=True, secure=settings.cookie_secure, samesite="lax")
-    if settings.cookie_domain and settings.cookie_domain != "localhost":
-        cookie_kwargs["domain"] = settings.cookie_domain
+    kw = _cookie_kwargs()
     response.set_cookie(
         "access_token",
         new_access,
         max_age=settings.jwt_access_token_expire_minutes * 60,
-        **cookie_kwargs,
+        **kw,
     )
     return user
 
