@@ -1156,7 +1156,7 @@ async def event_generator():
 
 ### Task E4: Add global exception handler
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/main.py`
