@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -160,6 +161,7 @@ export default function StatementsPage() {
           <SheetContent>
             <SheetHeader>
               <SheetTitle>New Statement</SheetTitle>
+              <SheetDescription>Add a new statement.</SheetDescription>
             </SheetHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="space-y-1">

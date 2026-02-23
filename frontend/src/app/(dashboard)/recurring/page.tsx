@@ -19,6 +19,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -235,6 +236,7 @@ export default function RecurringPage() {
           <SheetContent className="overflow-y-auto">
             <SheetHeader>
               <SheetTitle>New Recurring Transaction</SheetTitle>
+              <SheetDescription>Set up a new recurring transaction.</SheetDescription>
             </SheetHeader>
             <form onSubmit={handleCreate} className="space-y-4 mt-4">
               <div className="space-y-1">
@@ -472,6 +474,7 @@ export default function RecurringPage() {
         <SheetContent className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Edit Recurring Transaction</SheetTitle>
+            <SheetDescription>Update the recurring transaction details below.</SheetDescription>
           </SheetHeader>
           <form onSubmit={handleEdit} className="space-y-4 mt-4">
             <div className="space-y-1">

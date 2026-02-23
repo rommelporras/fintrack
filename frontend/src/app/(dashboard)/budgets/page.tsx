@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -178,6 +179,7 @@ export default function BudgetsPage() {
           <SheetContent>
             <SheetHeader>
               <SheetTitle>New Budget</SheetTitle>
+              <SheetDescription>Create a new budget.</SheetDescription>
             </SheetHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="space-y-1">

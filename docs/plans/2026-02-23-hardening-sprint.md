@@ -711,7 +711,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
 ### Task D2: Keyboard accessibility for interactive list items
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/app/(dashboard)/transactions/page.tsx:324`
@@ -801,7 +801,7 @@ import {
 
 ### Task D4: Transaction edit save feedback + error handling
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/app/(dashboard)/transactions/page.tsx:169-178`
@@ -851,7 +851,7 @@ function openEditSheet(t: Transaction) {
 
 ### Task D5: Add page numbers to pagination
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/app/(dashboard)/transactions/page.tsx:361-381`
@@ -984,7 +984,7 @@ import Link from "next/link";
 
 ### Task D8: Add SheetDescription to all sheets
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: All pages with `<SheetHeader>` that lack `<SheetDescription>`

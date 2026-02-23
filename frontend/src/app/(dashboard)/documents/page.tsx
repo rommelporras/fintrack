@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
@@ -207,6 +208,7 @@ export default function DocumentsPage() {
             <>
               <SheetHeader>
                 <SheetTitle>{selected.filename}</SheetTitle>
+                <SheetDescription>Update the document details below.</SheetDescription>
               </SheetHeader>
               <div className="mt-4 space-y-4">
                 {!defaultAccountId && !loading && (
