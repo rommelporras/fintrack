@@ -71,6 +71,7 @@ async function request<T>(
         isRefreshing = true;
         refreshPromise = tryRefresh().finally(() => {
           isRefreshing = false;
+          refreshPromise = null;
         });
       }
       const refreshed = await refreshPromise;

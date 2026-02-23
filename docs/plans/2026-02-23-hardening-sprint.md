@@ -152,7 +152,7 @@ cd api && DATABASE_URL="postgresql+asyncpg://finance:changeme@127.0.0.1:5435/fin
 
 ### Task A4: Fix refreshPromise stale reference
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/lib/api.ts:13,69-81`
