@@ -280,7 +280,7 @@ export default function StatementsPage() {
                           Due: {s.due_date}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Total: {formatPeso(s.total_amount)}
+                          Total: {s.total_amount != null ? formatPeso(s.total_amount) : "—"}
                           {s.minimum_due && ` · Min: ${formatPeso(s.minimum_due)}`}
                         </p>
                       </div>
