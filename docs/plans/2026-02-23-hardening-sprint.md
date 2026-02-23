@@ -233,7 +233,7 @@ Note: `tryRefresh` is already defined at the module level (around line 15). If i
 
 ### Task A6: Fix logout cookie clearing
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/routers/auth.py:16-35,61-65`
