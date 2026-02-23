@@ -21,7 +21,10 @@ class Notification(Base):
         UUID(as_uuid=True), primary_key=True, server_default=func.uuidv7()
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     type: Mapped[NotificationType] = mapped_column(String(30), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)

@@ -14,7 +14,9 @@ class Statement(Base):
         UUID(as_uuid=True), primary_key=True, server_default=func.uuidv7()
     )
     credit_card_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("credit_cards.id", ondelete="CASCADE")
+        UUID(as_uuid=True),
+        ForeignKey("credit_cards.id", ondelete="CASCADE"),
+        index=True,
     )
     document_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("documents.id", ondelete="SET NULL"), nullable=True
