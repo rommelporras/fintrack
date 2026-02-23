@@ -507,7 +507,7 @@ _Priority: medium. These make the codebase self-documenting for AI agents and fi
 
 ### Task C1: Fix setup-dev-env.sh hook
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `.claude/hooks/setup-dev-env.sh:9,14,30-36,52,89,115`
