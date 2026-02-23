@@ -68,7 +68,6 @@ class Transaction(Base):
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
     )
     account_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -84,13 +83,16 @@ class Transaction(Base):
     )
     to_account_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True,
+        index=True,
         comment="For transfer type: destination account (own_account sub_type only)"
     )
     document_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("documents.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True), ForeignKey("documents.id", ondelete="SET NULL"), nullable=True,
+        index=True,
     )
     recurring_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("recurring_transactions.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True), ForeignKey("recurring_transactions.id", ondelete="SET NULL"), nullable=True,
+        index=True,
     )
     amount: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False)
     description: Mapped[str] = mapped_column(Text, default="")
@@ -110,11 +112,13 @@ class Transaction(Base):
     )
     fee_category_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True,
+        index=True,
         comment="Category for the fee (defaults to ATM Fees / Bank Transaction Fees)"
     )
 
     created_by: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False,
+        index=True,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

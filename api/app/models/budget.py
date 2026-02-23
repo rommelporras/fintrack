@@ -25,11 +25,13 @@ class Budget(Base):
         UUID(as_uuid=True),
         ForeignKey("categories.id", ondelete="SET NULL"),
         nullable=True,
+        index=True,
     )
     account_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("accounts.id", ondelete="CASCADE"),
         nullable=True,
+        index=True,
     )
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     # "monthly" or "weekly"
