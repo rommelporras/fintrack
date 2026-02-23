@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { formatPeso } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,11 +51,6 @@ interface NewStatementForm {
   due_date: string;
   total_amount: string;
   minimum_due: string;
-}
-
-function formatPeso(amount: string | null): string {
-  if (!amount) return "—";
-  return `₱${Number(amount).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
 }
 
 export default function StatementsPage() {

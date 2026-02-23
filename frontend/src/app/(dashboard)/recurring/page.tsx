@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { formatPeso } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -70,10 +71,6 @@ interface CreateForm {
 
 interface EditForm extends CreateForm {
   is_active: boolean;
-}
-
-function formatPeso(amount: string | number) {
-  return `₱${Number(amount).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
 }
 
 const FREQUENCY_LABELS: Record<RecurringTransaction["frequency"], string> = {

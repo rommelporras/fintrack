@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { formatPeso } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
@@ -66,10 +68,6 @@ interface TransactionEditForm {
   description: string;
 }
 
-function formatPeso(amount: string | number) {
-  return `₱${Number(amount).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
-}
-
 const TYPE_COLORS: Record<string, string> = {
   income: "bg-green-100 text-green-800",
   expense: "bg-red-100 text-red-800",
@@ -105,6 +103,7 @@ export default function TransactionsPage() {
     description: "",
   });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Filter state
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -155,6 +154,7 @@ export default function TransactionsPage() {
 
   function openEditSheet(t: Transaction) {
     setSelectedTxn(t);
+    setSaveError(null);
     setEditForm({
       account_id: t.account_id,
       category_id: t.category_id ?? "",
@@ -168,13 +168,18 @@ export default function TransactionsPage() {
 
   async function handleSave() {
     if (!selectedTxn) return;
-    await api.patch(`/transactions/${selectedTxn.id}`, {
-      ...editForm,
-      category_id: editForm.category_id || null,
-    });
-    setEditSheetOpen(false);
-    setSelectedTxn(null);
-    await load();
+    setSaveError(null);
+    try {
+      await api.patch(`/transactions/${selectedTxn.id}`, {
+        ...editForm,
+        category_id: editForm.category_id || null,
+      });
+      setEditSheetOpen(false);
+      setSelectedTxn(null);
+      await load();
+    } catch (e: unknown) {
+      setSaveError(e instanceof Error ? e.message : "Failed to save.");
+    }
   }
 
   async function handleDelete() {
@@ -320,8 +325,11 @@ export default function TransactionsPage() {
               {transactions.map((t) => (
                 <li
                   key={t.id}
+                  role="button"
+                  tabIndex={0}
                   className="py-3 flex items-center justify-between cursor-pointer hover:bg-muted/50 -mx-2 px-2 rounded"
                   onClick={() => openEditSheet(t)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openEditSheet(t); } }}
                 >
                   <div className="space-y-0.5">
                     <p className="text-sm font-medium">
@@ -359,8 +367,8 @@ export default function TransactionsPage() {
           )}
 
           {/* Pagination */}
-          {!loading && (
-            <div className="flex justify-between mt-4 pt-4 border-t">
+          {!loading && total > LIMIT && (
+            <div className="flex items-center justify-between mt-4 pt-4 border-t">
               <Button
                 variant="outline"
                 size="sm"
@@ -369,10 +377,13 @@ export default function TransactionsPage() {
               >
                 Previous
               </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {Math.floor(offset / LIMIT) + 1} of {Math.ceil(total / LIMIT)}
+              </span>
               <Button
                 variant="outline"
                 size="sm"
-                disabled={transactions.length < LIMIT}
+                disabled={offset + LIMIT >= total}
                 onClick={() => setOffset(offset + LIMIT)}
               >
                 Next
@@ -387,6 +398,7 @@ export default function TransactionsPage() {
         <SheetContent>
           <SheetHeader>
             <SheetTitle>Edit Transaction</SheetTitle>
+            <SheetDescription>Update the transaction details below.</SheetDescription>
           </SheetHeader>
           <div className="space-y-4 mt-4">
             {/* Account select */}
@@ -440,6 +452,7 @@ export default function TransactionsPage() {
                 onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))} />
             </div>
             {/* Actions */}
+            {saveError && <p className="text-sm text-destructive">{saveError}</p>}
             <div className="flex gap-2 pt-2">
               <Button className="flex-1" onClick={handleSave}>Save</Button>
               <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

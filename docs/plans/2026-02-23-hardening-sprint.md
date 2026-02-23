@@ -543,7 +543,7 @@ _Priority: medium. These make the codebase self-documenting for AI agents and fi
 
 ### Task C3: Consolidate formatPeso to shared utility
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/lib/utils.ts` — add formatPeso

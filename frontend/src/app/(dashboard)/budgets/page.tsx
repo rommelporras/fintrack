@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, formatPeso } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -76,10 +76,6 @@ interface NewBudgetForm {
   period: "monthly" | "weekly";
   alert_at_80: boolean;
   alert_at_100: boolean;
-}
-
-function formatPeso(amount: string): string {
-  return `₱${Number(amount).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
 }
 
 function progressColor(status: "ok" | "warning" | "exceeded"): string {
