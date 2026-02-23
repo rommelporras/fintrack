@@ -1016,7 +1016,7 @@ _Priority: medium-low. These fix architectural anti-patterns. E1 is the highest-
 
 ### Task E1: Move check_budget_alerts to Celery task
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/routers/transactions.py:67,91`
