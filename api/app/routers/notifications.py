@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, func
-from app.core.database import get_db, AsyncSessionLocal
+from app.core.database import get_db
 from app.dependencies import get_current_user
 from app.models.notification import Notification
 from app.models.push_subscription import PushSubscription
@@ -52,28 +52,29 @@ async def mark_all_read(
 @router.get("/stream")
 async def notification_stream(
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """SSE stream: sends initial unreads then yields from Redis pub/sub."""
+    # Fetch initial unreads via the DI session so tests can override get_db.
+    # Serialise to dicts now while the session is still valid.
+    result = await db.execute(
+        select(Notification)
+        .where(
+            Notification.user_id == current_user.id,
+            Notification.is_read == False,  # noqa: E712
+        )
+        .order_by(Notification.created_at.desc())
+        .limit(20)
+    )
+    initial_payloads = [
+        {"id": str(n.id), "type": n.type, "title": n.title, "message": n.message}
+        for n in result.scalars().all()
+    ]
+
     async def generator():
-        # Send initial unread notifications
-        async with AsyncSessionLocal() as db:
-            result = await db.execute(
-                select(Notification)
-                .where(
-                    Notification.user_id == current_user.id,
-                    Notification.is_read == False,  # noqa: E712
-                )
-                .order_by(Notification.created_at.desc())
-                .limit(20)
-            )
-            for n in result.scalars().all():
-                payload = {
-                    "id": str(n.id),
-                    "type": n.type,
-                    "title": n.title,
-                    "message": n.message,
-                }
-                yield f"data: {json.dumps(payload)}\n\n"
+        # Yield pre-fetched initial unreads
+        for payload in initial_payloads:
+            yield f"data: {json.dumps(payload)}\n\n"
 
         # Keep connection open, yield from Redis pub/sub with 30s keepalive
         r = None
