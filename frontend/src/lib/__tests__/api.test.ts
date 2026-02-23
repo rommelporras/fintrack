@@ -83,4 +83,58 @@ describe("api", () => {
     const data = await api.post("/empty", {});
     expect(data).toBeUndefined();
   });
+
+  it("second 401 after completed refresh cycle triggers a new refresh, not the stale promise", async () => {
+    // Regression test for the stale refreshPromise bug (A4).
+    //
+    // The bug: the .finally() block only reset isRefreshing, leaving
+    // refreshPromise holding the old resolved Promise. Any concurrent
+    // request that checked isRefreshing=true (and therefore skipped the
+    // if-block) after the finally ran would await that stale Promise<boolean>.
+    //
+    // This test verifies the end-to-end sequential behaviour: two independent
+    // 401/refresh cycles each complete successfully and each call /auth/refresh
+    // exactly once, confirming refreshPromise is properly cleared between cycles.
+    let refreshCallCount = 0;
+    let resource1Calls = 0;
+    let resource2Calls = 0;
+
+    server.use(
+      // resource1: 401 on first call (triggers refresh), 200 on retry
+      http.get(`${BASE}/resource1`, () => {
+        resource1Calls++;
+        if (resource1Calls === 1) {
+          return HttpResponse.json({ detail: "Unauthorized" }, { status: 401 });
+        }
+        return HttpResponse.json({ data: 1 });
+      }),
+      // resource2: 401 on first call (triggers a second refresh), 200 on retry
+      http.get(`${BASE}/resource2`, () => {
+        resource2Calls++;
+        if (resource2Calls === 1) {
+          return HttpResponse.json({ detail: "Unauthorized" }, { status: 401 });
+        }
+        return HttpResponse.json({ data: 2 });
+      }),
+      // Refresh endpoint: always succeeds
+      http.post(`${BASE}/auth/refresh`, () => {
+        refreshCallCount++;
+        return new HttpResponse(null, { status: 200 });
+      })
+    );
+
+    // First request: hits 401, triggers refresh cycle, retries and succeeds
+    const result1 = await api.get<{ data: number }>("/resource1");
+    expect(result1).toEqual({ data: 1 });
+    expect(refreshCallCount).toBe(1);
+
+    // Second request: hits 401 after the first cycle is fully complete.
+    // Must resolve successfully (not redirect to /login) and trigger a second
+    // call to /auth/refresh, proving the module state is clean between cycles.
+    const result2 = await api.get<{ data: number }>("/resource2");
+    expect(result2).toEqual({ data: 2 });
+
+    // Both 401s must have each triggered exactly one refresh call (2 total)
+    expect(refreshCallCount).toBe(2);
+  });
 });
