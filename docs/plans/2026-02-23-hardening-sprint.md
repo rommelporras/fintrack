@@ -926,7 +926,7 @@ Ensure `Receipt`, `Plus`, `Card`, `CardContent`, `Button` are imported (most sho
 
 ### Task D7: Documents page loading/error state + Link fix
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/app/(dashboard)/documents/page.tsx:148,195`

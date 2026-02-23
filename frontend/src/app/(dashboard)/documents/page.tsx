@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet,
   SheetContent,
@@ -56,9 +58,12 @@ export default function DocumentsPage() {
   const [docs, setDocs] = useState<Document[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [accountsLoading, setAccountsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   async function loadData() {
+    setLoading(true);
+    setError(null);
     try {
       const [d, a, c] = await Promise.all([
         api.get<Document[]>("/documents"),
@@ -68,8 +73,10 @@ export default function DocumentsPage() {
       setDocs(d);
       setAccounts(a);
       setCategories(c);
+    } catch {
+      setError("Failed to load documents.");
     } finally {
-      setAccountsLoading(false);
+      setLoading(false);
     }
   }
 
@@ -143,46 +150,56 @@ export default function DocumentsPage() {
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Documents</h1>
-        <Button
-          variant="outline"
-          onClick={() => (window.location.href = "/scan")}
-        >
-          + Upload
+        <Button variant="outline" asChild>
+          <Link href="/scan">+ Upload</Link>
         </Button>
       </div>
 
-      {docs.length === 0 && (
-        <p className="text-muted-foreground text-sm">
-          No documents yet. Use the Scan page to upload receipts or statements.
-        </p>
-      )}
+      {loading ? (
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-lg" />
+          ))}
+        </div>
+      ) : error ? (
+        <p className="text-sm text-destructive">{error}</p>
+      ) : (
+        <>
+          {docs.length === 0 && (
+            <p className="text-muted-foreground text-sm">
+              No documents yet. Use the Scan page to upload receipts or
+              statements.
+            </p>
+          )}
 
-      <div className="space-y-2">
-        {docs.map((doc) => (
-          <div
-            key={doc.id}
-            className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/30 cursor-pointer"
-            onClick={() => {
-              setSelected(doc);
-              setParsedSingle(null);
-              setParsedBulk(null);
-              setCopied(false);
-              setCopyError(null);
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">{doc.filename}</p>
-                <p className="text-xs text-muted-foreground">
-                  {doc.document_type}
-                </p>
+          <div className="space-y-2">
+            {docs.map((doc) => (
+              <div
+                key={doc.id}
+                className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/30 cursor-pointer"
+                onClick={() => {
+                  setSelected(doc);
+                  setParsedSingle(null);
+                  setParsedBulk(null);
+                  setCopied(false);
+                  setCopyError(null);
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">{doc.filename}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {doc.document_type}
+                    </p>
+                  </div>
+                </div>
+                <Badge variant={statusVariant[doc.status]}>{doc.status}</Badge>
               </div>
-            </div>
-            <Badge variant={statusVariant[doc.status]}>{doc.status}</Badge>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
 
       <Sheet open={!!selected} onOpenChange={(open) => { if (!open) handleClose(); }}>
         <SheetContent className="w-[420px] overflow-y-auto">
@@ -192,7 +209,7 @@ export default function DocumentsPage() {
                 <SheetTitle>{selected.filename}</SheetTitle>
               </SheetHeader>
               <div className="mt-4 space-y-4">
-                {!defaultAccountId && !accountsLoading && (
+                {!defaultAccountId && !loading && (
                   <p className="text-sm text-destructive mb-2">
                     No account found. Please add an account before importing transactions.
                   </p>
@@ -224,7 +241,7 @@ export default function DocumentsPage() {
                       <PasteInput bulk={isBulk} onParsed={handleParsed} />
                     ) : (
                       <p className="text-sm text-muted-foreground">
-                        {accountsLoading ? "Loading accounts..." : "Add an account first to import transactions."}
+                        {loading ? "Loading accounts..." : "Add an account first to import transactions."}
                       </p>
                     )}
                   </div>
