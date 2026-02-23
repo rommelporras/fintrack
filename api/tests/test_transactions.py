@@ -224,6 +224,29 @@ async def test_update_transaction_not_found(client, user_and_accounts):
 
 
 async def test_search_escapes_wildcards(client, user_and_accounts):
-    """Search with % and _ should be treated as literals, not wildcards."""
-    resp = await client.get("/transactions", params={"search": "%_special"})
+    """Search with % and _ should be treated as literals, not wildcards.
+
+    Without proper escaping, '50%_off' would be interpreted by ILIKE as a
+    wildcard pattern matching almost anything. The test verifies that the
+    special-char transaction is found (escaping works) and that the result
+    set is exactly one item (no wildcard explosion).
+    """
+    ids = user_and_accounts
+    r = await client.post("/transactions", json={
+        "account_id": ids["bank_id"],
+        "amount": "10.00",
+        "type": "expense",
+        "date": "2026-01-15",
+        "description": "50%_off promo",
+    })
+    assert r.status_code == 201
+
+    resp = await client.get("/transactions", params={"search": "50%_off"})
     assert resp.status_code == 200
+    data = resp.json()
+    descriptions = [t["description"] for t in data["items"]]
+    assert "50%_off promo" in descriptions
+    # Without escaping, % and _ act as wildcards and would match far more than
+    # this single transaction. Confirming exactly one result ensures the
+    # pattern is matched literally.
+    assert data["total"] == 1
