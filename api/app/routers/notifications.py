@@ -93,11 +93,9 @@ async def notification_stream(
                     yield ": keepalive\n\n"
                     continue
                 if message and message["type"] == "message":
-                    data = message["data"]
-                    if isinstance(data, bytes):
-                        data = data.decode()
-                    yield f"data: {data}\n\n"
-        except (asyncio.CancelledError, Exception):
+                    # decode_responses=True guarantees str, not bytes
+                    yield f"data: {message['data']}\n\n"
+        except Exception:
             # Redis unavailable or client disconnected — end stream gracefully
             return
         finally:
