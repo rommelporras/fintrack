@@ -48,3 +48,14 @@ When building the React components, look out for these established patterns in t
 5. **Interactions & State**
    - **Dark Mode:** Toggled via the `.dark` class on the `<html>` element. All colors use semantic `var(--name)` or Tailwind's `dark:` variants.
    - **Custom Checkboxes:** See `.custom-checkbox` in the CSS for the custom SVG-based checkmark implementation used in tables.
+
+6. **Mobile Touch Gestures (Swipe & Pull-to-Refresh)**
+   **⚠️ CRITICAL INSTRUCTION FOR AGENT ⚠️**: The HTML mockups contain a vanilla JavaScript block at the bottom of the `<body>` implementing `touchstart`/`touchmove`/`touchend` for swiping side sheets and pulling to refresh. **DO NOT BLINDLY COPY THIS VANILLA JS INTO REACT OR NEXT.JS.** 
+   
+   React relies on a virtual DOM and synthetic events. Translating vanilla DOM-mutating `style.transform` logic step-by-step into React state will result in extreme performance degradation (unnecessary re-renders).
+
+   **Your Task:**
+   Before implementing gestures in the Next.js app, you MUST thoroughly research modern React animation and gesture libraries. 
+   - **Recommended Approach 1:** Use **Framer Motion** (`framer-motion`). It provides hardware-accelerated `drag`, `dragConstraints`, and `onDragEnd` props which elegantly handle swipe-to-close interactions with native physics without triggering React state updates on every frame.
+   - **Recommended Approach 2:** Use native React gesture hooks like `@use-gesture/react` combined with `react-spring` for complex interpolations like Pull-to-Refresh.
+   - Ensure the Next.js implementation maintains the 1:1 finger tracking feel (imperative tracking) but snaps back properly (spring physics). Evaluate the tradeoffs between implementing a generic global wrapper versus attaching gestures to specific overlay components.
