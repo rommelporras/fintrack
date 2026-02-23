@@ -132,3 +132,19 @@ async def test_login_without_remember_me(client):
         "email": "norem@test.com", "password": "password123", "remember_me": False
     })
     assert r.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_register_short_password_rejected(client):
+    resp = await client.post("/auth/register", json={
+        "email": "short@test.com", "name": "Test", "password": "short"
+    })
+    assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_register_empty_name_rejected(client):
+    resp = await client.post("/auth/register", json={
+        "email": "noname@test.com", "name": "", "password": "validpass123"
+    })
+    assert resp.status_code == 422
