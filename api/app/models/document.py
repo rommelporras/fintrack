@@ -34,7 +34,10 @@ class Document(Base):
         UUID(as_uuid=True), primary_key=True, server_default=func.uuidv7()
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     filename: Mapped[str] = mapped_column(String(500), nullable=False)
     file_path: Mapped[str] = mapped_column(String(1000), nullable=False)

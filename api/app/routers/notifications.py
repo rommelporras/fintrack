@@ -5,14 +5,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, func
-from app.core.database import get_db, AsyncSessionLocal
+from app.core.database import get_db
 from app.dependencies import get_current_user
 from app.models.notification import Notification
 from app.models.push_subscription import PushSubscription
 from app.models.user import User
 from app.schemas.notification import NotificationResponse, NotificationListResponse
 from app.schemas.push_subscription import PushSubscriptionCreate, PushSubscriptionDelete
-from app.services.pubsub import subscribe_notifications
+from app.services.pubsub import get_redis, _channel
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -52,36 +52,65 @@ async def mark_all_read(
 @router.get("/stream")
 async def notification_stream(
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """SSE stream: sends initial unreads then yields from Redis pub/sub."""
-    async def generator():
-        # Send initial unread notifications
-        async with AsyncSessionLocal() as db:
-            result = await db.execute(
-                select(Notification)
-                .where(
-                    Notification.user_id == current_user.id,
-                    Notification.is_read == False,  # noqa: E712
-                )
-                .order_by(Notification.created_at.desc())
-                .limit(20)
-            )
-            for n in result.scalars().all():
-                payload = {
-                    "id": str(n.id),
-                    "type": n.type,
-                    "title": n.title,
-                    "message": n.message,
-                }
-                yield f"data: {json.dumps(payload)}\n\n"
+    # Fetch initial unreads via the DI session so tests can override get_db.
+    # Serialise to dicts now while the session is still valid.
+    result = await db.execute(
+        select(Notification)
+        .where(
+            Notification.user_id == current_user.id,
+            Notification.is_read == False,  # noqa: E712
+        )
+        .order_by(Notification.created_at.desc())
+        .limit(20)
+    )
+    initial_payloads = [
+        {"id": str(n.id), "type": n.type, "title": n.title, "message": n.message}
+        for n in result.scalars().all()
+    ]
 
-        # Keep connection open, yield from Redis pub/sub
+    async def generator():
+        # Yield pre-fetched initial unreads
+        for payload in initial_payloads:
+            yield f"data: {json.dumps(payload)}\n\n"
+
+        # Keep connection open, yield from Redis pub/sub with 30s keepalive
+        r = None
+        pubsub = None
+        channel = _channel(current_user.id)
         try:
-            async for payload in subscribe_notifications(current_user.id):
-                yield f"data: {json.dumps(payload)}\n\n"
-        except (asyncio.CancelledError, Exception):
+            r = await get_redis()
+            pubsub = r.pubsub()
+            await pubsub.subscribe(channel)
+            while True:
+                try:
+                    message = await asyncio.wait_for(
+                        pubsub.get_message(ignore_subscribe_messages=True, timeout=None),
+                        timeout=30.0,
+                    )
+                except asyncio.TimeoutError:
+                    yield ": keepalive\n\n"
+                    continue
+                if message and message["type"] == "message":
+                    # decode_responses=True guarantees str, not bytes
+                    yield f"data: {message['data']}\n\n"
+        except Exception:
             # Redis unavailable or client disconnected — end stream gracefully
             return
+        finally:
+            if pubsub is not None:
+                try:
+                    await pubsub.unsubscribe(channel)
+                    await pubsub.aclose()
+                except Exception:
+                    pass
+            if r is not None:
+                try:
+                    await r.aclose()
+                except Exception:
+                    pass
 
     return StreamingResponse(
         generator(),

@@ -1,6 +1,9 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import IntegrityError
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 from app.core.config import settings
 from app.core.logging import configure_logging, log
 from app.routers import auth as auth_router
@@ -49,6 +52,24 @@ app.include_router(budgets_router.router)
 app.include_router(notifications_router.router)
 app.include_router(analytics_router.router)
 app.include_router(recurring_router.router)
+
+
+@app.exception_handler(IntegrityError)
+async def integrity_error_handler(request: Request, exc: IntegrityError) -> JSONResponse:
+    log.warning("integrity_error", detail=str(exc.orig))
+    return JSONResponse(
+        status_code=409,
+        content={"detail": "Operation conflicts with existing data. Check related records."},
+    )
+
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    log.error("unhandled_exception", detail=str(exc), exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
 
 
 @app.get("/health")

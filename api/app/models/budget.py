@@ -14,7 +14,10 @@ class Budget(Base):
         UUID(as_uuid=True), primary_key=True, server_default=func.uuidv7()
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     # "category" or "account"
     type: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -22,11 +25,13 @@ class Budget(Base):
         UUID(as_uuid=True),
         ForeignKey("categories.id", ondelete="SET NULL"),
         nullable=True,
+        index=True,
     )
     account_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("accounts.id", ondelete="CASCADE"),
         nullable=True,
+        index=True,
     )
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     # "monthly" or "weekly"

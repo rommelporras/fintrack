@@ -8,7 +8,6 @@ class DocumentResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     filename: str
-    file_path: str
     document_type: DocumentType
     status: DocumentStatus
     extracted_data: dict | None

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { formatPeso } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,10 +32,6 @@ interface Account {
   current_balance: string;
   currency: string;
   is_active: boolean;
-}
-
-function formatPeso(amount: string | number) {
-  return `₱${Number(amount).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
 }
 
 const TYPE_LABELS: Record<string, string> = {

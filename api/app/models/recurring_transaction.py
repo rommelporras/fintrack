@@ -26,13 +26,15 @@ class RecurringTransaction(Base):
         UUID(as_uuid=True), primary_key=True, server_default=func.uuidv7()
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        index=True,
     )
     account_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("accounts.id")
+        UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="CASCADE"), index=True
     )
     category_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True
+        UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True, index=True
     )
     amount: Mapped[Decimal] = mapped_column(Numeric(15, 2))
     description: Mapped[str] = mapped_column(Text, default="")

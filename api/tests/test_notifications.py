@@ -98,8 +98,18 @@ async def test_notifications_require_auth(client: AsyncClient):
     assert r.status_code == 401
 
 
-async def test_stream_returns_event_stream(auth_client: AsyncClient):
-    """Verify the SSE endpoint returns correct content-type and 200."""
+async def test_stream_returns_event_stream(auth_client: AsyncClient, monkeypatch):
+    """Verify the SSE endpoint returns correct content-type and 200.
+
+    Redis is not available in the test environment. We mock get_redis to raise
+    immediately so the generator exits cleanly after yielding initial events,
+    allowing httpx's ASGITransport to consume the full response.
+    """
+    async def _no_redis():
+        raise ConnectionError("Redis not available in tests")
+
+    monkeypatch.setattr("app.routers.notifications.get_redis", _no_redis)
+
     async with auth_client.stream("GET", "/notifications/stream") as r:
         assert r.status_code == 200
         assert "text/event-stream" in r.headers["content-type"]

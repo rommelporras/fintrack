@@ -89,7 +89,7 @@ async def update_statement(
     db: AsyncSession = Depends(get_db),
 ):
     stmt = await _get_user_statement(statement_id, current_user, db)
-    update_data = data.model_dump(exclude_none=True)
+    update_data = data.model_dump(exclude_unset=True)
 
     # Set paid_at when marking paid, clear it when unmarking
     if update_data.get("is_paid") is True and not stmt.is_paid:

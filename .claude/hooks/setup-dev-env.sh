@@ -6,12 +6,12 @@ set -e
 
 echo ""
 echo "════════════════════════════════════════════════════════"
-echo "  EXPENSE TRACKER DEV ENVIRONMENT"
+echo "  FINTRACK DEV ENVIRONMENT"
 echo "════════════════════════════════════════════════════════"
 echo ""
 
 ISSUES=0
-PROJECT_DIR="/home/wsl/personal/expense-tracker"
+PROJECT_DIR="/home/wsl/personal/fintrack"
 
 # =============================================================================
 # 1. Runtime Requirements
@@ -27,11 +27,11 @@ else
   ((ISSUES++))
 fi
 
-if command -v pnpm &>/dev/null; then
-  PNPM_VERSION=$(pnpm --version 2>/dev/null || echo "unknown")
-  echo "   ✅ pnpm $PNPM_VERSION"
+if command -v bun &>/dev/null; then
+  BUN_VERSION=$(bun --version 2>/dev/null || echo "unknown")
+  echo "   ✅ bun $BUN_VERSION"
 else
-  echo "   ❌ pnpm not found — install: npm install -g pnpm"
+  echo "   ❌ bun not found — install: curl -fsSL https://bun.sh/install | bash"
   ((ISSUES++))
 fi
 
@@ -49,13 +49,13 @@ echo ""
 
 echo "🐳 Services:"
 
-if docker ps 2>/dev/null | grep -qE "expense.tracker.*postgres|expense_tracker.*postgres|expense-tracker.*postgres"; then
+if docker ps 2>/dev/null | grep -qE "fintrack.*postgres|fintrack_postgres|fintrack-postgres"; then
   echo "   ✅ PostgreSQL running"
 else
   echo "   ⚠️  PostgreSQL not running — start: docker compose up postgres -d"
 fi
 
-if docker ps 2>/dev/null | grep -qE "expense.tracker.*redis|expense_tracker.*redis|expense-tracker.*redis"; then
+if docker ps 2>/dev/null | grep -qE "fintrack.*redis|fintrack_redis|fintrack-redis"; then
   echo "   ✅ Redis running"
 else
   echo "   ⚠️  Redis not running — start: docker compose up redis -d"
@@ -86,7 +86,7 @@ echo "🌐 Frontend (Next.js :3000):"
 if curl -s --connect-timeout 2 http://localhost:3000 > /dev/null 2>&1; then
   echo "   ✅ Frontend running"
 else
-  echo "   ⚠️  Frontend not running — start: cd frontend && pnpm dev"
+  echo "   ⚠️  Frontend not running — start: cd frontend && bun dev"
 fi
 
 echo ""
@@ -112,7 +112,7 @@ fi
 if [[ -d "$PROJECT_DIR/frontend/node_modules" ]]; then
   echo "   ✅ Node modules installed (frontend/node_modules)"
 else
-  echo "   ⚠️  Node modules missing — run: cd frontend && pnpm install"
+  echo "   ⚠️  Node modules missing — run: cd frontend && bun install"
 fi
 
 echo ""

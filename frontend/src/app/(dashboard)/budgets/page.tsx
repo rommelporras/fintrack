@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, formatPeso } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -24,6 +25,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, PiggyBank } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface BudgetResponse {
   id: string;
@@ -65,10 +77,6 @@ interface NewBudgetForm {
   period: "monthly" | "weekly";
   alert_at_80: boolean;
   alert_at_100: boolean;
-}
-
-function formatPeso(amount: string): string {
-  return `₱${Number(amount).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
 }
 
 function progressColor(status: "ok" | "warning" | "exceeded"): string {
@@ -171,6 +179,7 @@ export default function BudgetsPage() {
           <SheetContent>
             <SheetHeader>
               <SheetTitle>New Budget</SheetTitle>
+              <SheetDescription>Create a new budget.</SheetDescription>
             </SheetHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="space-y-1">
@@ -336,14 +345,25 @@ export default function BudgetsPage() {
                         ? "Warning"
                         : "On Track"}
                     </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                      onClick={() => handleDelete(item.budget.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete budget?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete the &quot;{budgetLabel(item, categories, accounts)}&quot; budget. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(item.budget.id)}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               </CardHeader>

@@ -34,7 +34,7 @@ if [[ "$TOOL" == "Write" || "$TOOL" == "Edit" ]]; then
     "serviceAccountKey"
     "google-credentials"
     "uv.lock"
-    "pnpm-lock.yaml"
+    "bun.lock"
   )
 
   for pattern in "${PROTECTED_PATTERNS[@]}"; do

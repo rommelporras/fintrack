@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { formatPeso } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -51,10 +52,6 @@ interface RecurringTransaction {
   next_due_date: string;
   is_active: boolean;
   type: string;
-}
-
-function formatPeso(amount: string | number) {
-  return `₱${Number(amount).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
 }
 
 export default function DashboardPage() {

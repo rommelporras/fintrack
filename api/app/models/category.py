@@ -16,6 +16,7 @@ class Category(Base):
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=True,
+        index=True,
         comment="NULL for system categories, set for user-created categories",
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)

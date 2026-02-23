@@ -88,11 +88,15 @@ export default function NotificationsPage() {
               {notifications.map((n) => (
                 <li
                   key={n.id}
+                  role={!n.is_read ? "button" : undefined}
+                  tabIndex={!n.is_read ? 0 : undefined}
                   className={cn(
-                    "px-4 py-3 cursor-pointer hover:bg-accent/50 transition-colors",
-                    !n.is_read && "bg-muted/40"
+                    "px-4 py-3 transition-colors",
+                    !n.is_read && "bg-muted/40 cursor-pointer hover:bg-accent/50",
+                    n.is_read && "cursor-default"
                   )}
                   onClick={() => !n.is_read && markRead(n.id)}
+                  onKeyDown={(e) => { if (!n.is_read && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); markRead(n.id); } }}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-0.5 min-w-0">

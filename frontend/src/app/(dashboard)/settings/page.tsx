@@ -147,29 +147,13 @@ export default function SettingsPage() {
 
       <Separator />
 
-      <Card>
+      <Card className="border-dashed">
         <CardHeader>
           <CardTitle>API Keys</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Gemini API Key</Label>
-            <Input
-              type="password"
-              placeholder="AIza…"
-              autoComplete="off"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Claude API Key</Label>
-            <Input
-              type="password"
-              placeholder="sk-ant-…"
-              autoComplete="off"
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Used for AI-powered receipt scanning in Phase 2.
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            API key configuration coming soon. Receipt scanning currently uses server-side keys.
           </p>
         </CardContent>
       </Card>

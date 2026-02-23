@@ -152,7 +152,7 @@ cd api && DATABASE_URL="postgresql+asyncpg://finance:changeme@127.0.0.1:5435/fin
 
 ### Task A4: Fix refreshPromise stale reference
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/lib/api.ts:13,69-81`
@@ -233,7 +233,7 @@ Note: `tryRefresh` is already defined at the module level (around line 15). If i
 
 ### Task A6: Fix logout cookie clearing
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/routers/auth.py:16-35,61-65`
@@ -274,7 +274,7 @@ async def logout(response: Response):
 
 ### Task A7: File upload extension allowlist
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/routers/documents.py:35-40`
@@ -300,7 +300,7 @@ ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf", ".csv", 
 
 ### Task A8: Remove file_path from DocumentResponse
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/schemas/document.py:11`
@@ -357,7 +357,7 @@ _Priority: high. These prevent silent data corruption and query performance issu
 
 ### Task B1: Add missing database indexes (migration)
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: model files to add `index=True` to FK columns
@@ -410,7 +410,7 @@ cd api && DATABASE_URL="postgresql+asyncpg://finance:changeme@127.0.0.1:5435/fin
 
 ### Task B2: Configure connection pool
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/core/database.py:9`
@@ -438,7 +438,7 @@ engine = create_async_engine(
 
 ### Task B3: Add CHECK constraints (migration)
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Create: migration via alembic
@@ -474,7 +474,7 @@ def downgrade() -> None:
 
 ### Task B4: Fix exclude_none → exclude_unset in update endpoints
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/routers/transactions.py:87`
@@ -507,7 +507,7 @@ _Priority: medium. These make the codebase self-documenting for AI agents and fi
 
 ### Task C1: Fix setup-dev-env.sh hook
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `.claude/hooks/setup-dev-env.sh:9,14,30-36,52,89,115`
@@ -528,7 +528,7 @@ _Priority: medium. These make the codebase self-documenting for AI agents and fi
 
 ### Task C2: Add bun.lock to protect-sensitive.sh
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `.claude/hooks/protect-sensitive.sh:18-38`
@@ -543,7 +543,7 @@ _Priority: medium. These make the codebase self-documenting for AI agents and fi
 
 ### Task C3: Consolidate formatPeso to shared utility
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/lib/utils.ts` — add formatPeso
@@ -577,7 +577,7 @@ Then in each of these files, remove the local `formatPeso` and add `import { for
 
 ### Task C4: Fix Pydantic validation error rendering
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/lib/api.ts` — inside the `request` function error handling
@@ -601,7 +601,7 @@ throw new Error(message);
 
 ### Task C5: Add Celery beat service to docker-compose
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `docker-compose.yml`
@@ -632,7 +632,7 @@ throw new Error(message);
 
 ### Task C6: Pin Docker image versions
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `docker-compose.yml:3,19`
@@ -655,7 +655,7 @@ throw new Error(message);
 
 ### Task C7: Remove unused passlib dependency
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/pyproject.toml:14`
@@ -711,7 +711,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
 ### Task D2: Keyboard accessibility for interactive list items
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/app/(dashboard)/transactions/page.tsx:324`
@@ -757,7 +757,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
 ### Task D3: Budget delete confirmation dialog
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/app/(dashboard)/budgets/page.tsx:130-137,340`
@@ -801,7 +801,7 @@ import {
 
 ### Task D4: Transaction edit save feedback + error handling
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/app/(dashboard)/transactions/page.tsx:169-178`
@@ -851,7 +851,7 @@ function openEditSheet(t: Transaction) {
 
 ### Task D5: Add page numbers to pagination
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/app/(dashboard)/transactions/page.tsx:361-381`
@@ -926,7 +926,7 @@ Ensure `Receipt`, `Plus`, `Card`, `CardContent`, `Button` are imported (most sho
 
 ### Task D7: Documents page loading/error state + Link fix
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/app/(dashboard)/documents/page.tsx:148,195`
@@ -984,7 +984,7 @@ import Link from "next/link";
 
 ### Task D8: Add SheetDescription to all sheets
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: All pages with `<SheetHeader>` that lack `<SheetDescription>`
@@ -1016,7 +1016,7 @@ _Priority: medium-low. These fix architectural anti-patterns. E1 is the highest-
 
 ### Task E1: Move check_budget_alerts to Celery task
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/routers/transactions.py:67,91`
@@ -1063,7 +1063,7 @@ def check_budget_alerts_task(user_id: str) -> None:
 
 ### Task E2: Fix N+1 budget status query
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/routers/budgets.py:56-72`
@@ -1118,7 +1118,7 @@ for budget in budgets:
 
 ### Task E3: Add SSE heartbeat
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/routers/notifications.py:57-84`
@@ -1156,7 +1156,7 @@ async def event_generator():
 
 ### Task E4: Add global exception handler
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/main.py`

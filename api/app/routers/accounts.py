@@ -77,7 +77,7 @@ async def update_account(
     account = result.scalar_one_or_none()
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
-    for field, value in data.model_dump(exclude_none=True).items():
+    for field, value in data.model_dump(exclude_unset=True).items():
         setattr(account, field, value)
     await db.commit()
     await db.refresh(account)

@@ -3,7 +3,7 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_create_and_list_account(client):
-    await client.post("/auth/register", json={"email": "a@test.com", "name": "A", "password": "pw"})
+    await client.post("/auth/register", json={"email": "a@test.com", "name": "A", "password": "changeme123"})
     r = await client.post("/accounts", json={"name": "BPI Savings", "type": "bank", "opening_balance": "5000.00"})
     assert r.status_code == 201
     data = r.json()
@@ -18,7 +18,7 @@ async def test_create_and_list_account(client):
 
 @pytest.mark.asyncio
 async def test_update_account(client):
-    await client.post("/auth/register", json={"email": "b@test.com", "name": "B", "password": "pw"})
+    await client.post("/auth/register", json={"email": "b@test.com", "name": "B", "password": "changeme123"})
     r = await client.post("/accounts", json={"name": "Cash", "type": "cash"})
     account_id = r.json()["id"]
 
@@ -29,7 +29,7 @@ async def test_update_account(client):
 
 @pytest.mark.asyncio
 async def test_delete_account(client):
-    await client.post("/auth/register", json={"email": "c@test.com", "name": "C", "password": "pw"})
+    await client.post("/auth/register", json={"email": "c@test.com", "name": "C", "password": "changeme123"})
     r = await client.post("/accounts", json={"name": "Temp", "type": "cash"})
     account_id = r.json()["id"]
 
@@ -48,7 +48,7 @@ async def test_accounts_require_auth(client):
 
 @pytest.mark.asyncio
 async def test_get_account_by_id(client):
-    await client.post("/auth/register", json={"email": "getid@test.com", "name": "G", "password": "pw"})
+    await client.post("/auth/register", json={"email": "getid@test.com", "name": "G", "password": "changeme123"})
     r = await client.post("/accounts", json={"name": "Savings", "type": "bank", "opening_balance": "1000.00"})
     account_id = r.json()["id"]
     r2 = await client.get(f"/accounts/{account_id}")
@@ -59,7 +59,7 @@ async def test_get_account_by_id(client):
 
 @pytest.mark.asyncio
 async def test_get_account_not_found(client):
-    await client.post("/auth/register", json={"email": "notfound@test.com", "name": "NF", "password": "pw"})
+    await client.post("/auth/register", json={"email": "notfound@test.com", "name": "NF", "password": "changeme123"})
     import uuid
     fake_id = str(uuid.uuid4())
     r = await client.get(f"/accounts/{fake_id}")
