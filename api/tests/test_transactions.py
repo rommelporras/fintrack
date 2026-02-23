@@ -250,3 +250,33 @@ async def test_search_escapes_wildcards(client, user_and_accounts):
     # this single transaction. Confirming exactly one result ensures the
     # pattern is matched literally.
     assert data["total"] == 1
+
+
+async def test_patch_clears_optional_field(client, user_and_accounts):
+    """PATCH with explicit null must clear an optional FK field (exclude_unset guard).
+
+    Regression test: exclude_none=True would silently drop the null and leave
+    category_id unchanged. exclude_unset=True correctly applies the null.
+    """
+    ids = user_and_accounts
+    cat = await client.post("/categories", json={
+        "name": "Food", "type": "expense", "icon": "🍔", "color": "#f97316",
+    })
+    assert cat.status_code == 201
+    category_id = cat.json()["id"]
+
+    r = await client.post("/transactions", json={
+        "account_id": ids["bank_id"],
+        "amount": "99.00",
+        "type": "expense",
+        "date": "2026-02-01",
+        "description": "Categorised txn",
+        "category_id": category_id,
+    })
+    assert r.status_code == 201
+    assert r.json()["category_id"] == category_id
+    txn_id = r.json()["id"]
+
+    r2 = await client.patch(f"/transactions/{txn_id}", json={"category_id": None})
+    assert r2.status_code == 200
+    assert r2.json()["category_id"] is None
