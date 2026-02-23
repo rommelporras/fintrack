@@ -655,7 +655,7 @@ throw new Error(message);
 
 ### Task C7: Remove unused passlib dependency
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/pyproject.toml:14`
