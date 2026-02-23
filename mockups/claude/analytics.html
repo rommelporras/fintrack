@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinTrack — Analytics</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --background: oklch(0.14 0.005 260); --foreground: oklch(0.95 0.005 260);
+      --card: oklch(0.18 0.005 260); --primary: oklch(0.72 0.17 162);
+      --primary-foreground: oklch(0.14 0.005 260); --muted: oklch(0.22 0.005 260);
+      --muted-foreground: oklch(0.65 0.01 260); --border: oklch(0.25 0.005 260);
+      --sidebar: oklch(0.12 0.005 260); --destructive: oklch(0.65 0.2 25);
+      --radius: 0.625rem;
+    }
+    body { background: var(--background); color: var(--foreground); font-family: system-ui, sans-serif; margin: 0; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: var(--muted-foreground); border-radius: 0.5rem; text-decoration: none; }
+    .nav-item:hover { background: var(--muted); color: var(--foreground); }
+    .nav-active { background: var(--primary); color: var(--primary-foreground) !important; }
+    .bar-income { background: oklch(0.72 0.17 162); border-radius: 3px 3px 0 0; }
+    .bar-expense { background: oklch(0.65 0.2 25); border-radius: 3px 3px 0 0; }
+    /* Period tabs */
+    .period-tab { padding: 6px 14px; font-size: 13px; font-weight: 500; border: 1px solid var(--border); background: transparent; color: var(--muted-foreground); cursor: pointer; border-radius: 0.375rem; }
+    .period-tab.active { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
+    .period-tab:hover:not(.active) { background: var(--muted); color: var(--foreground); }
+    /* Summary row hover */
+    .summary-row { cursor: pointer; transition: background 0.12s; }
+    .summary-row:hover { background: var(--muted); }
+    /* Month detail panel */
+    .detail-panel { display: none; background: oklch(0.72 0.17 162 / 0.06); border: 1px solid oklch(0.72 0.17 162 / 0.2); border-radius: 0.5rem; padding: 14px 16px; margin-top: 12px; }
+    .detail-panel.open { display: block; }
+    /* Dialog */
+    .dialog-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 60; align-items: center; justify-content: center; }
+    .dialog-backdrop.open { display: flex; }
+    .dialog-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; width: 400px; max-width: 90vw; }
+    .btn-ghost { background: var(--muted); color: var(--foreground); border: none; border-radius: 0.5rem; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; flex: 1; }
+    .btn-destructive { background: var(--destructive); color: #fff; border: none; border-radius: 0.5rem; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; flex: 1; }
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--card); border: 1px solid var(--border); border-radius: 0.5rem; padding: 12px 20px; font-size: 13px; color: var(--foreground); z-index: 80; box-shadow: 0 4px 20px rgba(0,0,0,0.4); opacity: 0; transform: translateY(8px); transition: opacity 0.2s, transform 0.2s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    /* Category filter chips */
+    .cat-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--muted); color: var(--muted-foreground); transition: all 0.12s; }
+    .cat-chip.active { border-color: oklch(0.72 0.17 162); color: oklch(0.72 0.17 162); background: oklch(0.72 0.17 162 / 0.1); }
+  </style>
+</head>
+<body class="flex min-h-screen">
+
+  <!-- Sign Out Confirmation Dialog -->
+  <div id="signout-dialog" class="dialog-backdrop" onclick="if(event.target===this)closeSignout()">
+    <div class="dialog-box">
+      <h3 style="font-size:16px;font-weight:700;margin:0 0 8px;color:var(--foreground)">Sign out</h3>
+      <p style="font-size:14px;color:var(--muted-foreground);margin:0 0 24px;">Are you sure you want to sign out of FinTrack?</p>
+      <div style="display:flex;gap:12px;">
+        <button class="btn-ghost" onclick="closeSignout()">Cancel</button>
+        <button class="btn-destructive" onclick="closeSignout()">Sign out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div id="toast" class="toast"></div>
+
+<!-- Sidebar -->
+<aside style="width:256px;min-height:100vh;background:var(--sidebar);border-right:1px solid var(--border);padding:16px 12px;display:flex;flex-direction:column;flex-shrink:0;">
+  <div style="padding:0 12px;margin-bottom:24px;"><div style="font-size:20px;font-weight:700;">FinTrack</div><div style="font-size:12px;color:var(--muted-foreground);">Personal Finance</div></div>
+  <nav style="flex:1;display:flex;flex-direction:column;gap:2px;">
+    <a href="dashboard.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
+    <a href="transactions.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>Transactions</a>
+    <a href="recurring.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Recurring</a>
+    <a href="budgets.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 9c0 3.314-3.134 6-7 6s-7-2.686-7-6 3.134-6 7-6 7 2.686 7 6z"/><path d="M5 15.5c0 2.485 3.134 4.5 7 4.5s7-2.015 7-4.5"/></svg>Budgets</a>
+    <a href="analytics.html" class="nav-item nav-active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</a>
+    <a href="scan.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>Scan Receipt</a>
+    <a href="accounts.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H4v4"/><path d="M20 12a2 2 0 0 0-2 2v2H6v-2a2 2 0 0 0-2-2"/><path d="M2 8l2-4h16l2 4"/></svg>Accounts</a>
+    <a href="credit-cards.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Credit Cards</a>
+    <a href="statements.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l4-2 4 2 4-2 4 2V2z"/></svg>Statements</a>
+    <a href="documents.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Documents</a>
+    <a href="notifications.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span style="margin-left:auto;background:var(--destructive);color:#fff;border-radius:9999px;padding:1px 6px;font-size:11px;">3</span></a>
+    <a href="settings.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>Settings</a>
+    <a href="guide.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>User Guide</a>
+  </nav>
+  <button onclick="openSignout()" style="display:flex;align-items:center;gap:12px;padding:8px 12px;font-size:14px;color:var(--muted-foreground);background:transparent;border:none;cursor:pointer;border-radius:0.5rem;width:100%;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign out</button>
+</aside>
+
+<!-- Main -->
+<main style="flex:1;padding:24px;overflow-y:auto;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+    <h1 style="font-size:24px;font-weight:700;margin:0;">Analytics</h1>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <!-- Period tabs -->
+      <div style="display:flex;gap:4px;">
+        <button class="period-tab active" id="tab-monthly" onclick="setPeriod('monthly')">Monthly</button>
+        <button class="period-tab" id="tab-quarterly" onclick="setPeriod('quarterly')">Quarterly</button>
+        <button class="period-tab" id="tab-yearly" onclick="setPeriod('yearly')">Yearly</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <label style="font-size:14px;color:var(--muted-foreground);">Year</label>
+        <input type="number" id="year-input" value="2026" min="2020" max="2099" style="background:var(--card);border:1px solid var(--border);border-radius:0.5rem;padding:6px 12px;color:var(--foreground);font-size:14px;width:80px;text-align:center;" onchange="updateYear(this.value)" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly bar chart -->
+  <div class="card" style="margin-bottom:24px;" id="chart-card">
+    <h2 id="chart-title" style="font-size:16px;font-weight:600;margin:0 0 20px;">Monthly Income vs Expenses — 2026</h2>
+    <div id="chart-container" style="display:flex;align-items:flex-end;gap:8px;height:180px;padding-bottom:24px;position:relative;">
+      <!-- Y axis labels -->
+      <div style="position:absolute;left:0;top:0;bottom:24px;display:flex;flex-direction:column;justify-content:space-between;font-size:11px;color:var(--muted-foreground);width:40px;text-align:right;">
+        <span>₱50k</span><span>₱37.5k</span><span>₱25k</span><span>₱12.5k</span><span>₱0</span>
+      </div>
+      <div id="bars" style="flex:1;display:flex;align-items:flex-end;gap:6px;margin-left:48px;height:156px;">
+        <!-- Jan -->
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <div style="display:flex;align-items:flex-end;gap:2px;height:140px;">
+            <div class="bar-income" style="width:14px;height:90%;"></div>
+            <div class="bar-expense" style="width:14px;height:62%;"></div>
+          </div>
+          <span style="font-size:10px;color:var(--muted-foreground);">Jan</span>
+        </div>
+        <!-- Feb -->
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <div style="display:flex;align-items:flex-end;gap:2px;height:140px;">
+            <div class="bar-income" style="width:14px;height:90%;"></div>
+            <div class="bar-expense" style="width:14px;height:57%;"></div>
+          </div>
+          <span style="font-size:10px;color:var(--muted-foreground);">Feb</span>
+        </div>
+        <!-- Mar -->
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="display:flex;align-items:flex-end;gap:2px;height:140px;"><div class="bar-income" style="width:14px;height:80%;opacity:0.4;"></div><div class="bar-expense" style="width:14px;height:50%;opacity:0.4;"></div></div><span style="font-size:10px;color:var(--muted-foreground);">Mar</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="display:flex;align-items:flex-end;gap:2px;height:140px;"><div style="width:14px;background:var(--muted);border-radius:3px 3px 0 0;height:10%;"></div><div style="width:14px;background:var(--muted);border-radius:3px 3px 0 0;height:10%;"></div></div><span style="font-size:10px;color:var(--muted-foreground);">Apr</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="display:flex;align-items:flex-end;gap:2px;height:140px;"><div style="width:14px;background:var(--muted);height:10%;border-radius:3px 3px 0 0;"></div><div style="width:14px;background:var(--muted);height:10%;border-radius:3px 3px 0 0;"></div></div><span style="font-size:10px;color:var(--muted-foreground);">May</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="display:flex;align-items:flex-end;gap:2px;height:140px;"><div style="width:14px;background:var(--muted);height:10%;border-radius:3px 3px 0 0;"></div><div style="width:14px;background:var(--muted);height:10%;border-radius:3px 3px 0 0;"></div></div><span style="font-size:10px;color:var(--muted-foreground);">Jun</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="display:flex;align-items:flex-end;gap:2px;height:140px;"><div style="width:14px;background:var(--muted);height:10%;border-radius:3px 3px 0 0;"></div><div style="width:14px;background:var(--muted);height:10%;border-radius:3px 3px 0 0;"></div></div><span style="font-size:10px;color:var(--muted-foreground);">Jul</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="display:flex;align-items:flex-end;gap:2px;height:140px;"><div style="width:14px;background:var(--muted);height:10%;border-radius:3px 3px 0 0;"></div><div style="width:14px;background:var(--muted);height:10%;border-radius:3px 3px 0 0;"></div></div><span style="font-size:10px;color:var(--muted-foreground);">Aug</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="display:flex;align-items:flex-end;gap:2px;height:140px;"><div style="width:14px;background:var(--muted);height:10%;border-radius:3px 3px 0 0;"></div><div style="width:14px;background:var(--muted);height:10%;border-radius:3px 3px 0 0;"></div></div><span style="font-size:10px;color:var(--muted-foreground);">Sep</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="display:flex;align-items:flex-end;gap:2px;height:140px;"><div style="width:14px;background:var(--muted);height:10%;border-radius:3px 3px 0 0;"></div><div style="width:14px;background:var(--muted);height:10%;border-radius:3px 3px 0 0;"></div></div><span style="font-size:10px;color:var(--muted-foreground);">Oct</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="display:flex;align-items:flex-end;gap:2px;height:140px;"><div style="width:14px;background:var(--muted);height:10%;border-radius:3px 3px 0 0;"></div><div style="width:14px;background:var(--muted);height:10%;border-radius:3px 3px 0 0;"></div></div><span style="font-size:10px;color:var(--muted-foreground);">Nov</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="display:flex;align-items:flex-end;gap:2px;height:140px;"><div style="width:14px;background:var(--muted);height:10%;border-radius:3px 3px 0 0;"></div><div style="width:14px;background:var(--muted);height:10%;border-radius:3px 3px 0 0;"></div></div><span style="font-size:10px;color:var(--muted-foreground);">Dec</span></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:16px;margin-top:8px;">
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;"><div style="width:12px;height:12px;border-radius:2px;background:oklch(0.72 0.17 162);"></div>Income</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;"><div style="width:12px;height:12px;border-radius:2px;background:oklch(0.65 0.2 25);"></div>Expenses</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+    <!-- Spending by Category -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <h2 id="cat-title" style="font-size:16px;font-weight:600;margin:0;">Spending by Category — Feb 2026</h2>
+      </div>
+      <!-- Category filter chips -->
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+        <button class="cat-chip active" id="chip-all" onclick="filterCategory('all')">All categories</button>
+        <button class="cat-chip" id="chip-food" onclick="filterCategory('food')">Food &amp; Dining</button>
+        <button class="cat-chip" id="chip-util" onclick="filterCategory('util')">Utilities</button>
+        <button class="cat-chip" id="chip-trans" onclick="filterCategory('trans')">Transportation</button>
+      </div>
+      <div id="cat-bars" style="display:flex;flex-direction:column;gap:14px;">
+        <div data-cat="food">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Food &amp; Dining</span><span style="color:var(--muted-foreground);">₱8,500 · 30%</span></div>
+          <div style="height:6px;background:var(--muted);border-radius:3px;"><div style="width:30%;height:100%;background:oklch(0.72 0.17 162);border-radius:3px;"></div></div>
+        </div>
+        <div data-cat="util">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Utilities</span><span style="color:var(--muted-foreground);">₱5,099 · 18%</span></div>
+          <div style="height:6px;background:var(--muted);border-radius:3px;"><div style="width:18%;height:100%;background:oklch(0.65 0.12 195);border-radius:3px;"></div></div>
+        </div>
+        <div data-cat="trans">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Transportation</span><span style="color:var(--muted-foreground);">₱3,200 · 11%</span></div>
+          <div style="height:6px;background:var(--muted);border-radius:3px;"><div style="width:11%;height:100%;background:oklch(0.75 0.15 85);border-radius:3px;"></div></div>
+        </div>
+        <div data-cat="ent">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Entertainment</span><span style="color:var(--muted-foreground);">₱2,218 · 8%</span></div>
+          <div style="height:6px;background:var(--muted);border-radius:3px;"><div style="width:8%;height:100%;background:oklch(0.65 0.2 25);border-radius:3px;"></div></div>
+        </div>
+        <div data-cat="shop">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Shopping</span><span style="color:var(--muted-foreground);">₱4,200 · 15%</span></div>
+          <div style="height:6px;background:var(--muted);border-radius:3px;"><div style="width:15%;height:100%;background:oklch(0.6 0.18 280);border-radius:3px;"></div></div>
+        </div>
+        <div data-cat="other">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>Others</span><span style="color:var(--muted-foreground);">₱5,533 · 18%</span></div>
+          <div style="height:6px;background:var(--muted);border-radius:3px;"><div style="width:18%;height:100%;background:oklch(0.55 0.01 260);border-radius:3px;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly trend table -->
+    <div class="card">
+      <h2 style="font-size:16px;font-weight:600;margin:0 0 4px;">Monthly Summary</h2>
+      <p style="font-size:12px;color:var(--muted-foreground);margin:0 0 16px;">Click a row to see category breakdown</p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="text-align:left;padding:8px 0;color:var(--muted-foreground);font-weight:500;">Month</th>
+            <th style="text-align:right;padding:8px 0;color:var(--muted-foreground);font-weight:500;">Income</th>
+            <th style="text-align:right;padding:8px 0;color:var(--muted-foreground);font-weight:500;">Expenses</th>
+            <th style="text-align:right;padding:8px 0;color:var(--muted-foreground);font-weight:500;">Net</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="summary-row" style="border-bottom:1px solid var(--border);" onclick="toggleMonthDetail('feb26')">
+            <td style="padding:10px 0 6px;">Feb 2026</td>
+            <td style="text-align:right;color:#4ade80;padding:10px 0 6px;">₱45,200</td>
+            <td style="text-align:right;color:#f87171;padding:10px 0 6px;">₱28,750</td>
+            <td style="text-align:right;color:#4ade80;padding:10px 0 6px;">+₱16,450</td>
+          </tr>
+          <tr id="detail-feb26" style="display:none;border-bottom:1px solid var(--border);">
+            <td colspan="4" style="padding:0 0 10px;">
+              <div class="detail-panel open">
+                <div style="font-size:12px;font-weight:600;color:var(--muted-foreground);margin-bottom:8px;">Top spending — Feb 2026</div>
+                <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
+                  <div style="display:flex;justify-content:space-between;"><span>Food &amp; Dining</span><span style="color:#f87171;">₱8,500</span></div>
+                  <div style="display:flex;justify-content:space-between;"><span>Utilities</span><span style="color:#f87171;">₱5,099</span></div>
+                  <div style="display:flex;justify-content:space-between;"><span>Shopping</span><span style="color:#f87171;">₱4,200</span></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr class="summary-row" style="border-bottom:1px solid var(--border);" onclick="toggleMonthDetail('jan26')">
+            <td style="padding:10px 0 6px;">Jan 2026</td>
+            <td style="text-align:right;color:#4ade80;padding:10px 0 6px;">₱45,200</td>
+            <td style="text-align:right;color:#f87171;padding:10px 0 6px;">₱31,200</td>
+            <td style="text-align:right;color:#4ade80;padding:10px 0 6px;">+₱14,000</td>
+          </tr>
+          <tr id="detail-jan26" style="display:none;border-bottom:1px solid var(--border);">
+            <td colspan="4" style="padding:0 0 10px;">
+              <div class="detail-panel open">
+                <div style="font-size:12px;font-weight:600;color:var(--muted-foreground);margin-bottom:8px;">Top spending — Jan 2026</div>
+                <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
+                  <div style="display:flex;justify-content:space-between;"><span>Food &amp; Dining</span><span style="color:#f87171;">₱9,200</span></div>
+                  <div style="display:flex;justify-content:space-between;"><span>Utilities</span><span style="color:#f87171;">₱5,800</span></div>
+                  <div style="display:flex;justify-content:space-between;"><span>Shopping</span><span style="color:#f87171;">₱6,100</span></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr class="summary-row" style="border-bottom:1px solid var(--border);" onclick="toggleMonthDetail('dec25')">
+            <td style="padding:10px 0 6px;">Dec 2025</td>
+            <td style="text-align:right;color:#4ade80;padding:10px 0 6px;">₱52,400</td>
+            <td style="text-align:right;color:#f87171;padding:10px 0 6px;">₱38,500</td>
+            <td style="text-align:right;color:#4ade80;padding:10px 0 6px;">+₱13,900</td>
+          </tr>
+          <tr id="detail-dec25" style="display:none;border-bottom:1px solid var(--border);">
+            <td colspan="4" style="padding:0 0 10px;">
+              <div class="detail-panel open">
+                <div style="font-size:12px;font-weight:600;color:var(--muted-foreground);margin-bottom:8px;">Top spending — Dec 2025</div>
+                <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
+                  <div style="display:flex;justify-content:space-between;"><span>Shopping</span><span style="color:#f87171;">₱14,200</span></div>
+                  <div style="display:flex;justify-content:space-between;"><span>Food &amp; Dining</span><span style="color:#f87171;">₱10,500</span></div>
+                  <div style="display:flex;justify-content:space-between;"><span>Entertainment</span><span style="color:#f87171;">₱5,800</span></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr class="summary-row" style="border-bottom:1px solid var(--border);" onclick="toggleMonthDetail('nov25')">
+            <td style="padding:10px 0 6px;">Nov 2025</td>
+            <td style="text-align:right;color:#4ade80;padding:10px 0 6px;">₱45,200</td>
+            <td style="text-align:right;color:#f87171;padding:10px 0 6px;">₱29,800</td>
+            <td style="text-align:right;color:#4ade80;padding:10px 0 6px;">+₱15,400</td>
+          </tr>
+          <tr id="detail-nov25" style="display:none;border-bottom:1px solid var(--border);">
+            <td colspan="4" style="padding:0 0 10px;">
+              <div class="detail-panel open">
+                <div style="font-size:12px;font-weight:600;color:var(--muted-foreground);margin-bottom:8px;">Top spending — Nov 2025</div>
+                <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
+                  <div style="display:flex;justify-content:space-between;"><span>Food &amp; Dining</span><span style="color:#f87171;">₱8,800</span></div>
+                  <div style="display:flex;justify-content:space-between;"><span>Utilities</span><span style="color:#f87171;">₱5,200</span></div>
+                  <div style="display:flex;justify-content:space-between;"><span>Transportation</span><span style="color:#f87171;">₱4,100</span></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr class="summary-row" onclick="toggleMonthDetail('oct25')">
+            <td style="padding:10px 0 6px;">Oct 2025</td>
+            <td style="text-align:right;color:#4ade80;padding:10px 0 6px;">₱45,200</td>
+            <td style="text-align:right;color:#f87171;padding:10px 0 6px;">₱33,100</td>
+            <td style="text-align:right;color:#4ade80;padding:10px 0 6px;">+₱12,100</td>
+          </tr>
+          <tr id="detail-oct25" style="display:none;">
+            <td colspan="4" style="padding:0 0 10px;">
+              <div class="detail-panel open">
+                <div style="font-size:12px;font-weight:600;color:var(--muted-foreground);margin-bottom:8px;">Top spending — Oct 2025</div>
+                <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
+                  <div style="display:flex;justify-content:space-between;"><span>Food &amp; Dining</span><span style="color:#f87171;">₱9,800</span></div>
+                  <div style="display:flex;justify-content:space-between;"><span>Shopping</span><span style="color:#f87171;">₱7,200</span></div>
+                  <div style="display:flex;justify-content:space-between;"><span>Utilities</span><span style="color:#f87171;">₱5,400</span></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script>
+  function openSignout() {
+    document.getElementById('signout-dialog').classList.add('open');
+  }
+  function closeSignout() {
+    document.getElementById('signout-dialog').classList.remove('open');
+  }
+
+  // Year input
+  function updateYear(val) {
+    var yr = parseInt(val);
+    if (isNaN(yr) || yr < 2020 || yr > 2099) return;
+    document.getElementById('chart-title').textContent = 'Monthly Income vs Expenses — ' + yr;
+    showToast('Showing data for ' + yr);
+  }
+
+  // Period tabs
+  function setPeriod(period) {
+    ['monthly','quarterly','yearly'].forEach(function(p) {
+      var btn = document.getElementById('tab-' + p);
+      if (p === period) btn.classList.add('active');
+      else btn.classList.remove('active');
+    });
+    var labels = {
+      monthly: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      quarterly: ['Q1','Q2','Q3','Q4'],
+      yearly: ['2022','2023','2024','2025','2026']
+    };
+    var yr = document.getElementById('year-input').value;
+    var titleMap = { monthly: 'Monthly', quarterly: 'Quarterly', yearly: 'Yearly' };
+    document.getElementById('chart-title').textContent = titleMap[period] + ' Income vs Expenses — ' + yr;
+    showToast('View changed to ' + titleMap[period].toLowerCase());
+  }
+
+  // Month detail toggle
+  function toggleMonthDetail(id) {
+    var row = document.getElementById('detail-' + id);
+    if (!row) return;
+    var isOpen = row.style.display !== 'none';
+    // Close all
+    ['feb26','jan26','dec25','nov25','oct25'].forEach(function(m) {
+      var el = document.getElementById('detail-' + m);
+      if (el) el.style.display = 'none';
+    });
+    // Open this one if it was closed
+    if (!isOpen) row.style.display = 'table-row';
+  }
+
+  // Category filter chips
+  var chipMap = { all: null, food: 'food', util: 'util', trans: 'trans' };
+  function filterCategory(filter) {
+    // Update chip states
+    Object.keys(chipMap).forEach(function(k) {
+      var chip = document.getElementById('chip-' + k);
+      if (chip) {
+        if (k === filter) chip.classList.add('active');
+        else chip.classList.remove('active');
+      }
+    });
+    // Filter bars
+    var bars = document.querySelectorAll('#cat-bars > div[data-cat]');
+    bars.forEach(function(bar) {
+      if (filter === 'all') {
+        bar.style.display = '';
+      } else {
+        bar.style.display = (bar.getAttribute('data-cat') === filter) ? '' : 'none';
+      }
+    });
+  }
+
+  // Toast
+  var toastTimer;
+  function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { t.classList.remove('show'); }, 2500);
+  }
+
+  // Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeSignout();
+  });
+</script>
+</body>
+</html>

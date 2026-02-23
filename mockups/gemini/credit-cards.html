@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>FinTrack &mdash; Credit Cards</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="tailwind-config.js"></script>
+    <link rel="stylesheet" href="index.css">
+    <style>
+        /* Card Visuals */
+        .cc-visual {
+            position: relative;
+            overflow: hidden;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            color: white;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.2);
+        }
+
+        .dark .cc-visual {
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        .cc-visual:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.3);
+        }
+
+        .dark .cc-visual:hover {
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Decoration circles inside cards */
+        .cc-visual::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+        }
+
+        .cc-visual::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            right: 40px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.05) 100%);
+        }
+
+        .cc-number {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Specific Card Gradients */
+        .cc-bdo {
+            background: linear-gradient(135deg, #1e3a8a, #0f172a);
+        }
+
+        .cc-bpi {
+            background: linear-gradient(135deg, #7f1d1d, #450a0a);
+            cursor: pointer;
+        }
+
+        .cc-metro {
+            background: linear-gradient(135deg, #064e3b, #022c22);
+            cursor: pointer;
+        }
+
+        /* Forms & Sheets */
+        .sheet {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            max-width: 440px;
+            background: var(--bg-card);
+            border-left: 1px solid var(--border);
+            z-index: 50;
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+            display: flex;
+            flex-direction: column;
+            box-shadow: none;
+        }
+
+        .sheet.open {
+            transform: translateX(0);
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .dark .sheet.open {
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.7);
+        }
+
+        .sheet-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        .sheet-footer {
+            padding: 1.25rem 1.5rem;
+            border-top: 1px solid var(--border);
+            background: var(--card);
+        }
+
+        .color-swatch {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+        }
+
+        .color-swatch.selected {
+            border-color: var(--foreground);
+            box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--foreground);
+        }
+
+        /* Modals / Dialogs */
+        .backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 40;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .backdrop.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            width: 90%;
+            max-width: 400px;
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .dialog.open {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            pointer-events: auto;
+        }
+    </style>
+</head>
+
+<body class="bg-background text-foreground antialiased selection:bg-primary selection:text-foreground pb-10 lg:pb-0">
+
+    <!-- Mobile Header -->
+    <header class="mobile-header border-b border-border bg-card/80 backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <button id="mobile-menu-btn" class="p-2 -ml-2 text-muted-foreground hover:text-foreground">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <div class="font-bold text-lg tracking-tight">FinTrack</div>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center overflow-hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="text-muted-foreground">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <div id="sidebar-overlay" class="mobile-nav-overlay lg:hidden"></div>
+
+        <aside id="sidebar" class="app-sidebar flex flex-col py-6 px-4">
+            <div class="mb-8 px-2 hidden lg:block">
+                <h1 class="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                    <div class="w-2 h-6 bg-primary rounded-sm"></div>
+                    FinTrack
+                </h1>
+                <p class="text-xs text-muted-foreground mt-1 ml-4">Personal Finance</p>
+            </div>
+
+            <nav class="flex-1 space-y-1 overflow-y-auto pr-2 -mr-2">
+                <a href="dashboard.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="transactions.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7 16V4m0 0L3 8m4-4 4 4" />
+                        <path d="M17 8v12m0 0 4-4m-4 4-4-4" />
+                    </svg>
+                    Transactions
+                </a>
+                <a href="recurring.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 2l4 4-4 4" />
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                        <path d="M7 22l-4-4 4-4" />
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                    </svg>
+                    Recurring
+                </a>
+                <a href="budgets.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 9a7 7 0 1 0-13.6 2.3C6.4 14.4 8 19 8 19h8s1.6-4.6 2.6-7.7" />
+                        <path d="M12 22v-3" />
+                        <path d="M9 19h6" />
+                    </svg>
+                    Budgets
+                </a>
+                <a href="analytics.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10" />
+                        <line x1="12" y1="20" x2="12" y2="4" />
+                        <line x1="6" y1="20" x2="6" y2="14" />
+                    </svg>
+                    Analytics
+                </a>
+
+                <div class="my-4 border-t border-border px-3 pt-4">
+                    <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Features</span>
+                </div>
+
+                <a href="scan.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                        <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                        <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                        <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                        <line x1="7" y1="12" x2="17" y2="12" />
+                    </svg>
+                    Scan Receipt
+                </a>
+
+                <a href="accounts.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 12V22H4V12" />
+                        <path d="M22 7H2v5h20V7z" />
+                        <path d="M12 22V7" />
+                        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+                    </svg>
+                    Accounts
+                </a>
+
+                <!-- Credit Cards (active) -->
+                <a href="credit-cards.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium bg-primary/10 text-primary transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect class="text-foreground shrink-0" ry="2" />
+                        <line x1="1" y1="10" x2="23" y2="10" />
+                    </svg>
+                    Credit Cards
+                </a>
+
+                <a href="statements.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z" />
+                        <line x1="8" y1="10" x2="16" y2="10" />
+                        <line x1="8" y1="14" x2="16" y2="14" />
+                    </svg>
+                    Statements
+                </a>
+                <a href="documents.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                        <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                    Documents
+                </a>
+            </nav>
+
+            <div class="mt-auto pt-4 flex flex-col gap-1">
+                <a href="notifications.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                    Notifications
+                    <span
+                        class="absolute right-3 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-4 text-center">3</span>
+                </a>
+                <a href="settings.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                    Settings
+                </a>
+                <button onclick="document.documentElement.classList.toggle('dark');"
+                    class="w-full flex items-center justify-between gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors group">
+                    <div class="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="dark:hidden">
+                            <circle cx="12" cy="12" r="5" fill="currentColor"/>
+                            <line x1="12" y1="1" x2="12" y2="3" />
+                            <line x1="12" y1="21" x2="12" y2="23" />
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                            <line x1="1" y1="12" x2="3" y2="12" />
+                            <line x1="21" y1="12" x2="23" y2="12" />
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="hidden dark:block">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                        </svg>
+                        <span class="dark:hidden">Light Mode</span>
+                        <span class="hidden dark:inline">Dark Mode</span>
+                    </div>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="app-main overflow-y-auto px-5 lg:px-10 py-6 lg:py-10">
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold tracking-tight text-foreground mb-1">Credit Cards</h1>
+                    <p class="text-sm text-muted-foreground">Manage your cards, limits, and billing cycles.</p>
+                </div>
+                <button onclick="openSheet('add')"
+                    class="btn-primary w-full sm:w-auto flex items-center justify-center gap-2 py-2.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Add Card
+                </button>
+            </div>
+
+            <!-- Card Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 xlg:grid-cols-3 gap-6">
+
+                <!-- BDO Visa Platinum -->
+                <div class="flex flex-col gap-4">
+                    <!-- Premium Card Visual -->
+                    <div class="cc-visual cc-bdo" onclick="openSheet('edit-bdo')">
+                        <div class="flex justify-between items-start z-10 relative">
+                            <div class="text-white font-medium drop-shadow-sm truncate pr-4">BDO Visa Platinum
+                            </div>
+                            <!-- Visa Logo -->
+                            <svg width="40" height="16" viewBox="0 0 40 16" fill="white"
+                                class="flex-shrink-0 opacity-90">
+                                <path
+                                    d="M15.4 0.3L10.3 15.7H6.5L4.2 3.6C4 2.8 3.8 2.5 3.1 2.1C1.9 1.4 0.5 0.9 0 0.7L0.1 0.3H5.6C6.3 0.3 7 0.8 7.2 1.6L8.6 10.9L11.7 0.3H15.4ZM28.5 10.8C28.5 6.7 22.8 6.5 22.8 4.7C22.8 4.1 23.4 3.5 24.3 3.3C24.8 3.2 26.2 3.1 28.5 4.2L29.2 0.7C28 0.3 26.4 0 24.8 0C21.3 0 18.8 1.9 18.8 4.6C18.8 6.6 20.6 7.7 22 8.4C23.4 9.1 23.9 9.5 23.9 10.1C23.9 11 22.8 11.4 21.8 11.4C19.8 11.4 18.8 10.9 17.6 10.3L16.9 13.9C18.1 14.5 20.2 15 22.4 15.1C26.2 15.1 28.5 13.2 28.5 10.8ZM36.9 15.7H40L37.4 0.3H34.3C33.7 0.3 33.1 0.7 32.9 1.3L28.1 15.7H32L32.8 13.5H37.5L36.9 15.7ZM33.9 10.5L35.7 5.5L36.7 10.5H33.9ZM18.1 15.7H14.5L11.3 0.3H14.9L18.1 15.7Z" />
+                            </svg>
+                        </div>
+                        <div class="cc-number z-10 relative mt-8 mb-4">
+                            <span>&bull;&bull;&bull;&bull;</span>
+                            <span>&bull;&bull;&bull;&bull;</span>
+                            <span>&bull;&bull;&bull;&bull;</span>
+                            <span>3892</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-white/80 z-10 relative">
+                            <div>
+                                <div class="uppercase tracking-widest text-[9px] mb-0.5 opacity-80">Card Holder</div>
+                                <div class="font-medium text-white shadow-sm">Rommel Porras</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="uppercase tracking-widest text-[9px] mb-0.5 opacity-80">Expires</div>
+                                <div class="font-medium text-white shadow-sm text-right">08/28</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Card Details Box -->
+                    <div class="card p-5">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="font-semibold text-foreground">BDO Visa Platinum</span>
+                            <div class="flex gap-1 -mt-1 -mr-2">
+                                <button
+                                    class="p-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
+                                    onclick="openSheet('edit-bdo')" title="Edit"><svg xmlns="http://www.w3.org/2000/svg"
+                                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M12 20h9" />
+                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                                    </svg></button>
+                                <button
+                                    class="p-2 text-muted-foreground hover:text-red-400 rounded-md hover:bg-muted transition-colors"
+                                    onclick="showDeleteDialog('BDO Visa Platinum')" title="Delete"><svg
+                                        xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 6h18" />
+                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                    </svg></button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-y-4 gap-x-2 text-sm mb-5">
+                            <div>
+                                <div class="text-xs text-muted-foreground mb-1">Credit Limit</div>
+                                <div class="font-semibold text-foreground">&#8369;150,000.00</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-muted-foreground mb-1">Current Balance</div>
+                                <div class="font-semibold text-red-400">&#8369;87,450.00</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-muted-foreground mb-1">Statement Day</div>
+                                <div class="text-foreground">1st of month</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-muted-foreground mb-1">Due Day</div>
+                                <div class="text-foreground">25th of month</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs text-muted-foreground mb-1.5 font-medium">
+                                <span>Utilization</span>
+                                <span>58%</span>
+                            </div>
+                            <div class="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                <div class="h-full bg-red-400 rounded-full" style="width: 58%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BPI Mastercard Gold -->
+                <div class="flex flex-col gap-4">
+                    <!-- Premium Card Visual -->
+                    <div class="cc-visual cc-bpi" onclick="openSheet('edit-bpi')">
+                        <div class="flex justify-between items-start z-10 relative">
+                            <div class="text-white font-medium drop-shadow-sm truncate pr-4">BPI Mastercard Gold
+                            </div>
+                            <!-- MC Logo -->
+                            <svg width="34" height="20" viewBox="0 0 40 24" fill="none"
+                                class="flex-shrink-0 opacity-90">
+                                <circle cx="14" cy="12" r="11" fill="#EB001B" opacity="0.9" />
+                                <circle cx="26" cy="12" r="11" fill="#F79E1B" opacity="0.9" />
+                            </svg>
+                        </div>
+                        <div class="cc-number z-10 relative mt-8 mb-4">
+                            <span>&bull;&bull;&bull;&bull;</span>
+                            <span>&bull;&bull;&bull;&bull;</span>
+                            <span>&bull;&bull;&bull;&bull;</span>
+                            <span>5517</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-white/80 z-10 relative">
+                            <div>
+                                <div class="uppercase tracking-widest text-[9px] mb-0.5 opacity-80">Card Holder</div>
+                                <div class="font-medium text-white shadow-sm">Rommel Porras</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="uppercase tracking-widest text-[9px] mb-0.5 opacity-80">Expires</div>
+                                <div class="font-medium text-white shadow-sm text-right">03/27</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Card Details Box -->
+                    <div class="card p-5">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="font-semibold text-foreground">BPI Mastercard Gold</span>
+                            <div class="flex gap-1 -mt-1 -mr-2">
+                                <button
+                                    class="p-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
+                                    onclick="openSheet('edit-bpi')" title="Edit"><svg xmlns="http://www.w3.org/2000/svg"
+                                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M12 20h9" />
+                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                                    </svg></button>
+                                <button
+                                    class="p-2 text-muted-foreground hover:text-red-400 rounded-md hover:bg-muted transition-colors"
+                                    onclick="showDeleteDialog('BPI Mastercard Gold')" title="Delete"><svg
+                                        xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 6h18" />
+                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                    </svg></button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-y-4 gap-x-2 text-sm mb-5">
+                            <div>
+                                <div class="text-xs text-muted-foreground mb-1">Credit Limit</div>
+                                <div class="font-semibold text-foreground">&#8369;80,000.00</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-muted-foreground mb-1">Current Balance</div>
+                                <div class="font-semibold text-yellow-400">&#8369;23,400.00</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-muted-foreground mb-1">Statement Day</div>
+                                <div class="text-foreground">10th of month</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-muted-foreground mb-1">Due Day</div>
+                                <div class="text-foreground">5th of month</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs text-muted-foreground mb-1.5 font-medium">
+                                <span>Utilization</span>
+                                <span>29%</span>
+                            </div>
+                            <div class="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                <div class="h-full bg-yellow-400 rounded-full" style="width: 29%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metrobank World Mastercard -->
+                <div class="flex flex-col gap-4">
+                    <!-- Premium Card Visual -->
+                    <div class="cc-visual cc-metro" onclick="openSheet('edit-metro')">
+                        <div class="flex justify-between items-start z-10 relative">
+                            <div class="text-white font-medium drop-shadow-sm truncate pr-4">Metrobank World MC
+                            </div>
+                            <!-- MC Logo -->
+                            <svg width="34" height="20" viewBox="0 0 40 24" fill="none"
+                                class="flex-shrink-0 opacity-90">
+                                <circle cx="14" cy="12" r="11" fill="#EB001B" opacity="0.9" />
+                                <circle cx="26" cy="12" r="11" fill="#F79E1B" opacity="0.9" />
+                            </svg>
+                        </div>
+                        <div class="cc-number z-10 relative mt-8 mb-4">
+                            <span>&bull;&bull;&bull;&bull;</span>
+                            <span>&bull;&bull;&bull;&bull;</span>
+                            <span>&bull;&bull;&bull;&bull;</span>
+                            <span>1100</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-white/80 z-10 relative">
+                            <div>
+                                <div class="uppercase tracking-widest text-[9px] mb-0.5 opacity-80">Card Holder</div>
+                                <div class="font-medium text-white shadow-sm">Rommel Porras</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="uppercase tracking-widest text-[9px] mb-0.5 opacity-80">Expires</div>
+                                <div class="font-medium text-white shadow-sm text-right">11/29</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Card Details Box -->
+                    <div class="card p-5">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="font-semibold text-foreground">Metrobank World Mastercard</span>
+                            <div class="flex gap-1 -mt-1 -mr-2">
+                                <button
+                                    class="p-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
+                                    onclick="openSheet('edit-metro')" title="Edit"><svg
+                                        xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 20h9" />
+                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                                    </svg></button>
+                                <button
+                                    class="p-2 text-muted-foreground hover:text-red-400 rounded-md hover:bg-muted transition-colors"
+                                    onclick="showDeleteDialog('Metrobank World Mastercard')" title="Delete"><svg
+                                        xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 6h18" />
+                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                    </svg></button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-y-4 gap-x-2 text-sm mb-5">
+                            <div>
+                                <div class="text-xs text-muted-foreground mb-1">Credit Limit</div>
+                                <div class="font-semibold text-foreground">&#8369;200,000.00</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-muted-foreground mb-1">Current Balance</div>
+                                <div class="font-semibold text-emerald-400">&#8369;45,200.00</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-muted-foreground mb-1">Statement Day</div>
+                                <div class="text-foreground">1st of month</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-muted-foreground mb-1">Due Day</div>
+                                <div class="text-foreground">28th of month</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs text-muted-foreground mb-1.5 font-medium">
+                                <span>Utilization</span>
+                                <span>23%</span>
+                            </div>
+                            <div class="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                <div class="h-full bg-emerald-400 rounded-full" style="width: 23%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+
+    <!-- ==================== OVERLAYS & MODALS ==================== -->
+    <div id="backdrop" class="backdrop" onclick="closeOverlays()"></div>
+
+    <!-- ADD CARD SHEET -->
+    <div id="sheet-add" class="sheet flex flex-col">
+        <div
+            class="px-6 py-5 border-b border-border flex justify-between items-center bg-card/80 backdrop-blur-sm z-10 sticky top-0">
+            <h2 class="text-lg font-semibold text-foreground">Add Credit Card</h2>
+            <button onclick="closeOverlays()"
+                class="text-muted-foreground hover:text-foreground transition-colors bg-muted/50 hover:bg-muted p-1.5 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+            </button>
+        </div>
+        <div class="sheet-body space-y-5">
+            <div class="space-y-1.5">
+                <label class="block text-sm font-medium text-muted-foreground">Card Name</label>
+                <input
+                    class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                    type="text" placeholder="e.g. BDO Visa Platinum" />
+            </div>
+            <div class="space-y-1.5">
+                <label class="block text-sm font-medium text-muted-foreground">Bank</label>
+                <select
+                    class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none">
+                    <option>BDO Unibank</option>
+                    <option>BPI (Bank of the Philippine Islands)</option>
+                    <option>Metrobank</option>
+                    <option>Security Bank</option>
+                    <option>UnionBank</option>
+                    <option>RCBC</option>
+                    <option>Citibank</option>
+                    <option>HSBC</option>
+                </select>
+            </div>
+            <div class="flex gap-4">
+                <div class="space-y-1.5 flex-1">
+                    <label class="block text-sm font-medium text-muted-foreground">Last 4 Digits</label>
+                    <input
+                        class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all font-mono"
+                        type="text" placeholder="3892" maxlength="4" />
+                </div>
+                <div class="space-y-1.5 flex-1">
+                    <label class="block text-sm font-medium text-muted-foreground">Network</label>
+                    <select
+                        class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all appearance-none">
+                        <option>Visa</option>
+                        <option>Mastercard</option>
+                        <option>Amex</option>
+                        <option>JCB</option>
+                    </select>
+                </div>
+            </div>
+            <div class="space-y-1.5">
+                <label class="block text-sm font-medium text-muted-foreground">Credit Limit (&#8369;)</label>
+                <div class="relative">
+                    <span
+                        class="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">&#8369;</span>
+                    <input
+                        class="w-full bg-muted/50 border border-border rounded-lg pl-8 pr-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all font-mono"
+                        type="number" placeholder="150000" />
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-medium text-muted-foreground">Statement Day</label>
+                    <input
+                        class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all"
+                        type="number" min="1" max="31" placeholder="1" />
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-medium text-muted-foreground">Due Day</label>
+                    <input
+                        class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all"
+                        type="number" min="1" max="31" placeholder="25" />
+                </div>
+            </div>
+            <div class="space-y-2 pt-2">
+                <label class="block text-sm font-medium text-muted-foreground">Card Theme Options</label>
+                <div class="flex gap-2.5">
+                    <div class="color-swatch selected" style="background: linear-gradient(135deg, #1e3a8a, #0f172a);"
+                        onclick="selectColor(this)"></div>
+                    <div class="color-swatch" style="background: linear-gradient(135deg, #7f1d1d, #450a0a);"
+                        onclick="selectColor(this)"></div>
+                    <div class="color-swatch" style="background: linear-gradient(135deg, #064e3b, #022c22);"
+                        onclick="selectColor(this)"></div>
+                    <div class="color-swatch" style="background: linear-gradient(135deg, #1e1b4b, #0a0a1a);"
+                        onclick="selectColor(this)"></div>
+                    <div class="color-swatch" style="background: linear-gradient(135deg, #581c87, #2e1065);"
+                        onclick="selectColor(this)"></div>
+                    <div class="color-swatch" style="background: linear-gradient(135deg, #854d0e, #422006);"
+                        onclick="selectColor(this)"></div>
+                </div>
+            </div>
+        </div>
+        <div class="sheet-footer flex gap-3">
+            <button class="btn-outline flex-1 py-2" onclick="closeOverlays()">Cancel</button>
+            <button class="btn-primary flex-1 py-2" onclick="closeOverlays()">Add Card</button>
+        </div>
+    </div>
+
+    <!-- EDIT SHEET (BDO Template) -->
+    <div id="sheet-edit-bdo" class="sheet flex flex-col">
+        <div
+            class="px-6 py-5 border-b border-border flex justify-between items-center bg-card/80 backdrop-blur-sm z-10 sticky top-0">
+            <h2 class="text-lg font-semibold text-foreground">Edit Credit Card</h2>
+            <button onclick="closeOverlays()"
+                class="text-muted-foreground hover:text-foreground transition-colors bg-muted/50 hover:bg-muted p-1.5 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+            </button>
+        </div>
+        <div class="sheet-body space-y-5">
+            <div class="space-y-1.5">
+                <label class="block text-sm font-medium text-muted-foreground">Card Name</label>
+                <input
+                    class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all"
+                    type="text" value="BDO Visa Platinum" />
+            </div>
+            <div class="space-y-1.5">
+                <label class="block text-sm font-medium text-muted-foreground">Bank</label>
+                <select
+                    class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all appearance-none">
+                    <option selected>BDO Unibank</option>
+                    <option>BPI</option>
+                    <option>Metrobank</option>
+                </select>
+            </div>
+            <div class="flex gap-4">
+                <div class="space-y-1.5 flex-1">
+                    <label class="block text-sm font-medium text-muted-foreground">Last 4 Digits</label>
+                    <input
+                        class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all font-mono"
+                        type="text" value="3892" maxlength="4" />
+                </div>
+                <div class="space-y-1.5 flex-1">
+                    <label class="block text-sm font-medium text-muted-foreground">Network</label>
+                    <select
+                        class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all appearance-none">
+                        <option selected>Visa</option>
+                        <option>Mastercard</option>
+                    </select>
+                </div>
+            </div>
+            <div class="space-y-1.5">
+                <label class="block text-sm font-medium text-muted-foreground">Credit Limit (&#8369;)</label>
+                <div class="relative">
+                    <span
+                        class="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">&#8369;</span>
+                    <input
+                        class="w-full bg-muted/50 border border-border rounded-lg pl-8 pr-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all font-mono"
+                        type="number" value="150000" />
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-medium text-muted-foreground">Statement Day</label>
+                    <input
+                        class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all"
+                        type="number" min="1" max="31" value="1" />
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-medium text-muted-foreground">Due Day</label>
+                    <input
+                        class="w-full bg-muted/50 border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-all"
+                        type="number" min="1" max="31" value="25" />
+                </div>
+            </div>
+        </div>
+        <div class="sheet-footer flex gap-3">
+            <button class="btn-outline flex-1 py-2" onclick="closeOverlays()">Cancel</button>
+            <button class="btn-primary flex-1 py-2" onclick="closeOverlays()">Save Changes</button>
+        </div>
+    </div>
+
+    <!-- DELETE DIALOG -->
+    <div id="dialog-delete" class="dialog">
+        <div class="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18" />
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+            </svg>
+        </div>
+        <h3 class="text-xl font-bold text-foreground mb-2">Delete Credit Card?</h3>
+        <p class="text-sm text-muted-foreground mb-6">Are you sure you want to remove <strong id="delete-card-name"
+                class="text-foreground font-semibold"></strong>? This action cannot be undone and will unlink associated
+            transactions.</p>
+        <div class="flex gap-3 w-full">
+            <button class="btn-outline flex-1 py-2.5" onclick="closeOverlays()">Cancel</button>
+            <button
+                class="bg-destructive hover:bg-red-600 text-foreground font-medium rounded-lg flex-1 py-2.5 transition-colors"
+                onclick="closeOverlays()">Delete Data</button>
+        </div>
+    </div>
+
+
+    <script>
+        const backdrop = document.getElementById('backdrop');
+
+        function openSheet(id) {
+            closeOverlays();
+            const sheet = document.getElementById('sheet-' + id);
+            if (sheet) {
+                backdrop.classList.add('open');
+                sheet.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function showDeleteDialog(cardName) {
+            closeOverlays();
+            document.getElementById('delete-card-name').textContent = cardName;
+            const dialog = document.getElementById('dialog-delete');
+            backdrop.classList.add('open');
+            dialog.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeOverlays() {
+            backdrop.classList.remove('open');
+            document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
+            document.querySelectorAll('.dialog').forEach(d => d.classList.remove('open'));
+            document.body.style.overflow = '';
+        }
+
+        function selectColor(element) {
+            const swatches = element.parentElement.querySelectorAll('.color-swatch');
+            swatches.forEach(s => s.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        // Mobile Sidebar Logic
+        const mobileBtn = document.getElementById('mobile-menu-btn');
+        const sidebar = document.getElementById('sidebar');
+        const navOverlay = document.getElementById('sidebar-overlay');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            navOverlay.classList.toggle('open');
+            document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
+        }
+        if (mobileBtn && navOverlay) {
+            mobileBtn.addEventListener('click', toggleSidebar);
+            navOverlay.addEventListener('click', toggleSidebar);
+        }
+    </script>
+</body>
+
+</html>

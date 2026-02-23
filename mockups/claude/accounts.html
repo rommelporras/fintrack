@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinTrack — Accounts</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            background: 'oklch(0.14 0.005 260)',
+            foreground: 'oklch(0.95 0.005 260)',
+            card: 'oklch(0.18 0.005 260)',
+            primary: 'oklch(0.72 0.17 162)',
+            'primary-foreground': 'oklch(0.14 0.005 260)',
+            sidebar: 'oklch(0.12 0.005 260)',
+            border: 'oklch(0.25 0.005 260)',
+            muted: 'oklch(0.22 0.005 260)',
+            'muted-foreground': 'oklch(0.65 0.01 260)',
+            destructive: 'oklch(0.65 0.2 25)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --background: oklch(0.14 0.005 260);
+      --foreground: oklch(0.95 0.005 260);
+      --card: oklch(0.18 0.005 260);
+      --primary: oklch(0.72 0.17 162);
+      --primary-foreground: oklch(0.14 0.005 260);
+      --muted: oklch(0.22 0.005 260);
+      --muted-foreground: oklch(0.65 0.01 260);
+      --border: oklch(0.25 0.005 260);
+      --input: oklch(0.25 0.005 260);
+      --sidebar: oklch(0.12 0.005 260);
+      --destructive: oklch(0.65 0.2 25);
+      --radius: 0.625rem;
+    }
+    body { background: var(--background); color: var(--foreground); font-family: system-ui, sans-serif; margin: 0; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); }
+    .badge-green { background: #dcfce7; color: #166534; display: inline-flex; align-items: center; border-radius: 9999px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .btn-primary { background: var(--primary); color: var(--primary-foreground); border: none; border-radius: var(--radius); padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .btn-outline { background: transparent; color: var(--foreground); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 12px; font-size: 13px; font-weight: 500; cursor: pointer; }
+    .btn-destructive { background: var(--destructive); color: white; border: none; border-radius: var(--radius); padding: 6px 12px; font-size: 13px; font-weight: 500; cursor: pointer; }
+    .icon-btn { background: transparent; border: 1px solid var(--border); border-radius: 6px; padding: 5px; cursor: pointer; color: var(--muted-foreground); display: inline-flex; align-items: center; justify-content: center; }
+    .icon-btn:hover { background: var(--muted); color: var(--foreground); }
+    .form-input { background: var(--input); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; font-size: 13px; color: var(--foreground); width: 100%; box-sizing: border-box; }
+    .form-input:focus { outline: 2px solid var(--primary); outline-offset: -2px; }
+    select.form-input option { background: var(--card); }
+  </style>
+</head>
+<body class="flex min-h-screen">
+
+  <!-- Sidebar -->
+  <aside style="width:256px;min-width:256px;background:var(--sidebar);border-right:1px solid var(--border);" class="flex flex-col py-4 px-3 min-h-screen">
+    <div class="mb-6 px-3">
+      <h1 class="text-xl font-bold tracking-tight">FinTrack</h1>
+      <p class="text-xs" style="color:var(--muted-foreground)">Personal Finance</p>
+    </div>
+    <nav class="flex-1 space-y-1">
+      <a href="dashboard.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="transactions.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4m0 0L3 8m4-4 4 4"/><path d="M17 8v12m0 0 4-4m-4 4-4-4"/></svg>
+        Transactions
+      </a>
+      <a href="recurring.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        Recurring
+      </a>
+      <a href="budgets.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9a7 7 0 1 0-13.6 2.3C6.4 14.4 8 19 8 19h8s1.6-4.6 2.6-7.7"/><path d="M12 22v-3"/><path d="M9 19h6"/></svg>
+        Budgets
+      </a>
+      <a href="analytics.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </a>
+      <a href="scan.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+        Scan Receipt
+      </a>
+      <!-- Accounts (active) -->
+      <a href="accounts.html" style="background:var(--primary);color:var(--primary-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+        Accounts
+      </a>
+      <a href="credit-cards.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Credit Cards
+      </a>
+      <a href="statements.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/></svg>
+        Statements
+      </a>
+      <a href="documents.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Documents
+      </a>
+      <a href="notifications.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Notifications
+        <span style="background:var(--destructive);color:white;margin-left:auto;" class="inline-flex items-center justify-center rounded-full text-xs font-semibold px-1.5 py-0.5 min-w-5">3</span>
+      </a>
+      <a href="settings.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </a>
+      <a href="guide.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        User Guide
+      </a>
+    </nav>
+    <button style="color:var(--muted-foreground);background:transparent;border:none;cursor:pointer;" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium mt-2">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign out
+    </button>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-y-auto p-6 space-y-6">
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl font-bold">Accounts</h1>
+      <button class="btn-primary flex items-center gap-1.5" onclick="openAddSheet()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Account
+      </button>
+    </div>
+
+    <!-- Account Cards Grid -->
+    <div class="grid grid-cols-2 gap-4">
+
+      <!-- BPI Savings -->
+      <div class="card p-5 relative">
+        <div style="position:absolute;top:12px;right:12px;display:flex;gap:6px;">
+          <button class="icon-btn" title="Edit account" onclick="openEditSheet('BPI Savings','Bank of the Philippine Islands','Savings','124500.00','PHP')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="icon-btn" title="Delete account" style="color:var(--destructive);border-color:var(--destructive);" onclick="openDeleteConfirm('BPI Savings')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>
+        <div class="flex items-start gap-3 mb-4">
+          <div style="width:40px;height:40px;background:oklch(0.25 0.005 260);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="oklch(0.72 0.17 162)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/></svg>
+          </div>
+          <div>
+            <h3 class="font-semibold">BPI Savings</h3>
+            <p class="text-xs" style="color:var(--muted-foreground)">Savings Account</p>
+          </div>
+        </div>
+        <p class="text-2xl font-bold mb-2">₱124,500.00</p>
+        <div class="flex items-center justify-between">
+          <span class="text-xs" style="color:var(--muted-foreground)">Current balance</span>
+          <span class="badge-green">Active</span>
+        </div>
+      </div>
+
+      <!-- BPI Checking -->
+      <div class="card p-5 relative">
+        <div style="position:absolute;top:12px;right:12px;display:flex;gap:6px;">
+          <button class="icon-btn" title="Edit account" onclick="openEditSheet('BPI Checking','Bank of the Philippine Islands','Checking','18320.00','PHP')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="icon-btn" title="Delete account" style="color:var(--destructive);border-color:var(--destructive);" onclick="openDeleteConfirm('BPI Checking')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>
+        <div class="flex items-start gap-3 mb-4">
+          <div style="width:40px;height:40px;background:oklch(0.25 0.005 260);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="oklch(0.65 0.12 195)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/></svg>
+          </div>
+          <div>
+            <h3 class="font-semibold">BPI Checking</h3>
+            <p class="text-xs" style="color:var(--muted-foreground)">Checking Account</p>
+          </div>
+        </div>
+        <p class="text-2xl font-bold mb-2">₱18,320.00</p>
+        <div class="flex items-center justify-between">
+          <span class="text-xs" style="color:var(--muted-foreground)">Current balance</span>
+          <span class="badge-green">Active</span>
+        </div>
+      </div>
+
+      <!-- Cash -->
+      <div class="card p-5 relative">
+        <div style="position:absolute;top:12px;right:12px;display:flex;gap:6px;">
+          <button class="icon-btn" title="Edit account" onclick="openEditSheet('Cash','','Cash','3200.00','PHP')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="icon-btn" title="Delete account" style="color:var(--destructive);border-color:var(--destructive);" onclick="openDeleteConfirm('Cash')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>
+        <div class="flex items-start gap-3 mb-4">
+          <div style="width:40px;height:40px;background:oklch(0.25 0.005 260);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+          </div>
+          <div>
+            <h3 class="font-semibold">Cash</h3>
+            <p class="text-xs" style="color:var(--muted-foreground)">Cash on Hand</p>
+          </div>
+        </div>
+        <p class="text-2xl font-bold mb-2">₱3,200.00</p>
+        <div class="flex items-center justify-between">
+          <span class="text-xs" style="color:var(--muted-foreground)">Current balance</span>
+          <span class="badge-green">Active</span>
+        </div>
+      </div>
+
+      <!-- Emergency Fund -->
+      <div class="card p-5 relative">
+        <div style="position:absolute;top:12px;right:12px;display:flex;gap:6px;">
+          <button class="icon-btn" title="Edit account" onclick="openEditSheet('Emergency Fund','Metrobank','Savings','50000.00','PHP')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="icon-btn" title="Delete account" style="color:var(--destructive);border-color:var(--destructive);" onclick="openDeleteConfirm('Emergency Fund')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>
+        <div class="flex items-start gap-3 mb-4">
+          <div style="width:40px;height:40px;background:oklch(0.25 0.005 260);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/></svg>
+          </div>
+          <div>
+            <h3 class="font-semibold">Emergency Fund</h3>
+            <p class="text-xs" style="color:var(--muted-foreground)">Savings Account</p>
+          </div>
+        </div>
+        <p class="text-2xl font-bold mb-2">₱50,000.00</p>
+        <div class="flex items-center justify-between">
+          <span class="text-xs" style="color:var(--muted-foreground)">Current balance</span>
+          <span class="badge-green">Active</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Net Worth Summary -->
+    <div class="card p-5" style="border-top: 3px solid var(--primary);">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium" style="color:var(--muted-foreground)">Total across 4 accounts</p>
+          <p class="text-3xl font-bold mt-1">₱196,020.00</p>
+        </div>
+        <div class="text-right space-y-1">
+          <p class="text-xs" style="color:var(--muted-foreground)">Savings: ₱174,500.00</p>
+          <p class="text-xs" style="color:var(--muted-foreground)">Checking: ₱18,320.00</p>
+          <p class="text-xs" style="color:var(--muted-foreground)">Cash: ₱3,200.00</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Sheet overlay (backdrop) -->
+  <div id="sheet-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:50;" onclick="closeSheet()"></div>
+
+  <!-- Add Account Sheet -->
+  <div id="add-sheet" style="display:none;position:fixed;top:0;right:0;height:100%;width:420px;max-width:95vw;background:var(--card);border-left:1px solid var(--border);z-index:51;padding:24px;box-sizing:border-box;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <h2 style="font-size:18px;font-weight:600;margin:0 0 4px;">New Account</h2>
+        <p style="font-size:13px;color:var(--muted-foreground);margin:0">Add a new bank account or wallet.</p>
+      </div>
+      <button onclick="closeSheet()" style="background:transparent;border:none;cursor:pointer;color:var(--muted-foreground);font-size:18px;line-height:1;padding:4px;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Account Name</label>
+        <input class="form-input" placeholder="e.g. BDO Savings" />
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Bank Name</label>
+        <input class="form-input" placeholder="e.g. BDO Unibank" />
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Account Type</label>
+        <select class="form-input">
+          <option>Savings</option>
+          <option>Checking</option>
+          <option>GCash</option>
+          <option>E-wallet</option>
+          <option>Cash</option>
+          <option>Investment</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Current Balance (₱)</label>
+        <input class="form-input" type="number" placeholder="0.00" />
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Currency</label>
+        <select class="form-input">
+          <option selected>PHP — Philippine Peso</option>
+          <option>USD — US Dollar</option>
+          <option>EUR — Euro</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;padding-top:4px;">
+        <button class="btn-primary" style="flex:1;" onclick="closeSheet()">Save Account</button>
+        <button class="btn-outline" onclick="closeSheet()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Account Sheet -->
+  <div id="edit-sheet" style="display:none;position:fixed;top:0;right:0;height:100%;width:420px;max-width:95vw;background:var(--card);border-left:1px solid var(--border);z-index:51;padding:24px;box-sizing:border-box;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <h2 style="font-size:18px;font-weight:600;margin:0 0 4px;">Edit Account</h2>
+        <p style="font-size:13px;color:var(--muted-foreground);margin:0">Update the account details below.</p>
+      </div>
+      <button onclick="closeSheet()" style="background:transparent;border:none;cursor:pointer;color:var(--muted-foreground);font-size:18px;line-height:1;padding:4px;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Account Name</label>
+        <input class="form-input" id="edit-name" value="BPI Savings" />
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Bank Name</label>
+        <input class="form-input" id="edit-bank" value="Bank of the Philippine Islands" />
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Account Type</label>
+        <select class="form-input" id="edit-type">
+          <option>Savings</option>
+          <option>Checking</option>
+          <option>GCash</option>
+          <option>E-wallet</option>
+          <option>Cash</option>
+          <option>Investment</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Current Balance (₱)</label>
+        <input class="form-input" id="edit-balance" type="number" value="124500.00" />
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Currency</label>
+        <select class="form-input" id="edit-currency">
+          <option selected>PHP — Philippine Peso</option>
+          <option>USD — US Dollar</option>
+          <option>EUR — Euro</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;padding-top:4px;">
+        <button class="btn-primary" style="flex:1;" onclick="closeSheet()">Save Changes</button>
+        <button class="btn-outline" onclick="closeSheet()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:60;align-items:center;justify-content:center;" onclick="closeDeleteConfirm()">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:0.625rem;padding:24px;width:400px;max-width:90vw;" onclick="event.stopPropagation()">
+      <h3 style="font-size:16px;font-weight:600;margin:0 0 8px;">Delete Account?</h3>
+      <p style="font-size:13px;color:var(--muted-foreground);margin:0 0 6px;">You are about to delete <strong id="delete-account-name">this account</strong>.</p>
+      <p style="font-size:13px;color:var(--muted-foreground);margin:0 0 20px;">This action cannot be undone. All associated transaction history will remain but the account will be removed.</p>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn-outline" onclick="closeDeleteConfirm()">Cancel</button>
+        <button class="btn-destructive" onclick="closeDeleteConfirm()">Delete Account</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Sheet open/close helpers
+    function openSheet(id) {
+      document.getElementById('sheet-overlay').style.display = 'block';
+      document.getElementById(id).style.display = 'block';
+    }
+    function closeSheet() {
+      document.getElementById('sheet-overlay').style.display = 'none';
+      document.getElementById('add-sheet').style.display = 'none';
+      document.getElementById('edit-sheet').style.display = 'none';
+    }
+
+    // Open Add Account sheet
+    function openAddSheet() {
+      openSheet('add-sheet');
+    }
+
+    // Open Edit Account sheet pre-filled
+    function openEditSheet(name, bank, type, balance, currency) {
+      document.getElementById('edit-name').value = name;
+      document.getElementById('edit-bank').value = bank;
+      document.getElementById('edit-balance').value = balance;
+
+      // Set type select
+      var typeSelect = document.getElementById('edit-type');
+      for (var i = 0; i < typeSelect.options.length; i++) {
+        if (typeSelect.options[i].text === type) { typeSelect.selectedIndex = i; break; }
+      }
+
+      openSheet('edit-sheet');
+    }
+
+    // Delete confirmation modal
+    function openDeleteConfirm(accountName) {
+      document.getElementById('delete-account-name').textContent = '"' + accountName + '"';
+      document.getElementById('delete-modal').style.display = 'flex';
+    }
+    function closeDeleteConfirm() {
+      document.getElementById('delete-modal').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

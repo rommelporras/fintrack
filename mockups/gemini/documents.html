@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>FinTrack &mdash; Documents</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="tailwind-config.js"></script>
+    <link rel="stylesheet" href="index.css">
+    <style>
+        /* Stats Cards Gradients */
+        .stat-card-total {
+            background: linear-gradient(135deg, rgba(114, 23, 162, 0.08) 0%, rgba(114, 23, 162, 0.02) 100%);
+            border-color: rgba(114, 23, 162, 0.15);
+        }
+
+        .stat-card-receipts {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.02) 100%);
+            border-color: rgba(16, 185, 129, 0.15);
+        }
+
+        .stat-card-parsed {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(14, 165, 233, 0.02) 100%);
+            border-color: rgba(14, 165, 233, 0.15);
+        }
+
+        /* Filters Bar */
+        .filters-bar {
+            scrollbar-width: none;
+        }
+
+        .filters-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Document Row Transitions */
+        .doc-row {
+            transition: background-color 0.2s ease;
+        }
+
+        .doc-row:hover {
+            background-color: var(--bg-card-hover);
+        }
+
+        /* Badges */
+        .badge-receipt {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-statement {
+            background-color: rgba(168, 85, 247, 0.1);
+            color: #a855f7;
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        .badge-csv {
+            background-color: rgba(14, 165, 233, 0.1);
+            color: #0ea5e9;
+            border: 1px solid rgba(14, 165, 233, 0.2);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.125rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .preview-placeholder {
+            background-image: repeating-linear-gradient(45deg, var(--border) 0, var(--border) 1px, transparent 0, transparent 50%);
+            background-size: 8px 8px;
+        }
+    </style>
+</head>
+
+<body class="bg-background text-foreground antialiased selection:bg-primary selection:text-foreground pb-10 lg:pb-0">
+
+    <!-- Mobile Header -->
+    <header class="mobile-header border-b border-border bg-card/80 backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <button id="mobile-menu-btn" class="p-2 -ml-2 text-muted-foreground hover:text-foreground">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <div class="font-bold text-lg tracking-tight">FinTrack</div>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center overflow-hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="text-muted-foreground">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <div id="sidebar-overlay" class="mobile-nav-overlay lg:hidden"></div>
+
+        <aside id="sidebar" class="app-sidebar flex flex-col py-6 px-4">
+            <div class="mb-8 px-2 hidden lg:block">
+                <h1 class="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                    <div class="w-2 h-6 bg-primary rounded-sm"></div>
+                    FinTrack
+                </h1>
+                <p class="text-xs text-muted-foreground mt-1 ml-4">Personal Finance</p>
+            </div>
+
+            <nav class="flex-1 space-y-1 overflow-y-auto pr-2 -mr-2">
+                <a href="dashboard.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="transactions.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7 16V4m0 0L3 8m4-4 4 4" />
+                        <path d="M17 8v12m0 0 4-4m-4 4-4-4" />
+                    </svg>
+                    Transactions
+                </a>
+                <a href="recurring.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 2l4 4-4 4" />
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                        <path d="M7 22l-4-4 4-4" />
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                    </svg>
+                    Recurring
+                </a>
+                <a href="budgets.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 9a7 7 0 1 0-13.6 2.3C6.4 14.4 8 19 8 19h8s1.6-4.6 2.6-7.7" />
+                        <path d="M12 22v-3" />
+                        <path d="M9 19h6" />
+                    </svg>
+                    Budgets
+                </a>
+                <a href="analytics.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10" />
+                        <line x1="12" y1="20" x2="12" y2="4" />
+                        <line x1="6" y1="20" x2="6" y2="14" />
+                    </svg>
+                    Analytics
+                </a>
+
+                <div class="my-4 border-t border-border px-3 pt-4">
+                    <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Features</span>
+                </div>
+
+                <a href="scan.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                        <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                        <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                        <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                        <line x1="7" y1="12" x2="17" y2="12" />
+                    </svg>
+                    Scan Receipt
+                </a>
+                <a href="accounts.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 12V22H4V12" />
+                        <path d="M22 7H2v5h20V7z" />
+                        <path d="M12 22V7" />
+                        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+                    </svg>
+                    Accounts
+                </a>
+                <a href="credit-cards.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect class="text-foreground shrink-0" ry="2" />
+                        <line x1="1" y1="10" x2="23" y2="10" />
+                    </svg>
+                    Credit Cards
+                </a>
+                <a href="statements.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z" />
+                        <line x1="8" y1="10" x2="16" y2="10" />
+                        <line x1="8" y1="14" x2="16" y2="14" />
+                    </svg>
+                    Statements
+                </a>
+
+                <!-- Documents (active) -->
+                <a href="documents.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium bg-primary/10 text-primary transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                        <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                    Documents
+                </a>
+            </nav>
+
+            <div class="mt-auto pt-4 flex flex-col gap-1">
+                <a href="notifications.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                    Notifications
+                    <span
+                        class="absolute right-3 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-4 text-center">3</span>
+                </a>
+                <a href="settings.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                    Settings
+                </a>
+                <button onclick="document.documentElement.classList.toggle('dark');"
+                    class="w-full flex items-center justify-between gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors group">
+                    <div class="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dark:hidden">
+                            <circle cx="12" cy="12" r="5" fill="currentColor"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/>
+                            <line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden dark:block">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                        <span class="dark:hidden">Light Mode</span>
+                        <span class="hidden dark:inline">Dark Mode</span>
+                    </div>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="app-main flex flex-col h-screen lg:h-auto overflow-hidden">
+
+            <!-- Sticky Header Region -->
+            <div class="px-5 py-6 lg:px-10 lg:pt-10 lg:pb-6 border-b border-border bg-background z-10 flex-shrink-0">
+                <div class="max-w-[1200px] mx-auto">
+
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-3xl font-bold tracking-tight text-foreground mb-1">Documents</h1>
+                            <p class="text-sm text-muted-foreground">Uploaded receipts, bank statements, and CSV files
+                                used for AI parsing.</p>
+                        </div>
+                        <a href="scan.html"
+                            class="btn-primary flex items-center justify-center gap-2 shadow-sm shadow-sm w-full sm:w-auto"
+                            style="text-decoration: none;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                            Upload Document
+                        </a>
+                    </div>
+
+                    <!-- Filters Row -->
+                    <div class="flex items-center gap-3 overflow-x-auto filters-bar pb-1 -mx-5 px-5 lg:mx-0 lg:px-0">
+                        <div class="relative min-w-[200px] max-w-sm flex-1">
+                            <div
+                                class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8" />
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                </svg>
+                            </div>
+                            <input type="text" id="doc-search" oninput="filterDocs()"
+                                class="form-input w-full pl-10 pr-4 py-2 bg-card/60"
+                                placeholder="Search documents..." />
+                        </div>
+
+                        <div class="relative min-w-[150px]">
+                            <select id="type-filter" onchange="filterDocs()"
+                                class="form-select appearance-none pl-3 pr-8 py-2 border border-border bg-card/60 rounded-md text-sm font-medium hover:bg-muted/50 transition-colors w-full cursor-pointer">
+                                <option value="">All Types</option>
+                                <option value="receipt">Receipt</option>
+                                <option value="statement">Bank Statement</option>
+                                <option value="csv">CSV Export</option>
+                            </select>
+                            <div
+                                class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-muted-foreground">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Scrollable Content Area -->
+            <div class="flex-1 overflow-y-auto px-5 lg:px-10 pb-6 lg:pb-10 pt-6">
+                <div class="max-w-[1200px] mx-auto">
+
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                        <div class="card p-5 stat-card-total flex items-center gap-4">
+                            <div
+                                class="w-12 h-12 rounded-full bg-primary/20 flex flex-shrink-0 items-center justify-center text-primary shadow-[0_0_15px_rgba(114,23,162,0.2)]">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold text-foreground tabular-nums tracking-tight">24</div>
+                                <div class="text-xs font-medium text-muted-foreground uppercase tracking-wider mt-0.5">
+                                    Total Documents</div>
+                            </div>
+                        </div>
+
+                        <div class="card p-5 stat-card-receipts flex items-center gap-4">
+                            <div
+                                class="w-12 h-12 rounded-full bg-[#10b981]/20 flex flex-shrink-0 items-center justify-center text-[#10b981] shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                                    <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                                    <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                                    <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                                    <line x1="3" y1="12" x2="21" y2="12" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold text-foreground tabular-nums tracking-tight">18</div>
+                                <div class="text-xs font-medium text-muted-foreground uppercase tracking-wider mt-0.5">
+                                    Receipts Scanned</div>
+                            </div>
+                        </div>
+
+                        <div class="card p-5 stat-card-parsed flex items-center gap-4">
+                            <div
+                                class="w-12 h-12 rounded-full bg-[#0ea5e9]/20 flex flex-shrink-0 items-center justify-center text-[#0ea5e9] shadow-[0_0_15px_rgba(14,165,233,0.2)]">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold text-foreground tabular-nums tracking-tight">142</div>
+                                <div class="text-xs font-medium text-muted-foreground uppercase tracking-wider mt-0.5">
+                                    Transactions Parsed</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Document List Panel -->
+                    <div class="card p-0 overflow-hidden flex flex-col">
+                        <div class="px-5 lg:px-6 py-4 border-b border-border bg-card/60">
+                            <h2 class="text-sm font-semibold text-foreground tracking-tight">Recent Documents</h2>
+                        </div>
+
+                        <div class="divide-y divide-border">
+                            <!-- Item 1 -->
+                            <div class="doc-row flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 lg:px-6"
+                                data-name="grocery_receipt_feb14.jpg" data-type="receipt">
+                                <div class="flex items-center gap-4 flex-1 min-w-0">
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-[#10b981]/10 border border-[#10b981]/20 flex items-center justify-center flex-shrink-0 text-[#10b981]">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <rect class="text-foreground shrink-0" />
+                                            <circle cx="8.5" cy="8.5" r="1.5" />
+                                            <polyline points="21 15 16 10 5 21" />
+                                        </svg>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="font-bold text-foreground text-sm lg:text-base truncate">
+                                            grocery_receipt_feb14.jpg</div>
+                                        <div
+                                            class="flex items-center gap-2 mt-1 flex-wrap text-xs text-muted-foreground">
+                                            <span class="status-badge badge-receipt">Receipt</span>
+                                            <span class="font-mono">245 KB</span>
+                                            <span>&bull; Feb 14, 2026</span>
+                                            <span>&bull; 3 items parsed</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-end gap-2 ml-16 sm:ml-0">
+                                    <button class="btn-outline text-xs px-3 py-1.5"
+                                        onclick="openViewModal('grocery_receipt_feb14.jpg','Receipt','245 KB','Feb 14, 2026',3,[{date:'Feb 14',desc:'Puregold Supermarket',cat:'Groceries',amt:'₱1,250.00'},{date:'Feb 14',desc:'Rebisco Crackers',cat:'Groceries',amt:'₱180.00'},{date:'Feb 14',desc:'Tropicana Orange Juice',cat:'Groceries',amt:'₱95.00'}])">View</button>
+                                    <button
+                                        class="p-1.5 text-muted-foreground hover:text-foreground hover:bg-destructive/20 rounded-md transition-colors"
+                                        title="Delete Statement"
+                                        onclick="openDeleteConfirm('grocery_receipt_feb14.jpg', this)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6" />
+                                            <path d="M19 6l-1 14H6L5 6" />
+                                            <path d="M10 11v6M14 11v6" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Item 2 -->
+                            <div class="doc-row flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 lg:px-6"
+                                data-name="bdo_statement_jan2026.pdf" data-type="statement">
+                                <div class="flex items-center gap-4 flex-1 min-w-0">
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-[#a855f7]/10 border border-[#a855f7]/20 flex items-center justify-center flex-shrink-0 text-[#a855f7]">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                            <polyline points="14 2 14 8 20 8" />
+                                            <line x1="16" y1="13" x2="8" y2="13" />
+                                            <line x1="16" y1="17" x2="8" y2="17" />
+                                        </svg>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="font-bold text-foreground text-sm lg:text-base truncate">
+                                            BDO_statement_jan2026.pdf</div>
+                                        <div
+                                            class="flex items-center gap-2 mt-1 flex-wrap text-xs text-muted-foreground">
+                                            <span class="status-badge badge-statement">Statement</span>
+                                            <span class="font-mono">1.2 MB</span>
+                                            <span>&bull; Feb 10, 2026</span>
+                                            <span>&bull; 47 items parsed</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-end gap-2 ml-16 sm:ml-0">
+                                    <button class="btn-outline text-xs px-3 py-1.5"
+                                        onclick="openViewModal('BDO_statement_jan2026.pdf','Bank Statement','1.2 MB','Feb 10, 2026',47,[{date:'Jan 31',desc:'SM Supermarket',cat:'Groceries',amt:'₱3,450.00'},{date:'Jan 29',desc:'Grab Food',cat:'Food & Dining',amt:'₱580.00'},{date:'Jan 27',desc:'Netflix',cat:'Entertainment',amt:'₱549.00'},{date:'Jan 25',desc:'Globe Telecom',cat:'Utilities',amt:'₱999.00'},{date:'Jan 20',desc:'Uniqlo SM MOA',cat:'Shopping',amt:'₱2,800.00'}])">View</button>
+                                    <button
+                                        class="p-1.5 text-muted-foreground hover:text-foreground hover:bg-destructive/20 rounded-md transition-colors"
+                                        title="Delete Document"
+                                        onclick="openDeleteConfirm('BDO_statement_jan2026.pdf', this)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6" />
+                                            <path d="M19 6l-1 14H6L5 6" />
+                                            <path d="M10 11v6M14 11v6" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Item 3 -->
+                            <div class="doc-row flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 lg:px-6"
+                                data-name="gcash_export_jan2026.csv" data-type="csv">
+                                <div class="flex items-center gap-4 flex-1 min-w-0">
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-[#0ea5e9]/10 border border-[#0ea5e9]/20 flex items-center justify-center flex-shrink-0 text-[#0ea5e9]">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                            <polyline points="14 2 14 8 20 8" />
+                                            <line x1="16" y1="13" x2="8" y2="13" />
+                                            <line x1="16" y1="17" x2="8" y2="17" />
+                                        </svg>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="font-bold text-foreground text-sm lg:text-base truncate">
+                                            GCash_export_jan2026.csv</div>
+                                        <div
+                                            class="flex items-center gap-2 mt-1 flex-wrap text-xs text-muted-foreground">
+                                            <span class="status-badge badge-csv">CSV</span>
+                                            <span class="font-mono">18 KB</span>
+                                            <span>&bull; Feb 3, 2026</span>
+                                            <span>&bull; 22 items parsed</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-end gap-2 ml-16 sm:ml-0">
+                                    <button class="btn-outline text-xs px-3 py-1.5"
+                                        onclick="openViewModal('GCash_export_jan2026.csv','CSV Export','18 KB','Feb 3, 2026',22,[{date:'Jan 28',desc:'7-Eleven',cat:'Food & Dining',amt:'₱85.00'},{date:'Jan 26',desc:'Shopee Payment',cat:'Shopping',amt:'₱1,200.00'},{date:'Jan 22',desc:'Angkas',cat:'Transport',amt:'₱120.00'},{date:'Jan 18',desc:'Starbucks',cat:'Food & Dining',amt:'₱265.00'},{date:'Jan 15',desc:'Mercury Drug',cat:'Health',amt:'₱450.00'}])">View</button>
+                                    <button
+                                        class="p-1.5 text-muted-foreground hover:text-foreground hover:bg-destructive/20 rounded-md transition-colors"
+                                        title="Delete Document"
+                                        onclick="openDeleteConfirm('GCash_export_jan2026.csv', this)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6" />
+                                            <path d="M19 6l-1 14H6L5 6" />
+                                            <path d="M10 11v6M14 11v6" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Item 4 -->
+                            <div class="doc-row flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 lg:px-6"
+                                data-name="jollibee_receipt_feb10.jpg" data-type="receipt">
+                                <div class="flex items-center gap-4 flex-1 min-w-0">
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-[#10b981]/10 border border-[#10b981]/20 flex items-center justify-center flex-shrink-0 text-[#10b981]">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <rect class="text-foreground shrink-0" />
+                                            <circle cx="8.5" cy="8.5" r="1.5" />
+                                            <polyline points="21 15 16 10 5 21" />
+                                        </svg>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="font-bold text-foreground text-sm lg:text-base truncate">
+                                            jollibee_receipt_feb10.jpg</div>
+                                        <div
+                                            class="flex items-center gap-2 mt-1 flex-wrap text-xs text-muted-foreground">
+                                            <span class="status-badge badge-receipt">Receipt</span>
+                                            <span class="font-mono">87 KB</span>
+                                            <span>&bull; Feb 10, 2026</span>
+                                            <span>&bull; 1 item parsed</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-end gap-2 ml-16 sm:ml-0">
+                                    <button class="btn-outline text-xs px-3 py-1.5"
+                                        onclick="openViewModal('jollibee_receipt_feb10.jpg','Receipt','87 KB','Feb 10, 2026',1,[{date:'Feb 10',desc:'Jollibee - Yum Burger Meal',cat:'Food & Dining',amt:'₱189.00'}])">View</button>
+                                    <button
+                                        class="p-1.5 text-muted-foreground hover:text-foreground hover:bg-destructive/20 rounded-md transition-colors"
+                                        title="Delete Statement"
+                                        onclick="openDeleteConfirm('jollibee_receipt_feb10.jpg', this)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6" />
+                                            <path d="M19 6l-1 14H6L5 6" />
+                                            <path d="M10 11v6M14 11v6" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Item 5 -->
+                            <div class="doc-row flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 lg:px-6"
+                                data-name="bpi_statement_jan2026.pdf" data-type="statement">
+                                <div class="flex items-center gap-4 flex-1 min-w-0">
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-[#a855f7]/10 border border-[#a855f7]/20 flex items-center justify-center flex-shrink-0 text-[#a855f7]">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                            <polyline points="14 2 14 8 20 8" />
+                                            <line x1="16" y1="13" x2="8" y2="13" />
+                                            <line x1="16" y1="17" x2="8" y2="17" />
+                                        </svg>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="font-bold text-foreground text-sm lg:text-base truncate">
+                                            BPI_statement_jan2026.pdf</div>
+                                        <div
+                                            class="flex items-center gap-2 mt-1 flex-wrap text-xs text-muted-foreground">
+                                            <span class="status-badge badge-statement">Statement</span>
+                                            <span class="font-mono">980 KB</span>
+                                            <span>&bull; Jan 25, 2026</span>
+                                            <span>&bull; 31 items parsed</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-end gap-2 ml-16 sm:ml-0">
+                                    <button class="btn-outline text-xs px-3 py-1.5"
+                                        onclick="openViewModal('BPI_statement_jan2026.pdf','Bank Statement','980 KB','Jan 25, 2026',31,[{date:'Jan 24',desc:'Ayala Land Inc.',cat:'Bills',amt:'₱5,000.00'},{date:'Jan 22',desc:'National Bookstore',cat:'Shopping',amt:'₱650.00'},{date:'Jan 20',desc:'Meralco',cat:'Utilities',amt:'₱3,200.00'},{date:'Jan 18',desc:'Manila Water',cat:'Utilities',amt:'₱480.00'},{date:'Jan 15',desc:'SM Cinema',cat:'Entertainment',amt:'₱360.00'}])">View</button>
+                                    <button
+                                        class="p-1.5 text-muted-foreground hover:text-foreground hover:bg-destructive/20 rounded-md transition-colors"
+                                        title="Delete Document"
+                                        onclick="openDeleteConfirm('BPI_statement_jan2026.pdf', this)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6" />
+                                            <path d="M19 6l-1 14H6L5 6" />
+                                            <path d="M10 11v6M14 11v6" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- List Pagination Footer -->
+                        <div
+                            class="border-t border-border px-5 lg:px-6 py-4 bg-card/50 flex flex-col sm:flex-row items-center gap-4 justify-between">
+                            <span class="text-sm font-medium text-muted-foreground">Showing 5 of 24 documents</span>
+                            <div class="flex items-center gap-1">
+                                <button
+                                    class="btn-outline px-3 py-1.5 opacity-50 cursor-not-allowed text-xs sm:text-sm">Prev</button>
+                                <div class="flex items-center gap-1 mx-2">
+                                    <button
+                                        class="w-8 h-8 rounded-md bg-primary text-primary-foreground font-medium text-sm flex items-center justify-center">1</button>
+                                    <button
+                                        class="w-8 h-8 rounded-md hover:bg-muted text-muted-foreground font-medium text-sm flex items-center justify-center transition-colors">2</button>
+                                    <button
+                                        class="w-8 h-8 rounded-md hover:bg-muted text-muted-foreground font-medium text-sm flex items-center justify-center transition-colors">3</button>
+                                </div>
+                                <button
+                                    class="btn-outline px-3 py-1.5 hover:bg-muted transition-colors text-xs sm:text-sm">Next</button>
+                            </div>
+                        </div>
+
+                    </div><!-- /list wrapper -->
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+
+    <!-- Global Backdrop for Modals-->
+    <div id="modal-backdrop"
+        class="fixed inset-0 bg-background/80 z-50 backdrop flex items-center justify-center p-4 lg:p-6"
+        onclick="closeAll()">
+
+        <!-- View Document Modal -->
+        <div id="view-modal"
+            class="modal-dialog hidden-on-init bg-card border border-border rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-full"
+            onclick="event.stopPropagation()">
+            <!-- Header -->
+            <div
+                class="flex items-center justify-between px-5 py-4 lg:px-6 lg:py-5 border-b border-border flex-shrink-0 bg-card/50 rounded-t-xl">
+                <div class="min-w-0 pr-4">
+                    <h2 id="modal-filename" class="text-base lg:text-lg font-bold text-foreground tracking-tight truncate">
+                        Document.pdf</h2>
+                    <p id="modal-meta" class="text-xs text-muted-foreground mt-1 truncate">Type &bull; Size &bull;
+                        Uploaded Date</p>
+                </div>
+                <button onclick="closeAll()"
+                    class="p-2 -mr-2 rounded-full hover:bg-muted text-muted-foreground transition-colors self-start flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Scrollable Body -->
+            <div class="flex-1 overflow-y-auto p-5 lg:p-6 scrollbar-thin">
+
+                <!-- Interactive Preview Placeholder -->
+                <div
+                    class="w-full h-40 lg:h-48 rounded-lg preview-placeholder border border-border/50 flex flex-col items-center justify-center text-muted-foreground mb-6 transition-colors hover:border-primary/50 cursor-pointer group">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.5"
+                        class="mb-3 group-hover:text-primary transition-colors">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    <span class="text-sm font-medium group-hover:text-primary transition-colors">Click to Expand
+                        Preview</span>
+                </div>
+
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-xs font-bold text-muted-foreground uppercase tracking-wider">Parsed Items (<span
+                            id="modal-tx-count">0</span>)</h3>
+                </div>
+
+                <!-- Transaction List -->
+                <div class="flex flex-col border border-border rounded-lg overflow-hidden bg-card/50">
+                    <div
+                        class="hidden sm:grid grid-cols-[80px_1fr_120px_90px] gap-4 px-4 py-2 border-b border-border bg-muted/30 text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                        <span>Date</span>
+                        <span>Description</span>
+                        <span>Category</span>
+                        <span class="text-right">Amount</span>
+                    </div>
+                    <div id="modal-tx-list" class="divide-y divide-border">
+                        <!-- Trans items injected via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-4 border-t border-border flex justify-end gap-3 bg-card/80 flex-shrink-0 rounded-b-xl">
+                <button class="btn-outline px-5 py-2" onclick="closeAll()">Close</button>
+                <a href="transactions.html" class="btn-primary px-5 py-2">View in Transactions</a>
+            </div>
+        </div>
+
+
+        <!-- Delete Confirmation Modal -->
+        <div id="delete-modal"
+            class="modal-dialog hidden-on-init bg-card border border-border rounded-xl shadow-2xl p-6 w-full max-w-sm relative"
+            onclick="event.stopPropagation()">
+            <div
+                class="w-12 h-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold text-foreground mb-2">Delete Document</h3>
+            <p class="text-sm text-muted-foreground mb-6">Are you sure you want to delete <span id="delete-filename"
+                    class="font-semibold text-foreground break-all">this document</span>? This will permanently remove the
+                file. Associated transactions will remain entirely unaffected.</p>
+            <div class="flex gap-3">
+                <button class="btn-outline flex-1" onclick="closeAll()">Cancel</button>
+                <button class="btn-primary flex-1 bg-destructive hover:bg-destructive/90 text-foreground"
+                    onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+
+    </div>
+
+
+
+
+    <script>
+        // Filtering Logic
+        function filterDocs() {
+            const query = document.getElementById('doc-search').value.toLowerCase();
+            const type = document.getElementById('type-filter').value;
+            const rows = document.querySelectorAll('.doc-row');
+
+            rows.forEach(row => {
+                const name = (row.dataset.name || '').toLowerCase();
+                const rowType = row.dataset.type || '';
+                const matchesName = name.indexOf(query) !== -1;
+                const matchesType = !type || rowType === type;
+
+                if (matchesName && matchesType) {
+                    row.style.display = 'flex';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Modal & Interactions Logic
+        const backdrop = document.getElementById('modal-backdrop');
+        const viewModal = document.getElementById('view-modal');
+        const deleteModal = document.getElementById('delete-modal');
+        let pendingDeleteRow = null;
+
+        // Reset modals on init
+        document.querySelectorAll('.hidden-on-init').forEach(el => el.style.display = 'none');
+
+        function closeAll() {
+            backdrop.classList.remove('open');
+            viewModal.classList.remove('open');
+            deleteModal.classList.remove('open');
+
+            // Delay display none for animation
+            setTimeout(() => {
+                if (!backdrop.classList.contains('open')) {
+                    viewModal.style.display = 'none';
+                    deleteModal.style.display = 'none';
+                }
+            }, 300);
+            pendingDeleteRow = null;
+        }
+
+        window.openViewModal = function (filename, type, size, date, txCount, transactions) {
+            document.getElementById('modal-filename').textContent = filename;
+            document.getElementById('modal-meta').textContent = `${type} • ${size} • Uploaded ${date}`;
+            document.getElementById('modal-tx-count').textContent = txCount;
+
+            const list = document.getElementById('modal-tx-list');
+            let txnsHtml = '';
+
+            transactions.forEach(tx => {
+                txnsHtml += `
+          <div class="flex flex-col sm:grid sm:grid-cols-[80px_1fr_120px_90px] gap-2 sm:gap-4 px-4 py-3 text-sm hover:bg-muted/30 transition-colors">
+            <span class="text-xs font-semibold text-muted-foreground flex-shrink-0">${tx.date}</span>
+            <span class="font-medium text-foreground break-words">${tx.desc}</span>
+            <span class="text-xs font-medium text-muted-foreground uppercase tracking-wider">${tx.cat}</span>
+            <span class="font-bold text-foreground tabular-nums sm:text-right mt-1 sm:mt-0">${tx.amt}</span>
+          </div>
+        `;
+            });
+
+            if (transactions.length < txCount) {
+                txnsHtml += `
+          <div class="px-4 py-3 text-xs font-medium text-muted-foreground text-center bg-muted/10">
+            + ${txCount - transactions.length} more transactions
+          </div>
+        `;
+            }
+
+            list.innerHTML = txnsHtml;
+
+            viewModal.style.display = 'flex';
+            backdrop.classList.add('open');
+            // allow display:flex to apply before adding exact opacity class
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    viewModal.classList.add('open');
+                });
+            });
+        };
+
+        window.openDeleteConfirm = function (filename, btnElem) {
+            pendingDeleteRow = btnElem.closest('.doc-row');
+            document.getElementById('delete-filename').textContent = filename;
+
+            deleteModal.style.display = 'block';
+            backdrop.classList.add('open');
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    deleteModal.classList.add('open');
+                });
+            });
+        };
+
+        window.confirmDelete = function () {
+            if (pendingDeleteRow) {
+                // smooth collapse visual cue
+                pendingDeleteRow.style.overflow = 'hidden';
+                pendingDeleteRow.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                pendingDeleteRow.style.opacity = '0';
+                pendingDeleteRow.style.height = pendingDeleteRow.offsetHeight + 'px';
+
+                requestAnimationFrame(() => {
+                    pendingDeleteRow.style.height = '0px';
+                    pendingDeleteRow.style.paddingTop = '0px';
+                    pendingDeleteRow.style.paddingBottom = '0px';
+                    pendingDeleteRow.style.borderWidth = '0px';
+                });
+
+                setTimeout(() => {
+                    if (pendingDeleteRow) pendingDeleteRow.remove();
+                    closeAll();
+                }, 300);
+            } else {
+                closeAll();
+            }
+        };
+
+        // Mobile Sidebar Logic
+        const mobileBtn = document.getElementById('mobile-menu-btn');
+        const sidebar = document.getElementById('sidebar');
+        const navOverlay = document.getElementById('sidebar-overlay');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            navOverlay.classList.toggle('open');
+            document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
+        }
+        mobileBtn.addEventListener('click', toggleSidebar);
+        navOverlay.addEventListener('click', toggleSidebar);
+    </script>
+</body>
+
+</html>

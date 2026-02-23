@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinTrack — Documents</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --background: oklch(0.14 0.005 260); --foreground: oklch(0.95 0.005 260);
+      --card: oklch(0.18 0.005 260); --primary: oklch(0.72 0.17 162);
+      --primary-foreground: oklch(0.14 0.005 260); --muted: oklch(0.22 0.005 260);
+      --muted-foreground: oklch(0.65 0.01 260); --border: oklch(0.25 0.005 260);
+      --sidebar: oklch(0.12 0.005 260); --destructive: oklch(0.65 0.2 25); --radius: 0.625rem;
+    }
+    body { background: var(--background); color: var(--foreground); font-family: system-ui, sans-serif; margin: 0; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: var(--muted-foreground); border-radius: 0.5rem; text-decoration: none; }
+    .nav-item:hover { background: var(--muted); }
+    .nav-active { background: var(--primary); color: var(--primary-foreground) !important; }
+    .btn-primary { background: var(--primary); color: var(--primary-foreground); border: none; border-radius: 0.5rem; padding: 10px 20px; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    .btn-ghost { background: transparent; color: var(--muted-foreground); border: 1px solid var(--border); border-radius: 0.5rem; padding: 8px 14px; font-size: 13px; cursor: pointer; }
+    .btn-destructive { background: oklch(0.65 0.2 25 / 0.15); color: oklch(0.65 0.2 25); border: 1px solid oklch(0.65 0.2 25 / 0.3); border-radius: 0.5rem; padding: 8px 14px; font-size: 13px; cursor: pointer; }
+    .badge-receipt { background: oklch(0.72 0.17 162 / 0.15); color: oklch(0.72 0.17 162); border-radius: 9999px; padding: 2px 8px; font-size: 11px; font-weight: 500; }
+    .badge-statement { background: oklch(0.6 0.18 260 / 0.15); color: oklch(0.7 0.15 260); border-radius: 9999px; padding: 2px 8px; font-size: 11px; font-weight: 500; }
+    .badge-csv { background: oklch(0.85 0.18 90 / 0.15); color: oklch(0.85 0.18 90); border-radius: 9999px; padding: 2px 8px; font-size: 11px; font-weight: 500; }
+    .doc-row { display:flex; align-items:center; gap:16px; padding:14px 16px; border-bottom:1px solid var(--border); }
+    .doc-row:last-child { border-bottom: none; }
+    .doc-row:hover { background: var(--muted); }
+    .doc-icon { width:40px; height:40px; border-radius:0.5rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    /* Modal overlay */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:50; }
+    .modal-overlay.hidden { display:none; }
+    .modal-box { background:var(--card); border:1px solid var(--border); border-radius:0.75rem; padding:24px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .modal-close { background:transparent; border:none; cursor:pointer; color:var(--muted-foreground); padding:4px; border-radius:0.375rem; }
+    .modal-close:hover { background:var(--muted); }
+    /* Confirm dialog */
+    .confirm-dialog { background:var(--card); border:1px solid var(--border); border-radius:0.75rem; padding:24px; width:100%; max-width:380px; }
+    .tx-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; }
+    .tx-row:last-child { border-bottom:none; }
+  </style>
+</head>
+<body class="flex min-h-screen">
+<aside style="width:256px;min-height:100vh;background:var(--sidebar);border-right:1px solid var(--border);padding:16px 12px;display:flex;flex-direction:column;flex-shrink:0;">
+  <div style="padding:0 12px;margin-bottom:24px;"><div style="font-size:20px;font-weight:700;">FinTrack</div><div style="font-size:12px;color:var(--muted-foreground);">Personal Finance</div></div>
+  <nav style="flex:1;display:flex;flex-direction:column;gap:2px;">
+    <a href="dashboard.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
+    <a href="transactions.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>Transactions</a>
+    <a href="recurring.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Recurring</a>
+    <a href="budgets.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 9c0 3.314-3.134 6-7 6s-7-2.686-7-6 3.134-6 7-6 7 2.686 7 6z"/><path d="M5 15.5c0 2.485 3.134 4.5 7 4.5s7-2.015 7-4.5"/></svg>Budgets</a>
+    <a href="analytics.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</a>
+    <a href="scan.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>Scan Receipt</a>
+    <a href="accounts.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H4v4"/><path d="M20 12a2 2 0 0 0-2 2v2H6v-2a2 2 0 0 0-2-2"/><path d="M2 8l2-4h16l2 4"/></svg>Accounts</a>
+    <a href="credit-cards.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Credit Cards</a>
+    <a href="statements.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l4-2 4 2 4-2 4 2V2z"/></svg>Statements</a>
+    <a href="documents.html" class="nav-item nav-active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Documents</a>
+    <a href="notifications.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span style="margin-left:auto;background:var(--destructive);color:#fff;border-radius:9999px;padding:1px 6px;font-size:11px;">3</span></a>
+    <a href="settings.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>Settings</a>
+    <a href="guide.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>User Guide</a>
+  </nav>
+  <button style="display:flex;align-items:center;gap:12px;padding:8px 12px;font-size:14px;color:var(--muted-foreground);background:transparent;border:none;cursor:pointer;border-radius:0.5rem;width:100%;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign out</button>
+</aside>
+
+<main style="flex:1;padding:24px;overflow-y:auto;">
+  <div style="max-width:900px;margin:0 auto;">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+      <div>
+        <h1 style="font-size:24px;font-weight:700;margin:0 0 4px;">Documents</h1>
+        <p style="color:var(--muted-foreground);font-size:14px;margin:0;">Uploaded receipts, bank statements, and CSV files used for AI parsing.</p>
+      </div>
+      <a href="scan.html" class="btn-primary" style="text-decoration:none;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Upload Document
+      </a>
+    </div>
+
+    <!-- Search + filter -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;">
+      <div style="flex:1;position:relative;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="doc-search" placeholder="Search documents..." oninput="filterDocs()" style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:0.5rem;padding:8px 12px 8px 36px;font-size:13px;color:var(--foreground);box-sizing:border-box;" />
+      </div>
+      <select id="type-filter" onchange="filterDocs()" style="background:var(--card);border:1px solid var(--border);border-radius:0.5rem;padding:8px 12px;font-size:13px;color:var(--foreground);cursor:pointer;">
+        <option value="">All Types</option>
+        <option value="receipt">Receipt</option>
+        <option value="statement">Bank Statement</option>
+        <option value="csv">CSV Export</option>
+      </select>
+    </div>
+
+    <!-- Stats row -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+      <div class="card" style="padding:12px 16px;display:flex;align-items:center;gap:12px;">
+        <div style="width:32px;height:32px;background:oklch(0.72 0.17 162 / 0.15);border-radius:0.5rem;display:flex;align-items:center;justify-content:center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="oklch(0.72 0.17 162)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div>
+          <div style="font-size:18px;font-weight:700;">24</div>
+          <div style="font-size:12px;color:var(--muted-foreground);">Total documents</div>
+        </div>
+      </div>
+      <div class="card" style="padding:12px 16px;display:flex;align-items:center;gap:12px;">
+        <div style="width:32px;height:32px;background:oklch(0.6 0.18 260 / 0.15);border-radius:0.5rem;display:flex;align-items:center;justify-content:center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="oklch(0.7 0.15 260)" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+        </div>
+        <div>
+          <div style="font-size:18px;font-weight:700;">18</div>
+          <div style="font-size:12px;color:var(--muted-foreground);">Receipts scanned</div>
+        </div>
+      </div>
+      <div class="card" style="padding:12px 16px;display:flex;align-items:center;gap:12px;">
+        <div style="width:32px;height:32px;background:oklch(0.85 0.18 90 / 0.15);border-radius:0.5rem;display:flex;align-items:center;justify-content:center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="oklch(0.85 0.18 90)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div>
+          <div style="font-size:18px;font-weight:700;">142</div>
+          <div style="font-size:12px;color:var(--muted-foreground);">Transactions parsed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Document list -->
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--muted-foreground);">Recent Documents</div>
+
+      <div class="doc-row" data-name="grocery_receipt_feb14.jpg" data-type="receipt">
+        <div class="doc-icon" style="background:oklch(0.72 0.17 162 / 0.15);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="oklch(0.72 0.17 162)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">grocery_receipt_feb14.jpg</div>
+          <div style="font-size:12px;color:var(--muted-foreground);">245 KB · Feb 14, 2026 · 3 transactions parsed</div>
+        </div>
+        <span class="badge-receipt">Receipt</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-ghost" style="padding:4px 10px;font-size:12px;" onclick="openViewModal('grocery_receipt_feb14.jpg','Receipt','245 KB','Feb 14, 2026',3,[{date:'Feb 14',desc:'Puregold Supermarket',cat:'Groceries',amt:'₱1,250.00'},{date:'Feb 14',desc:'Rebisco Crackers',cat:'Groceries',amt:'₱180.00'},{date:'Feb 14',desc:'Tropicana Orange Juice',cat:'Groceries',amt:'₱95.00'}])">View</button>
+          <button style="background:transparent;border:none;cursor:pointer;color:var(--muted-foreground);padding:4px;" onclick="openDeleteConfirm('grocery_receipt_feb14.jpg', this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="doc-row" data-name="bdo_statement_jan2026.pdf" data-type="statement">
+        <div class="doc-icon" style="background:oklch(0.6 0.18 260 / 0.15);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="oklch(0.7 0.15 260)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">BDO_statement_jan2026.pdf</div>
+          <div style="font-size:12px;color:var(--muted-foreground);">1.2 MB · Feb 10, 2026 · 47 transactions parsed</div>
+        </div>
+        <span class="badge-statement">Statement</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-ghost" style="padding:4px 10px;font-size:12px;" onclick="openViewModal('BDO_statement_jan2026.pdf','Bank Statement','1.2 MB','Feb 10, 2026',47,[{date:'Jan 31',desc:'SM Supermarket',cat:'Groceries',amt:'₱3,450.00'},{date:'Jan 29',desc:'Grab Food',cat:'Food &amp; Dining',amt:'₱580.00'},{date:'Jan 27',desc:'Netflix',cat:'Entertainment',amt:'₱549.00'},{date:'Jan 25',desc:'Globe Telecom',cat:'Utilities',amt:'₱999.00'},{date:'Jan 20',desc:'Uniqlo SM MOA',cat:'Shopping',amt:'₱2,800.00'}])">View</button>
+          <button style="background:transparent;border:none;cursor:pointer;color:var(--muted-foreground);padding:4px;" onclick="openDeleteConfirm('BDO_statement_jan2026.pdf', this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="doc-row" data-name="gcash_export_jan2026.csv" data-type="csv">
+        <div class="doc-icon" style="background:oklch(0.85 0.18 90 / 0.15);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="oklch(0.85 0.18 90)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">GCash_export_jan2026.csv</div>
+          <div style="font-size:12px;color:var(--muted-foreground);">18 KB · Feb 3, 2026 · 22 transactions parsed</div>
+        </div>
+        <span class="badge-csv">CSV</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-ghost" style="padding:4px 10px;font-size:12px;" onclick="openViewModal('GCash_export_jan2026.csv','CSV Export','18 KB','Feb 3, 2026',22,[{date:'Jan 28',desc:'7-Eleven',cat:'Food &amp; Dining',amt:'₱85.00'},{date:'Jan 26',desc:'Shopee Payment',cat:'Shopping',amt:'₱1,200.00'},{date:'Jan 22',desc:'Angkas',cat:'Transport',amt:'₱120.00'},{date:'Jan 18',desc:'Starbucks',cat:'Food &amp; Dining',amt:'₱265.00'},{date:'Jan 15',desc:'Mercury Drug',cat:'Health',amt:'₱450.00'}])">View</button>
+          <button style="background:transparent;border:none;cursor:pointer;color:var(--muted-foreground);padding:4px;" onclick="openDeleteConfirm('GCash_export_jan2026.csv', this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="doc-row" data-name="jollibee_receipt_feb10.jpg" data-type="receipt">
+        <div class="doc-icon" style="background:oklch(0.72 0.17 162 / 0.15);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="oklch(0.72 0.17 162)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">jollibee_receipt_feb10.jpg</div>
+          <div style="font-size:12px;color:var(--muted-foreground);">87 KB · Feb 10, 2026 · 1 transaction parsed</div>
+        </div>
+        <span class="badge-receipt">Receipt</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-ghost" style="padding:4px 10px;font-size:12px;" onclick="openViewModal('jollibee_receipt_feb10.jpg','Receipt','87 KB','Feb 10, 2026',1,[{date:'Feb 10',desc:'Jollibee - Yum Burger Meal',cat:'Food &amp; Dining',amt:'₱189.00'}])">View</button>
+          <button style="background:transparent;border:none;cursor:pointer;color:var(--muted-foreground);padding:4px;" onclick="openDeleteConfirm('jollibee_receipt_feb10.jpg', this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="doc-row" data-name="bpi_statement_jan2026.pdf" data-type="statement">
+        <div class="doc-icon" style="background:oklch(0.6 0.18 260 / 0.15);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="oklch(0.7 0.15 260)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">BPI_statement_jan2026.pdf</div>
+          <div style="font-size:12px;color:var(--muted-foreground);">980 KB · Jan 25, 2026 · 31 transactions parsed</div>
+        </div>
+        <span class="badge-statement">Statement</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-ghost" style="padding:4px 10px;font-size:12px;" onclick="openViewModal('BPI_statement_jan2026.pdf','Bank Statement','980 KB','Jan 25, 2026',31,[{date:'Jan 24',desc:'Ayala Land Inc.',cat:'Bills',amt:'₱5,000.00'},{date:'Jan 22',desc:'National Bookstore',cat:'Shopping',amt:'₱650.00'},{date:'Jan 20',desc:'Meralco',cat:'Utilities',amt:'₱3,200.00'},{date:'Jan 18',desc:'Manila Water',cat:'Utilities',amt:'₱480.00'},{date:'Jan 15',desc:'SM Cinema',cat:'Entertainment',amt:'₱360.00'}])">View</button>
+          <button style="background:transparent;border:none;cursor:pointer;color:var(--muted-foreground);padding:4px;" onclick="openDeleteConfirm('BPI_statement_jan2026.pdf', this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--border);">
+        <span style="font-size:13px;color:var(--muted-foreground);">Showing 5 of 24 documents</span>
+        <div style="display:flex;gap:4px;">
+          <button class="btn-ghost" style="padding:6px 12px;">Previous</button>
+          <button style="background:var(--primary);color:var(--primary-foreground);border:none;border-radius:0.5rem;padding:6px 12px;font-size:13px;cursor:pointer;">1</button>
+          <button class="btn-ghost" style="padding:6px 12px;">2</button>
+          <button class="btn-ghost" style="padding:6px 12px;">3</button>
+          <button class="btn-ghost" style="padding:6px 12px;">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- View Document Modal -->
+<div id="view-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeViewModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <div id="modal-filename" style="font-size:16px;font-weight:600;margin-bottom:2px;"></div>
+        <div id="modal-meta" style="font-size:12px;color:var(--muted-foreground);"></div>
+      </div>
+      <button class="modal-close" onclick="closeViewModal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Document preview placeholder -->
+    <div style="background:var(--muted);border-radius:0.5rem;height:160px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;border:1px dashed var(--border);">
+      <div style="text-align:center;color:var(--muted-foreground);">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;display:block;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <div style="font-size:12px;">Document preview</div>
+      </div>
+    </div>
+
+    <!-- Parsed transactions -->
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--muted-foreground);">
+      PARSED TRANSACTIONS (<span id="modal-tx-count"></span>)
+    </div>
+    <div style="background:var(--muted);border-radius:0.5rem;overflow:hidden;">
+      <div style="display:grid;grid-template-columns:60px 1fr 100px 80px;gap:8px;padding:8px 12px;font-size:11px;font-weight:600;color:var(--muted-foreground);border-bottom:1px solid var(--border);">
+        <span>DATE</span><span>DESCRIPTION</span><span>CATEGORY</span><span style="text-align:right;">AMOUNT</span>
+      </div>
+      <div id="modal-tx-list"></div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+      <button class="btn-ghost" onclick="closeViewModal()">Close</button>
+      <a href="transactions.html" class="btn-primary" style="text-decoration:none;padding:8px 16px;font-size:13px;">View all transactions</a>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Dialog -->
+<div id="delete-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeDeleteModal()">
+  <div class="confirm-dialog">
+    <div style="font-size:16px;font-weight:600;margin-bottom:8px;">Delete Document?</div>
+    <p style="font-size:13px;color:var(--muted-foreground);margin:0 0 20px;">
+      "<span id="delete-filename"></span>" will be permanently deleted. This cannot be undone.
+    </p>
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button class="btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn-destructive" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var pendingDeleteRow = null;
+
+  function filterDocs() {
+    var query = document.getElementById('doc-search').value.toLowerCase();
+    var type = document.getElementById('type-filter').value;
+    document.querySelectorAll('.doc-row').forEach(function(row) {
+      var name = (row.dataset.name || '').toLowerCase();
+      var rowType = row.dataset.type || '';
+      var matchesName = name.indexOf(query) !== -1;
+      var matchesType = !type || rowType === type;
+      row.style.display = (matchesName && matchesType) ? 'flex' : 'none';
+    });
+  }
+
+  function openViewModal(filename, type, size, date, txCount, transactions) {
+    document.getElementById('modal-filename').textContent = filename;
+    document.getElementById('modal-meta').textContent = type + ' · ' + size + ' · Uploaded ' + date;
+    document.getElementById('modal-tx-count').textContent = txCount;
+
+    var list = document.getElementById('modal-tx-list');
+    list.innerHTML = '';
+    transactions.forEach(function(tx) {
+      var row = document.createElement('div');
+      row.style.cssText = 'display:grid;grid-template-columns:60px 1fr 100px 80px;gap:8px;padding:8px 12px;font-size:12px;border-bottom:1px solid var(--border);';
+      row.innerHTML = '<span style="color:var(--muted-foreground);">' + tx.date + '</span>'
+        + '<span>' + tx.desc + '</span>'
+        + '<span style="color:var(--muted-foreground);">' + tx.cat + '</span>'
+        + '<span style="text-align:right;font-weight:500;">' + tx.amt + '</span>';
+      list.appendChild(row);
+    });
+    if (transactions.length < txCount) {
+      var more = document.createElement('div');
+      more.style.cssText = 'padding:8px 12px;font-size:12px;color:var(--muted-foreground);text-align:center;';
+      more.textContent = '+ ' + (txCount - transactions.length) + ' more transactions';
+      list.appendChild(more);
+    }
+
+    document.getElementById('view-modal').classList.remove('hidden');
+  }
+
+  function closeViewModal() {
+    document.getElementById('view-modal').classList.add('hidden');
+  }
+
+  function openDeleteConfirm(filename, btn) {
+    pendingDeleteRow = btn.closest('.doc-row');
+    document.getElementById('delete-filename').textContent = filename;
+    document.getElementById('delete-modal').classList.remove('hidden');
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('delete-modal').classList.add('hidden');
+    pendingDeleteRow = null;
+  }
+
+  function confirmDelete() {
+    if (pendingDeleteRow) {
+      pendingDeleteRow.style.transition = 'opacity 0.2s';
+      pendingDeleteRow.style.opacity = '0';
+      setTimeout(function() {
+        if (pendingDeleteRow) pendingDeleteRow.remove();
+        pendingDeleteRow = null;
+      }, 200);
+    }
+    closeDeleteModal();
+  }
+</script>
+</body>
+</html>

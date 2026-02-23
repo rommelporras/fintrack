@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinTrack — Notifications</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --background: oklch(0.14 0.005 260); --foreground: oklch(0.95 0.005 260);
+      --card: oklch(0.18 0.005 260); --primary: oklch(0.72 0.17 162);
+      --primary-foreground: oklch(0.14 0.005 260); --muted: oklch(0.22 0.005 260);
+      --muted-foreground: oklch(0.65 0.01 260); --border: oklch(0.25 0.005 260);
+      --sidebar: oklch(0.12 0.005 260); --destructive: oklch(0.65 0.2 25); --radius: 0.625rem;
+    }
+    body { background: var(--background); color: var(--foreground); font-family: system-ui, sans-serif; margin: 0; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: var(--muted-foreground); border-radius: 0.5rem; text-decoration: none; }
+    .nav-item:hover { background: var(--muted); }
+    .nav-active { background: var(--primary); color: var(--primary-foreground) !important; }
+    .btn-ghost { background: transparent; color: var(--muted-foreground); border: 1px solid var(--border); border-radius: 0.5rem; padding: 8px 14px; font-size: 13px; cursor: pointer; }
+    .notif-row { display:flex; align-items:flex-start; gap:14px; padding:16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.1s; }
+    .notif-row:last-child { border-bottom: none; }
+    .notif-row:hover { background: var(--muted); }
+    .notif-row.unread { background: oklch(0.72 0.17 162 / 0.05); }
+    .notif-icon { width:36px; height:36px; border-radius:9999px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
+    .unread-dot { width:8px; height:8px; border-radius:9999px; background:var(--primary); flex-shrink:0; margin-top:6px; }
+    .filter-tab { padding:6px 16px; border-radius:0.5rem; font-size:13px; font-weight:500; border:none; cursor:pointer; transition:background 0.1s, color 0.1s; }
+    .filter-tab.active { background:var(--card); color:var(--foreground); }
+    .filter-tab:not(.active) { background:transparent; color:var(--muted-foreground); }
+  </style>
+</head>
+<body class="flex min-h-screen">
+<aside style="width:256px;min-height:100vh;background:var(--sidebar);border-right:1px solid var(--border);padding:16px 12px;display:flex;flex-direction:column;flex-shrink:0;">
+  <div style="padding:0 12px;margin-bottom:24px;"><div style="font-size:20px;font-weight:700;">FinTrack</div><div style="font-size:12px;color:var(--muted-foreground);">Personal Finance</div></div>
+  <nav style="flex:1;display:flex;flex-direction:column;gap:2px;">
+    <a href="dashboard.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
+    <a href="transactions.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>Transactions</a>
+    <a href="recurring.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Recurring</a>
+    <a href="budgets.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 9c0 3.314-3.134 6-7 6s-7-2.686-7-6 3.134-6 7-6 7 2.686 7 6z"/><path d="M5 15.5c0 2.485 3.134 4.5 7 4.5s7-2.015 7-4.5"/></svg>Budgets</a>
+    <a href="analytics.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</a>
+    <a href="scan.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>Scan Receipt</a>
+    <a href="accounts.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H4v4"/><path d="M20 12a2 2 0 0 0-2 2v2H6v-2a2 2 0 0 0-2-2"/><path d="M2 8l2-4h16l2 4"/></svg>Accounts</a>
+    <a href="credit-cards.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Credit Cards</a>
+    <a href="statements.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l4-2 4 2 4-2 4 2V2z"/></svg>Statements</a>
+    <a href="documents.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Documents</a>
+    <a href="notifications.html" class="nav-item nav-active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span style="margin-left:auto;background:var(--destructive);color:#fff;border-radius:9999px;padding:1px 6px;font-size:11px;">3</span></a>
+    <a href="settings.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>Settings</a>
+    <a href="guide.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>User Guide</a>
+  </nav>
+  <button style="display:flex;align-items:center;gap:12px;padding:8px 12px;font-size:14px;color:var(--muted-foreground);background:transparent;border:none;cursor:pointer;border-radius:0.5rem;width:100%;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign out</button>
+</aside>
+
+<main style="flex:1;padding:24px;overflow-y:auto;">
+  <div style="max-width:720px;margin:0 auto;">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+      <div>
+        <h1 style="font-size:24px;font-weight:700;margin:0 0 4px;">Notifications</h1>
+        <p style="color:var(--muted-foreground);font-size:14px;margin:0;">Budget alerts, payment reminders, and system updates.</p>
+      </div>
+      <button class="btn-ghost" onclick="markAllRead()">Mark all read</button>
+    </div>
+
+    <!-- Filter tabs -->
+    <div style="display:flex;gap:4px;background:var(--muted);border-radius:0.625rem;padding:4px;margin-bottom:20px;width:fit-content;">
+      <button id="tab-all" class="filter-tab active" onclick="filterNotifs('all')">All <span style="background:var(--destructive);color:#fff;border-radius:9999px;padding:0px 5px;font-size:11px;margin-left:4px;">3</span></button>
+      <button id="tab-unread" class="filter-tab" onclick="filterNotifs('unread')">Unread</button>
+      <button id="tab-alerts" class="filter-tab" onclick="filterNotifs('alerts')">Alerts</button>
+      <button id="tab-reminders" class="filter-tab" onclick="filterNotifs('reminders')">Reminders</button>
+    </div>
+
+    <!-- Notifications list -->
+    <div class="card" style="padding:0;overflow:hidden;">
+
+      <!-- Unread: Budget alert (alerts) -->
+      <div class="notif-row unread" data-type="alerts" onclick="markRead(this)">
+        <div class="notif-icon" style="background:oklch(0.65 0.2 25 / 0.15);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="oklch(0.65 0.2 25)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:14px;margin-bottom:2px;">Budget Exceeded — Food &amp; Dining</div>
+          <div style="font-size:13px;color:var(--muted-foreground);">You've spent ₱12,850 of your ₱10,000 monthly food budget (128%). Consider reviewing recent restaurant expenses.</div>
+          <div style="font-size:11px;color:var(--muted-foreground);margin-top:6px;">2 hours ago</div>
+        </div>
+        <div class="unread-dot"></div>
+      </div>
+
+      <!-- Unread: Payment due (alerts) -->
+      <div class="notif-row unread" data-type="alerts" onclick="markRead(this)">
+        <div class="notif-icon" style="background:oklch(0.85 0.18 90 / 0.15);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="oklch(0.85 0.18 90)" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:14px;margin-bottom:2px;">Payment Due in 5 Days — BDO Visa Platinum</div>
+          <div style="font-size:13px;color:var(--muted-foreground);">Your statement of ₱32,450.00 is due on February 28, 2026. Minimum payment is ₱1,200.00.</div>
+          <div style="font-size:11px;color:var(--muted-foreground);margin-top:6px;">5 hours ago</div>
+        </div>
+        <div class="unread-dot"></div>
+      </div>
+
+      <!-- Unread: Budget warning (alerts) -->
+      <div class="notif-row unread" data-type="alerts" onclick="markRead(this)">
+        <div class="notif-icon" style="background:oklch(0.85 0.18 90 / 0.15);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="oklch(0.85 0.18 90)" stroke-width="2"><path d="M19 9c0 3.314-3.134 6-7 6s-7-2.686-7-6 3.134-6 7-6 7 2.686 7 6z"/><path d="M5 15.5c0 2.485 3.134 4.5 7 4.5s7-2.015 7-4.5"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:14px;margin-bottom:2px;">Budget Warning — Shopping</div>
+          <div style="font-size:13px;color:var(--muted-foreground);">You've used 82% of your ₱8,000 shopping budget. ₱1,440 remaining for the rest of the month.</div>
+          <div style="font-size:11px;color:var(--muted-foreground);margin-top:6px;">Yesterday at 3:22 PM</div>
+        </div>
+        <div class="unread-dot"></div>
+      </div>
+
+      <!-- Read: Recurring charge (reminders) -->
+      <div class="notif-row" data-type="reminders" onclick="markRead(this)">
+        <div class="notif-icon" style="background:oklch(0.6 0.18 260 / 0.15);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="oklch(0.7 0.15 260)" stroke-width="2"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-weight:500;font-size:14px;margin-bottom:2px;color:var(--muted-foreground);">Recurring Charge — Netflix</div>
+          <div style="font-size:13px;color:var(--muted-foreground);">Monthly subscription of ₱549.00 was automatically logged for February 2026.</div>
+          <div style="font-size:11px;color:var(--muted-foreground);margin-top:6px;">Feb 14, 2026</div>
+        </div>
+      </div>
+
+      <!-- Read: Import complete (reminders) -->
+      <div class="notif-row" data-type="reminders" onclick="markRead(this)">
+        <div class="notif-icon" style="background:oklch(0.72 0.17 162 / 0.15);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="oklch(0.72 0.17 162)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-weight:500;font-size:14px;margin-bottom:2px;color:var(--muted-foreground);">Import Complete — BDO Statement Jan 2026</div>
+          <div style="font-size:13px;color:var(--muted-foreground);">Successfully parsed 47 transactions from your uploaded statement. 2 items need category review.</div>
+          <div style="font-size:11px;color:var(--muted-foreground);margin-top:6px;">Feb 10, 2026</div>
+        </div>
+      </div>
+
+      <!-- Read: Payment confirmed (reminders) -->
+      <div class="notif-row" data-type="reminders" onclick="markRead(this)">
+        <div class="notif-icon" style="background:oklch(0.72 0.17 162 / 0.15);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="oklch(0.72 0.17 162)" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-weight:500;font-size:14px;margin-bottom:2px;color:var(--muted-foreground);">Statement Marked Paid — Metrobank World Mastercard</div>
+          <div style="font-size:13px;color:var(--muted-foreground);">December 2025 statement of ₱28,500.00 was marked as paid.</div>
+          <div style="font-size:11px;color:var(--muted-foreground);margin-top:6px;">Feb 1, 2026</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<script>
+  function filterNotifs(type) {
+    // Update tab active states
+    ['all','unread','alerts','reminders'].forEach(function(t) {
+      var tab = document.getElementById('tab-' + t);
+      if (tab) tab.classList.toggle('active', t === type);
+    });
+
+    // Show/hide rows
+    document.querySelectorAll('.notif-row').forEach(function(row) {
+      var show;
+      if (type === 'all') {
+        show = true;
+      } else if (type === 'unread') {
+        show = row.classList.contains('unread');
+      } else {
+        show = row.dataset.type === type;
+      }
+      row.style.display = show ? 'flex' : 'none';
+    });
+  }
+
+  function markRead(row) {
+    if (!row.classList.contains('unread')) return;
+    row.classList.remove('unread');
+    row.style.background = '';
+    var dot = row.querySelector('.unread-dot');
+    if (dot) dot.remove();
+    // Update title font-weight of the notification text to read state
+    var title = row.querySelector('div[style*="font-weight:600"]');
+    if (title) {
+      title.style.fontWeight = '500';
+      title.style.color = 'var(--muted-foreground)';
+    }
+  }
+
+  function markAllRead() {
+    document.querySelectorAll('.notif-row.unread').forEach(function(row) {
+      markRead(row);
+    });
+  }
+</script>
+</body>
+</html>

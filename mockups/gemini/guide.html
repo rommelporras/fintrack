@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>FinTrack &mdash; User Guide</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="tailwind-config.js"></script>
+    <link rel="stylesheet" href="index.css">
+    <style>
+        /* Prose / Typography for Guide */
+        .prose {
+            max-width: 65ch;
+            color: var(--muted-foreground);
+            line-height: 1.75;
+        }
+
+        .prose h2 {
+            color: var(--foreground);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            scroll-margin-top: 6rem;
+        }
+
+        .prose h3 {
+            color: var(--foreground);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 2rem;
+            margin-bottom: 0.75rem;
+            scroll-margin-top: 6rem;
+        }
+
+        .prose p {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .prose ul,
+        .prose ol {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+
+        .prose li {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .prose ul {
+            list-style-type: disc;
+        }
+
+        .prose ol {
+            list-style-type: decimal;
+        }
+
+        .prose strong {
+            color: var(--foreground);
+            font-weight: 600;
+        }
+
+        .prose em {
+            color: var(--foreground);
+            font-style: italic;
+        }
+
+        /* Info/Warning Boxes */
+        .callout {
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem 1.25rem;
+            border-radius: 0.75rem;
+            border: 1px solid transparent;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .callout-icon {
+            flex-shrink: 0;
+            margin-top: 0.125rem;
+        }
+
+        .callout-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .callout-content {
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        .callout-tip {
+            background-color: rgba(114, 23, 162, 0.1);
+            border-color: rgba(114, 23, 162, 0.2);
+        }
+
+        .callout-tip .callout-title {
+            color: var(--primary);
+        }
+
+        .callout-tip .callout-icon {
+            color: var(--primary);
+        }
+
+        .callout-warn {
+            background-color: rgba(220, 38, 38, 0.1);
+            border-color: rgba(220, 38, 38, 0.2);
+        }
+
+        .callout-warn .callout-title {
+            color: rgb(248, 113, 113);
+        }
+
+        .callout-warn .callout-icon {
+            color: rgb(248, 113, 113);
+        }
+
+        .badge-inline {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.125rem 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            border-radius: 0.25rem;
+            background-color: var(--muted);
+            color: var(--foreground);
+            border: 1px solid var(--border);
+        }
+
+        /* TOC Sidebar */
+        .toc-nav {
+            position: sticky;
+            top: 2rem;
+            max-height: calc(100vh - 4rem);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            padding-right: 1rem;
+        }
+
+        .toc-item {
+            display: block;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            color: var(--muted-foreground);
+            border-left: 2px solid var(--border);
+            transition: all 0.2s ease;
+            margin-left: 1px;
+        }
+
+        .toc-item:hover {
+            color: var(--foreground);
+            border-left-color: var(--muted-foreground);
+        }
+
+        .toc-item.active {
+            color: var(--primary);
+            font-weight: 600;
+            border-left-color: var(--primary);
+            background-color: rgba(114, 23, 162, 0.05);
+            border-radius: 0 0.25rem 0.25rem 0;
+        }
+
+        /* Mobile TOC */
+        .mobile-toc {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            background-color: var(--background);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 1.25rem;
+            margin-left: -1.25rem;
+            margin-right: -1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .mobile-toc-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: var(--card);
+            border-bottom: 1px solid var(--border);
+            max-height: 60vh;
+            overflow-y: auto;
+            transform-origin: top;
+            transform: scaleY(0);
+            opacity: 0;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        }
+
+        .mobile-toc-dropdown.open {
+            transform: scaleY(1);
+            opacity: 1;
+        }
+
+        /* Back to top */
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 9999px;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(114, 23, 162, 0.4);
+            transform: translateY(100px) scale(0.5);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 40;
+        }
+
+        .back-to-top.visible {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+
+        .back-to-top:hover {
+            background-color: #8b28c0;
+            transform: translateY(-2px) scale(1.05);
+        }
+    </style>
+</head>
+
+<body class="bg-background text-foreground antialiased selection:bg-primary selection:text-foreground pb-10 lg:pb-0">
+
+    <!-- Mobile Header -->
+    <header class="mobile-header border-b border-border bg-card/80 backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <button id="mobile-menu-btn" class="p-2 -ml-2 text-muted-foreground hover:text-foreground"
+                aria-label="Open menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <div class="font-bold text-lg tracking-tight">FinTrack</div>
+        </div>
+        <div
+            class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs ring-2 ring-primary/20">
+            RP
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <div id="sidebar-overlay" class="mobile-nav-overlay lg:hidden"></div>
+
+        <aside id="sidebar" class="app-sidebar flex flex-col py-6 px-4">
+            <div class="mb-8 px-2 hidden lg:block">
+                <h1 class="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                    <div class="w-2 h-6 bg-primary rounded-sm"></div>
+                    FinTrack
+                </h1>
+                <p class="text-xs text-muted-foreground mt-1 ml-4">Personal Finance</p>
+            </div>
+
+            <nav class="flex-1 space-y-1 overflow-y-auto pr-2 -mr-2">
+                <a href="dashboard.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="transactions.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7 16V4m0 0L3 8m4-4 4 4" />
+                        <path d="M17 8v12m0 0 4-4m-4 4-4-4" />
+                    </svg>
+                    Transactions
+                </a>
+                <a href="recurring.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 2l4 4-4 4" />
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                        <path d="M7 22l-4-4 4-4" />
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                    </svg>
+                    Recurring
+                </a>
+                <a href="budgets.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 9a7 7 0 1 0-13.6 2.3C6.4 14.4 8 19 8 19h8s1.6-4.6 2.6-7.7" />
+                        <path d="M12 22v-3" />
+                        <path d="M9 19h6" />
+                    </svg>
+                    Budgets
+                </a>
+                <a href="analytics.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10" />
+                        <line x1="12" y1="20" x2="12" y2="4" />
+                        <line x1="6" y1="20" x2="6" y2="14" />
+                    </svg>
+                    Analytics
+                </a>
+
+                <div class="my-4 border-t border-border px-3 pt-4">
+                    <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Features</span>
+                </div>
+
+                <a href="scan.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                        <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                        <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                        <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                        <line x1="7" y1="12" x2="17" y2="12" />
+                    </svg>
+                    Scan Receipt
+                </a>
+                <a href="accounts.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 12V22H4V12" />
+                        <path d="M22 7H2v5h20V7z" />
+                        <path d="M12 22V7" />
+                        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+                    </svg>
+                    Accounts
+                </a>
+                <a href="credit-cards.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect class="text-foreground shrink-0" ry="2" />
+                        <line x1="1" y1="10" x2="23" y2="10" />
+                    </svg>
+                    Credit Cards
+                </a>
+                <a href="statements.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z" />
+                        <line x1="8" y1="10" x2="16" y2="10" />
+                        <line x1="8" y1="14" x2="16" y2="14" />
+                    </svg>
+                    Statements
+                </a>
+                <a href="documents.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                        <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                    Documents
+                </a>
+            </nav>
+
+            <div class="mt-auto pt-4 flex flex-col gap-1">
+                <a href="notifications.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                    Notifications
+                    <span
+                        class="absolute right-3 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-4 text-center">3</span>
+                </a>
+                <a href="settings.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                    Settings
+                </a>
+                <!-- Guide (active) -->
+                <a href="guide.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium bg-primary/10 text-primary transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                    </svg>
+                    User Guide
+                </a>
+                <button onclick="document.documentElement.classList.toggle('dark');"
+                    class="w-full flex items-center justify-between gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors group">
+                    <div class="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dark:hidden">
+                            <circle cx="12" cy="12" r="5" fill="currentColor"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/>
+                            <line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden dark:block">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                        <span class="dark:hidden">Light Mode</span>
+                        <span class="hidden dark:inline">Dark Mode</span>
+                    </div>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main id="main-content" class="app-main flex flex-col h-screen lg:h-auto overflow-y-auto w-full scroll-smooth">
+            <div class="px-5 pt-6 lg:px-10 lg:pt-10 max-w-[1200px] mx-auto w-full">
+
+                <header class="mb-4 lg:mb-10 lg:flex items-end justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold tracking-tight text-foreground mb-2">User Guide</h1>
+                        <p class="text-muted-foreground text-lg">Everything you need to know to get the most out of
+                            FinTrack.</p>
+                    </div>
+                </header>
+
+                <!-- Mobile Sticky TOC -->
+                <div class="lg:hidden mobile-toc">
+                    <div class="flex flex-col">
+                        <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">On this
+                            page</span>
+                        <span id="mobile-toc-active-label" class="font-medium text-sm text-primary">Getting
+                            Started</span>
+                    </div>
+                    <button id="mobile-toc-btn"
+                        class="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label="Toggle Table of Contents">
+                        <svg id="mobile-toc-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+
+                    <!-- Dropdown content -->
+                    <nav id="mobile-toc-dropdown" class="mobile-toc-dropdown p-2 flex flex-col gap-1">
+                        <a href="#getting-started"
+                            class="p-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground rounded-md transition-colors mobile-toc-link">Getting
+                            Started</a>
+                        <a href="#transactions"
+                            class="p-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground rounded-md transition-colors mobile-toc-link">Transactions</a>
+                        <a href="#scan-receipt"
+                            class="p-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground rounded-md transition-colors mobile-toc-link">Scan
+                            Receipt / AI Import</a>
+                        <a href="#budgets"
+                            class="p-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground rounded-md transition-colors mobile-toc-link">Budgets</a>
+                        <a href="#recurring"
+                            class="p-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground rounded-md transition-colors mobile-toc-link">Recurring
+                            Transactions</a>
+                        <a href="#credit-cards"
+                            class="p-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground rounded-md transition-colors mobile-toc-link">Credit
+                            Cards &amp; Statements</a>
+                        <a href="#analytics"
+                            class="p-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground rounded-md transition-colors mobile-toc-link">Analytics</a>
+                    </nav>
+                </div>
+
+                <div class="flex flex-col lg:flex-row gap-8 lg:gap-16 pb-20 items-start mt-4 lg:mt-0">
+
+                    <!-- Guide Content (Prose) -->
+                    <article class="prose flex-1 min-w-0">
+
+                        <section id="getting-started" class="scroll-mt-24 lg:scroll-mt-10">
+                            <h2>Getting Started</h2>
+                            <p>FinTrack is a personal finance manager built for the Philippines. It tracks your spending
+                                across bank accounts and credit cards, lets you set budgets by category, and uses AI to
+                                extract transactions from receipts and bank statements.</p>
+
+                            <h3>1. Add your accounts</h3>
+                            <p>Go to <strong>Accounts</strong> in the sidebar and click <em>Add Account</em>. Enter your
+                                bank name, account type (Savings, Checking, GCash, etc.), and current balance. FinTrack
+                                does not connect to banks directly — you enter balances manually.</p>
+
+                            <h3>2. Add your credit cards</h3>
+                            <p>Go to <strong>Credit Cards</strong> and click <em>Add Card</em>. Enter the card name,
+                                credit limit, statement day (when your billing cycle closes), and due day (when payment
+                                is due).</p>
+
+                            <h3>3. Set up budgets</h3>
+                            <p>Go to <strong>Budgets</strong> and click <em>Add Budget</em>. Choose a category (Food
+                                &amp; Dining, Shopping, Transport, etc.), set a monthly limit in pesos, and save.
+                                FinTrack will alert you when you're approaching or exceeding the limit.</p>
+                        </section>
+
+                        <section id="transactions" class="scroll-mt-24 lg:scroll-mt-10">
+                            <h2>Transactions</h2>
+                            <p>Transactions are the core of FinTrack. Every expense, income, or transfer you record is
+                                stored here.</p>
+
+                            <h3>Adding transactions manually</h3>
+                            <ol>
+                                <li>Click <em>Add Transaction</em> on the Transactions page.</li>
+                                <li>Choose the type: <span class="badge-inline">expense</span>, <span
+                                        class="badge-inline">income</span>, or <span
+                                        class="badge-inline">transfer</span>.</li>
+                                <li>Enter the amount in pesos, description, category, date, and the account or card it
+                                    came from.</li>
+                                <li>Click <em>Save</em>. The transaction appears immediately in your list and updates
+                                    your budget totals.</li>
+                            </ol>
+
+                            <h3>Filtering and searching</h3>
+                            <p>Use the search bar to find transactions by description. Use the category and account
+                                dropdowns to filter. The date range picker lets you view any custom period.</p>
+
+                            <div class="callout callout-tip">
+                                <div class="callout-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <path d="M12 16v-4" />
+                                        <path d="M12 8h.01" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="callout-title">Tip: Inline editing</div>
+                                    <div class="callout-content">Click any transaction row to open an edit sheet without
+                                        leaving the page. You can change the amount, category, or description directly.
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="scan-receipt" class="scroll-mt-24 lg:scroll-mt-10">
+                            <h2>Scan Receipt / AI Import</h2>
+                            <p>FinTrack uses a clever copy-paste AI workflow to extract transactions from images and
+                                PDFs. It does not have a direct AI API connection — instead, you use your own AI
+                                assistant (like Gemini, ChatGPT, or Claude).</p>
+
+                            <h3>Single receipt workflow</h3>
+                            <ol>
+                                <li>Go to <strong>Scan Receipt</strong> and upload your receipt image (JPG, PNG, PDF).
+                                </li>
+                                <li>Click <em>Copy AI Prompt</em>. This copies a pre-formatted prompt specifically
+                                    designed for receipt extraction.</li>
+                                <li>Paste the prompt (along with your image) into Gemini, ChatGPT, or Claude.</li>
+                                <li>Copy the AI's JSON response and paste it into the <em>Step 2</em> text area in
+                                    FinTrack.</li>
+                                <li>Click <em>Parse &amp; Review</em> to inspect the extracted transactions before
+                                    saving them to your database.</li>
+                            </ol>
+
+                            <h3>Bulk import (bank statement)</h3>
+                            <p>Switch to the <em>Bulk Import</em> tab. Upload a PDF statement or CSV export. The same AI
+                                copy-paste flow applies — the AI will return multiple transactions in one JSON array.
+                                You can review all of them in a table before confirming the import.</p>
+
+                            <div class="callout callout-warn">
+                                <div class="callout-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path
+                                            d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                                        <path d="M12 9v4" />
+                                        <path d="M12 17h.01" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="callout-title">Important: Review before saving</div>
+                                    <div class="callout-content">Always review AI-extracted transactions before saving.
+                                        AI models can occasionally misread amounts, confuse dates, or select the wrong
+                                        categories. The review step lets you edit any field before it becomes permanent.
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="budgets" class="scroll-mt-24 lg:scroll-mt-10">
+                            <h2>Budgets</h2>
+                            <p>Budgets reset on the first day of each month. The progress bar on each budget card gives
+                                a quick visual indication of how much you've spent relative to your limit.</p>
+
+                            <h3>Budget alerts</h3>
+                            <p>You'll receive a notification when spending reaches 80% of a budget (this threshold is
+                                configurable in Settings). A second alert fires when you exceed 100%. Both alerts also
+                                appear in the Notifications page.</p>
+
+                            <div class="callout callout-tip">
+                                <div class="callout-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <path d="M12 16v-4" />
+                                        <path d="M12 8h.01" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="callout-title">Tip: Unlinked budgets</div>
+                                    <div class="callout-content">Budgets track all transactions in a specific category
+                                        regardless of which account or credit card was used to make the payment. If you
+                                        have a "Food &amp; Dining" budget, every expense tagged with that category
+                                        counts toward it.</div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="recurring" class="scroll-mt-24 lg:scroll-mt-10">
+                            <h2>Recurring Transactions</h2>
+                            <p>Recurring transactions are subscriptions, rent, and bills that repeat on a fixed schedule
+                                (monthly, weekly, or yearly). FinTrack auto-logs them on their scheduled date so you
+                                don't have to enter them manually.</p>
+
+                            <h3>Adding a recurring transaction</h3>
+                            <ol>
+                                <li>Go to <strong>Recurring</strong> and click <em>Add Recurring</em>.</li>
+                                <li>Enter the service name (e.g., Netflix, Spotify), amount, category, account, and
+                                    frequency.</li>
+                                <li>Set the next due date. FinTrack will log a transaction on that date and
+                                    automatically schedule the next one.</li>
+                            </ol>
+                        </section>
+
+                        <section id="credit-cards" class="scroll-mt-24 lg:scroll-mt-10">
+                            <h2>Credit Cards &amp; Statements</h2>
+                            <p>Each credit card you add requires a statement day and a due day. When the billing cycle
+                                closes, FinTrack generates a statement record so you can track precisely what is owed
+                                and when the payment is due.</p>
+
+                            <h3>Marking statements as paid</h3>
+                            <p>Go to <strong>Statements</strong>, locate the current statement, and click <em>Mark
+                                    Paid</em>. This updates the statement status, removes the payment reminder from
+                                Notifications, and logs a transfer transaction. You can still view paid statements for
+                                historical reference.</p>
+
+                            <h3>Utilization rate</h3>
+                            <p>On the Credit Cards page, each card dynamically shows its current balance against the
+                                credit limit as a utilization percentage. Keeping this utilization rate below 30% is
+                                generally recommended for maintaining good credit health.</p>
+                        </section>
+
+                        <section id="analytics" class="scroll-mt-24 lg:scroll-mt-10 border-none">
+                            <h2>Analytics</h2>
+                            <p>The Analytics page provides a visual breakdown of your financial health. Charts update in
+                                real-time as you add transactions or change the date range.</p>
+
+                            <ul>
+                                <li><strong>Spending over time</strong> &mdash; an interactive bar chart showing daily
+                                    or monthly aggregated totals.</li>
+                                <li><strong>Category breakdown</strong> &mdash; a donut chart illustrating the
+                                    percentage of spending allocated to each category.</li>
+                                <li><strong>Cash flow (Income vs. Expense)</strong> &mdash; a side-by-side comparison to
+                                    ensure you are earning more than you spend.</li>
+                                <li><strong>Top merchants</strong> &mdash; a ranked list showing where your money goes
+                                    the most frequently.</li>
+                            </ul>
+
+                            <p>Use the date range picker in the top right corner of the Analytics page to change the
+                                analysis period. You can easily compare the current month to any previous month or year.
+                            </p>
+                        </section>
+                    </article>
+
+                    <!-- Desktop Sidebar / TOC -->
+                    <aside class="hidden lg:block w-64 shrink-0">
+                        <div class="toc-nav">
+                            <h4 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4 pl-3">
+                                On this page</h4>
+                            <nav id="desktop-toc-nav" class="flex flex-col">
+                                <a href="#getting-started" class="toc-item active" data-target="getting-started">Getting
+                                    Started</a>
+                                <a href="#transactions" class="toc-item" data-target="transactions">Transactions</a>
+                                <a href="#scan-receipt" class="toc-item" data-target="scan-receipt">Scan Receipt / AI
+                                    Import</a>
+                                <a href="#budgets" class="toc-item" data-target="budgets">Budgets</a>
+                                <a href="#recurring" class="toc-item" data-target="recurring">Recurring Transactions</a>
+                                <a href="#credit-cards" class="toc-item" data-target="credit-cards">Credit Cards &amp;
+                                    Statements</a>
+                                <a href="#analytics" class="toc-item" data-target="analytics">Analytics</a>
+                            </nav>
+                        </div>
+                    </aside>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Back to Top Button -->
+    <a href="#top" id="back-to-top" class="back-to-top" aria-label="Back to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m18 15-6-6-6 6" />
+        </svg>
+    </a>
+
+    <script>
+        // Mobile Sidebar Logic
+        const mobileBtn = document.getElementById('mobile-menu-btn');
+        const sidebar = document.getElementById('sidebar');
+        const navOverlay = document.getElementById('sidebar-overlay');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            navOverlay.classList.toggle('open');
+            document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
+        }
+        if (mobileBtn && navOverlay) {
+            mobileBtn.addEventListener('click', toggleSidebar);
+            navOverlay.addEventListener('click', toggleSidebar);
+        }
+
+        // Scroll Spy & TOC Logic
+        const mainContent = document.getElementById('main-content');
+        const sections = Array.from(document.querySelectorAll('article.prose section'));
+        const desktopTocLinks = document.querySelectorAll('#desktop-toc-nav .toc-item');
+        const mobileTocLinks = document.querySelectorAll('.mobile-toc-link');
+        const mobileTocLabel = document.getElementById('mobile-toc-active-label');
+        const backToTopBtn = document.getElementById('back-to-top');
+
+        // Create an intersection observer to track which section is currently active
+        const observerOptions = {
+            root: mainContent,
+            rootMargin: '-60px 0px -60% 0px', // Trigger when header passes near top
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+
+                    // Update Desktop TOC
+                    desktopTocLinks.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('data-target') === id) {
+                            link.classList.add('active');
+                            // Update mobile label to match desktop active text
+                            if (mobileTocLabel) mobileTocLabel.textContent = link.textContent;
+                        }
+                    });
+
+                    // Update Mobile TOC links
+                    mobileTocLinks.forEach(link => {
+                        link.classList.remove('font-bold', 'text-primary');
+                        if (link.getAttribute('href') === `#${id}`) {
+                            link.classList.add('font-bold', 'text-primary');
+                        }
+                    });
+                }
+            });
+        }, observerOptions);
+
+        sections.forEach(sec => observer.observe(sec));
+
+        // Handle Back to Top visibility
+        if (mainContent && backToTopBtn) {
+            mainContent.addEventListener('scroll', () => {
+                if (mainContent.scrollTop > 500) {
+                    backToTopBtn.classList.add('visible');
+                } else {
+                    backToTopBtn.classList.remove('visible');
+                }
+            });
+        }
+
+        // Mobile TOC Dropdown Toggle
+        const mobileTocBtn = document.getElementById('mobile-toc-btn');
+        const mobileTocDropdown = document.getElementById('mobile-toc-dropdown');
+        const mobileTocIcon = document.getElementById('mobile-toc-icon');
+
+        if (mobileTocBtn && mobileTocDropdown) {
+            mobileTocBtn.addEventListener('click', () => {
+                const isOpen = mobileTocDropdown.classList.contains('open');
+                if (isOpen) {
+                    mobileTocDropdown.classList.remove('open');
+                    mobileTocIcon.style.transform = 'rotate(0deg)';
+                } else {
+                    mobileTocDropdown.classList.add('open');
+                    mobileTocIcon.style.transform = 'rotate(180deg)';
+                }
+            });
+
+            // Close dropdown when a link is clicked
+            mobileTocLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileTocDropdown.classList.remove('open');
+                    mobileTocIcon.style.transform = 'rotate(0deg)';
+                });
+            });
+        }
+
+        // Ensure anchor links scroll within the specific scroll container (main-content) smoothly
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const targetId = this.getAttribute('href');
+                if (targetId === '#top') {
+                    e.preventDefault();
+                    mainContent.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                }
+
+                const targetEl = document.querySelector(targetId);
+                if (targetEl && targetId !== '#') {
+                    e.preventDefault();
+
+                    // Manually calculate the scroll position relative to the container
+                    const containerTop = mainContent.getBoundingClientRect().top;
+                    const targetTop = targetEl.getBoundingClientRect().top;
+
+                    mainContent.scrollTo({
+                        top: mainContent.scrollTop + targetTop - containerTop - 60, // 60px offset for the scrolling margin
+                        behavior: 'smooth'
+                    });
+
+                    // Update URL without jumping
+                    history.pushState(null, null, targetId);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

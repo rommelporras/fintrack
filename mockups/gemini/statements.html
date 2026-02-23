@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>FinTrack &mdash; Statements</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="tailwind-config.js"></script>
+    <link rel="stylesheet" href="index.css">
+    <style>
+        /* Table / List Styles */
+        .statement-row {
+            transition: background-color 0.2s ease;
+        }
+
+        .statement-row:hover {
+            background-color: var(--bg-card-hover);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.125rem 0.625rem;
+            border-radius: 999px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-paid {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .status-pending {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .status-overdue {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        /* Summary Card Gradients */
+        .summary-card-1 {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.02) 100%);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .summary-card-2 {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.02) 100%);
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .summary-card-3 {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.02) 100%);
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+
+        /* Filters Bar */
+        .filters-bar {
+            scrollbar-width: none;
+        }
+
+        .filters-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Modal / Sheet Transitions */
+        .backdrop {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            backdrop-filter: blur(4px);
+        }
+
+        .backdrop.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .side-sheet {
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .side-sheet.open {
+            transform: translateX(0);
+        }
+
+        .modal-dialog {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+
+        .modal-dialog.open {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        .txn-list-item {
+            transition: background-color 0.2s;
+        }
+
+        .txn-list-item:hover {
+            background-color: var(--bg-muted);
+        }
+    </style>
+</head>
+
+<body class="bg-background text-foreground antialiased selection:bg-primary selection:text-foreground pb-10 lg:pb-0">
+
+    <!-- Mobile Header -->
+    <header class="mobile-header border-b border-border bg-card/80 backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <button id="mobile-menu-btn" class="p-2 -ml-2 text-muted-foreground hover:text-foreground">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <div class="font-bold text-lg tracking-tight">FinTrack</div>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center overflow-hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="text-muted-foreground">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <div id="sidebar-overlay" class="mobile-nav-overlay lg:hidden"></div>
+
+        <aside id="sidebar" class="app-sidebar flex flex-col py-6 px-4">
+            <div class="mb-8 px-2 hidden lg:block">
+                <h1 class="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                    <div class="w-2 h-6 bg-primary rounded-sm"></div>
+                    FinTrack
+                </h1>
+                <p class="text-xs text-muted-foreground mt-1 ml-4">Personal Finance</p>
+            </div>
+
+            <nav class="flex-1 space-y-1 overflow-y-auto pr-2 -mr-2">
+                <a href="dashboard.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="transactions.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7 16V4m0 0L3 8m4-4 4 4" />
+                        <path d="M17 8v12m0 0 4-4m-4 4-4-4" />
+                    </svg>
+                    Transactions
+                </a>
+                <a href="recurring.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 2l4 4-4 4" />
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                        <path d="M7 22l-4-4 4-4" />
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                    </svg>
+                    Recurring
+                </a>
+                <a href="budgets.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 9a7 7 0 1 0-13.6 2.3C6.4 14.4 8 19 8 19h8s1.6-4.6 2.6-7.7" />
+                        <path d="M12 22v-3" />
+                        <path d="M9 19h6" />
+                    </svg>
+                    Budgets
+                </a>
+                <a href="analytics.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10" />
+                        <line x1="12" y1="20" x2="12" y2="4" />
+                        <line x1="6" y1="20" x2="6" y2="14" />
+                    </svg>
+                    Analytics
+                </a>
+
+                <div class="my-4 border-t border-border px-3 pt-4">
+                    <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Features</span>
+                </div>
+
+                <a href="scan.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                        <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                        <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                        <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                        <line x1="7" y1="12" x2="17" y2="12" />
+                    </svg>
+                    Scan Receipt
+                </a>
+                <a href="accounts.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 12V22H4V12" />
+                        <path d="M22 7H2v5h20V7z" />
+                        <path d="M12 22V7" />
+                        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+                    </svg>
+                    Accounts
+                </a>
+                <a href="credit-cards.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect class="text-foreground shrink-0" ry="2" />
+                        <line x1="1" y1="10" x2="23" y2="10" />
+                    </svg>
+                    Credit Cards
+                </a>
+
+                <!-- Statements (active) -->
+                <a href="statements.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium bg-primary/10 text-primary transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z" />
+                        <line x1="8" y1="10" x2="16" y2="10" />
+                        <line x1="8" y1="14" x2="16" y2="14" />
+                    </svg>
+                    Statements
+                </a>
+
+                <a href="documents.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                        <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                    Documents
+                </a>
+            </nav>
+
+            <div class="mt-auto pt-4 flex flex-col gap-1">
+                <a href="notifications.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                    Notifications
+                    <span
+                        class="absolute right-3 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-4 text-center">3</span>
+                </a>
+                <a href="settings.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                    Settings
+                </a>
+                <button onclick="document.documentElement.classList.toggle('dark');"
+                    class="w-full flex items-center justify-between gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors group">
+                    <div class="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dark:hidden">
+                            <circle cx="12" cy="12" r="5" fill="currentColor"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/>
+                            <line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden dark:block">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                        <span class="dark:hidden">Light Mode</span>
+                        <span class="hidden dark:inline">Dark Mode</span>
+                    </div>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="app-main flex flex-col h-screen lg:h-auto overflow-hidden">
+
+            <!-- Sticky Header Region -->
+            <div class="px-5 py-6 lg:px-10 lg:pt-10 lg:pb-6 border-b border-border bg-background z-10 flex-shrink-0">
+                <div class="max-w-[1200px] mx-auto">
+
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-3xl font-bold tracking-tight text-foreground mb-1">Statements</h1>
+                            <p class="text-sm text-muted-foreground">Credit card billing statements and payment
+                                tracking.</p>
+                        </div>
+                        <button
+                            class="btn-primary flex items-center justify-center gap-2 shadow-sm shadow-sm w-full sm:w-auto"
+                            onclick="openSheet('add-statement')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                            Add Statement
+                        </button>
+                    </div>
+
+                    <!-- Filters Row -->
+                    <div class="flex items-center gap-3 overflow-x-auto filters-bar pb-1 -mx-5 px-5 lg:mx-0 lg:px-0">
+                        <div class="relative min-w-[200px]">
+                            <select
+                                class="form-select appearance-none pl-3 pr-8 py-2 border border-border bg-card rounded-md text-sm font-medium hover:bg-muted/50 transition-colors w-full cursor-pointer">
+                                <option>All Cards</option>
+                                <option>BDO Visa Platinum</option>
+                                <option>BPI Mastercard Gold</option>
+                                <option>Metrobank World</option>
+                            </select>
+                            <div
+                                class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-muted-foreground">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="relative min-w-[130px]">
+                            <select
+                                class="form-select appearance-none pl-3 pr-8 py-2 border border-border bg-card rounded-md text-sm font-medium hover:bg-muted/50 transition-colors w-full cursor-pointer">
+                                <option>All Status</option>
+                                <option>Paid</option>
+                                <option>Pending</option>
+                                <option>Overdue</option>
+                            </select>
+                            <div
+                                class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-muted-foreground">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="relative min-w-[150px]">
+                            <select
+                                class="form-select appearance-none pl-3 pr-8 py-2 border border-border bg-card rounded-md text-sm font-medium hover:bg-muted/50 transition-colors w-full cursor-pointer">
+                                <option>Last 6 months</option>
+                                <option>Last 12 months</option>
+                                <option>This year</option>
+                            </select>
+                            <div
+                                class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-muted-foreground">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Scrollable Content Area -->
+            <div class="flex-1 overflow-y-auto px-5 lg:px-10 pb-6 lg:pb-10 pt-6">
+                <div class="max-w-[1200px] mx-auto">
+
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                        <div class="card p-5 summary-card-1">
+                            <div class="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
+                                Outstanding Balance
+                            </div>
+                            <div class="text-2xl font-bold text-[#ef4444] tabular-nums tracking-tight">₱47,850.00</div>
+                            <div class="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" class="text-foreground">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                Across 2 unpaid statements
+                            </div>
+                        </div>
+
+                        <div class="card p-5 summary-card-2">
+                            <div class="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
+                                Paid This Month
+                            </div>
+                            <div class="text-2xl font-bold text-[#10b981] tabular-nums tracking-tight">₱28,500.00</div>
+                            <div class="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" class="text-foreground">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                1 statement settled recently
+                            </div>
+                        </div>
+
+                        <div class="card p-5 summary-card-3">
+                            <div class="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
+                                Next Due Date
+                            </div>
+                            <div class="text-2xl font-bold text-foreground tabular-nums tracking-tight">Feb 28, 2026</div>
+                            <div class="text-xs text-[#f59e0b] font-medium mt-2 flex items-center gap-1.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect class="text-foreground shrink-0" ry="2" />
+                                    <line x1="16" y1="2" x2="16" y2="6" />
+                                    <line x1="8" y1="2" x2="8" y2="6" />
+                                    <line x1="3" y1="10" x2="21" y2="10" />
+                                </svg>
+                                5 days remaining to pay
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statements Table Wrapper -->
+                    <div class="card p-0 overflow-hidden flex flex-col">
+
+                        <div class="overflow-x-auto">
+                            <!-- Desktop Table Layout -->
+                            <table class="w-full text-left min-w-[800px]">
+                                <thead>
+                                    <tr
+                                        class="bg-card/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                        <th class="px-5 py-4 w-[240px]">Card Account</th>
+                                        <th class="px-5 py-4">Billing Period</th>
+                                        <th class="px-5 py-4 text-right">Statement Date</th>
+                                        <th class="px-5 py-4 text-right">Due Date</th>
+                                        <th class="px-5 py-4 text-right">Total Amount</th>
+                                        <th class="px-5 py-4 text-center">Status</th>
+                                        <th class="px-5 py-4 w-[140px]"></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-border text-sm">
+
+                                    <!-- Row 1: BDO Pending -->
+                                    <tr class="statement-row group">
+                                        <td class="px-5 py-4">
+                                            <div
+                                                class="font-bold text-foreground group-hover:text-primary transition-colors">
+                                                BDO Visa Platinum</div>
+                                            <div class="text-xs text-muted-foreground mt-0.5 font-mono">•••• 3892</div>
+                                        </td>
+                                        <td class="px-5 py-4 text-muted-foreground">
+                                            Jan 1 &ndash; Jan 31, 2026
+                                        </td>
+                                        <td class="px-5 py-4 text-right text-muted-foreground">
+                                            Feb 5, 2026
+                                        </td>
+                                        <td class="px-5 py-4 text-right text-[#ef4444] font-medium">
+                                            Feb 28, 2026
+                                        </td>
+                                        <td class="px-5 py-4 text-right">
+                                            <div class="font-bold text-foreground tabular-nums tracking-tight">₱32,450.00
+                                            </div>
+                                            <div class="text-xs text-muted-foreground mt-0.5 tabular-nums">Min:
+                                                ₱1,200.00</div>
+                                        </td>
+                                        <td class="px-5 py-4 text-center">
+                                            <span class="status-badge status-pending badge-indicator">Pending</span>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div
+                                                class="flex items-center justify-end gap-2 pr-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    class="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
+                                                    title="View Details" onclick="openViewModal('bdo-jan')">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                                        <circle cx="12" cy="12" r="3" />
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    class="mark-paid-btn btn-primary text-xs py-1.5 px-3 bg-primary/20 text-primary border border-primary/20 hover:bg-primary/30 ml-1 whitespace-nowrap"
+                                                    onclick="markPaid(this)">
+                                                    Mark Paid
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Row 2: BPI Pending -->
+                                    <tr class="statement-row group">
+                                        <td class="px-5 py-4">
+                                            <div
+                                                class="font-bold text-foreground group-hover:text-primary transition-colors">
+                                                BPI Mastercard Gold</div>
+                                            <div class="text-xs text-muted-foreground mt-0.5 font-mono">•••• 5517</div>
+                                        </td>
+                                        <td class="px-5 py-4 text-muted-foreground">
+                                            Jan 10 &ndash; Feb 9, 2026
+                                        </td>
+                                        <td class="px-5 py-4 text-right text-muted-foreground">
+                                            Feb 15, 2026
+                                        </td>
+                                        <td class="px-5 py-4 text-right text-[#ef4444] font-medium">
+                                            Mar 5, 2026
+                                        </td>
+                                        <td class="px-5 py-4 text-right">
+                                            <div class="font-bold text-foreground tabular-nums tracking-tight">₱15,400.00
+                                            </div>
+                                            <div class="text-xs text-muted-foreground mt-0.5 tabular-nums">Min: ₱770.00
+                                            </div>
+                                        </td>
+                                        <td class="px-5 py-4 text-center">
+                                            <span class="status-badge status-pending badge-indicator">Pending</span>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div
+                                                class="flex items-center justify-end gap-2 pr-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    class="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
+                                                    title="View Details" onclick="openViewModal('bpi-jan')">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                                        <circle cx="12" cy="12" r="3" />
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    class="mark-paid-btn btn-primary text-xs py-1.5 px-3 bg-primary/20 text-primary border border-primary/20 hover:bg-primary/30 ml-1 whitespace-nowrap"
+                                                    onclick="markPaid(this)">
+                                                    Mark Paid
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Row 3: Metrobank Paid -->
+                                    <tr class="statement-row group">
+                                        <td class="px-5 py-4">
+                                            <div
+                                                class="font-bold text-foreground group-hover:text-primary transition-colors">
+                                                Metrobank World</div>
+                                            <div class="text-xs text-muted-foreground mt-0.5 font-mono">•••• 1100</div>
+                                        </td>
+                                        <td class="px-5 py-4 text-muted-foreground">
+                                            Dec 1 &ndash; Dec 31, 2025
+                                        </td>
+                                        <td class="px-5 py-4 text-right text-muted-foreground">
+                                            Jan 7, 2026
+                                        </td>
+                                        <td class="px-5 py-4 text-right text-muted-foreground due-date-cell">
+                                            Jan 28, 2026
+                                        </td>
+                                        <td class="px-5 py-4 text-right">
+                                            <div class="font-bold text-foreground tabular-nums tracking-tight">₱28,500.00
+                                            </div>
+                                            <div class="text-xs text-muted-foreground mt-0.5 tabular-nums">Min:
+                                                ₱1,425.00</div>
+                                        </td>
+                                        <td class="px-5 py-4 text-center">
+                                            <span class="status-badge status-paid badge-indicator">Paid</span>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div
+                                                class="flex items-center justify-end gap-2 pr-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    class="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
+                                                    title="View Details" onclick="openViewModal('metro-dec')">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                                        <circle cx="12" cy="12" r="3" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Row 4: BDO Paid -->
+                                    <tr class="statement-row group">
+                                        <td class="px-5 py-4">
+                                            <div
+                                                class="font-bold text-foreground group-hover:text-primary transition-colors">
+                                                BDO Visa Platinum</div>
+                                            <div class="text-xs text-muted-foreground mt-0.5 font-mono">•••• 3892</div>
+                                        </td>
+                                        <td class="px-5 py-4 text-muted-foreground">
+                                            Dec 1 &ndash; Dec 31, 2025
+                                        </td>
+                                        <td class="px-5 py-4 text-right text-muted-foreground">
+                                            Jan 5, 2026
+                                        </td>
+                                        <td class="px-5 py-4 text-right text-muted-foreground due-date-cell">
+                                            Jan 28, 2026
+                                        </td>
+                                        <td class="px-5 py-4 text-right">
+                                            <div class="font-bold text-foreground tabular-nums tracking-tight">₱41,200.00
+                                            </div>
+                                            <div class="text-xs text-muted-foreground mt-0.5 tabular-nums">Min:
+                                                ₱2,060.00</div>
+                                        </td>
+                                        <td class="px-5 py-4 text-center">
+                                            <span class="status-badge status-paid badge-indicator">Paid</span>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div
+                                                class="flex items-center justify-end gap-2 pr-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    class="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
+                                                    title="View Details" onclick="openViewModal('bdo-dec')">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                                        <circle cx="12" cy="12" r="3" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Row 5: BPI Paid -->
+                                    <tr class="statement-row group">
+                                        <td class="px-5 py-4">
+                                            <div
+                                                class="font-bold text-foreground group-hover:text-primary transition-colors">
+                                                BPI Mastercard Gold</div>
+                                            <div class="text-xs text-muted-foreground mt-0.5 font-mono">•••• 5517</div>
+                                        </td>
+                                        <td class="px-5 py-4 text-muted-foreground">
+                                            Dec 10 &ndash; Jan 9, 2026
+                                        </td>
+                                        <td class="px-5 py-4 text-right text-muted-foreground">
+                                            Jan 15, 2026
+                                        </td>
+                                        <td class="px-5 py-4 text-right text-muted-foreground due-date-cell">
+                                            Feb 5, 2026
+                                        </td>
+                                        <td class="px-5 py-4 text-right">
+                                            <div class="font-bold text-foreground tabular-nums tracking-tight">₱9,800.00
+                                            </div>
+                                            <div class="text-xs text-muted-foreground mt-0.5 tabular-nums">Min: ₱490.00
+                                            </div>
+                                        </td>
+                                        <td class="px-5 py-4 text-center">
+                                            <span class="status-badge status-paid badge-indicator">Paid</span>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div
+                                                class="flex items-center justify-end gap-2 pr-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    class="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors"
+                                                    title="View Details" onclick="openViewModal('bpi-dec')">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                                        <circle cx="12" cy="12" r="3" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Table Pagination Footer -->
+                        <div
+                            class="border-t border-border px-6 py-4 bg-card/50 flex flex-col sm:flex-row items-center gap-4 justify-between">
+                            <span class="text-sm font-medium text-muted-foreground">Showing 5 of 12 statements</span>
+                            <div class="flex items-center gap-1">
+                                <button
+                                    class="btn-outline px-3 py-1.5 opacity-50 cursor-not-allowed text-xs sm:text-sm">Prev</button>
+                                <div class="flex items-center gap-1 mx-2">
+                                    <button
+                                        class="w-8 h-8 rounded-md bg-primary text-primary-foreground font-medium text-sm flex items-center justify-center">1</button>
+                                    <button
+                                        class="w-8 h-8 rounded-md hover:bg-muted text-muted-foreground font-medium text-sm flex items-center justify-center transition-colors">2</button>
+                                    <button
+                                        class="w-8 h-8 rounded-md hover:bg-muted text-muted-foreground font-medium text-sm flex items-center justify-center transition-colors">3</button>
+                                </div>
+                                <button
+                                    class="btn-outline px-3 py-1.5 hover:bg-muted transition-colors text-xs sm:text-sm">Next</button>
+                            </div>
+                        </div>
+
+                    </div><!-- /table wrapper -->
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+
+    <!-- Gloabl Backdrop for Modals and Sheets -->
+    <div id="modal-backdrop" class="fixed inset-0 bg-background/80 z-50 backdrop flex items-center justify-center"
+        onclick="closeAll()">
+
+        <!-- View Statement Modal -->
+        <div id="view-modal"
+            class="modal-dialog bg-card border border-border rounded-xl shadow-2xl w-full max-w-lg mx-4 flex flex-col max-h-[90vh]"
+            onclick="event.stopPropagation()">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-6 py-5 border-b border-border flex-shrink-0">
+                <div>
+                    <h2 id="modal-title" class="text-lg font-bold text-foreground tracking-tight">Statement Details</h2>
+                    <p id="modal-meta" class="text-xs text-muted-foreground mt-1">Billing Period Data</p>
+                </div>
+                <button onclick="closeAll()"
+                    class="p-2 -mr-2 rounded-full hover:bg-muted text-muted-foreground transition-colors self-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Scrollable Body -->
+            <div class="flex-1 overflow-y-auto p-6 scrollbar-thin">
+
+                <!-- Summary Box -->
+                <div id="modal-summary"
+                    class="grid grid-cols-3 gap-4 bg-muted/50 border border-border rounded-lg p-4 mb-6">
+                    <div class="flex flex-col gap-1">
+                        <span class="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Total</span>
+                        <span class="text-base font-bold text-foreground tabular-nums tracking-tight">₱0.00</span>
+                    </div>
+                </div>
+
+                <h3 class="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Transactions</h3>
+
+                <!-- Transaction List -->
+                <div id="modal-transactions"
+                    class="flex flex-col border border-border rounded-lg overflow-hidden bg-card divide-y divide-border">
+                    <!-- Trans items injected via JS -->
+                </div>
+
+            </div>
+
+            <!-- Footer -->
+            <div
+                class="p-4 border-t border-border flex justify-between items-center bg-card/50 flex-shrink-0 rounded-b-xl">
+                <span class="text-xs font-medium text-muted-foreground ml-2">Displaying all statement
+                    transactions</span>
+                <button class="btn-outline px-6 py-2 bg-card" onclick="closeAll()">Close</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Add Statement Side Sheet -->
+    <div id="side-sheet"
+        class="fixed inset-y-0 right-0 w-full md:w-[440px] bg-card border-l border-border shadow-2xl z-50 side-sheet flex flex-col">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-5 border-b border-border flex-shrink-0">
+            <div>
+                <h2 class="text-lg font-bold text-foreground tracking-tight">Add Statement</h2>
+                <p class="text-sm text-muted-foreground mt-0.5">Manually record a new billing cycle.</p>
+            </div>
+            <button onclick="closeAll()"
+                class="p-2 -mr-2 rounded-full hover:bg-muted text-muted-foreground transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-5">
+
+            <div>
+                <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Credit
+                    Card</label>
+                <div class="relative">
+                    <select class="form-select appearance-none form-input w-full cursor-pointer pr-8">
+                        <option value="">Select a card...</option>
+                        <option>BDO Visa Platinum (•••• 3892)</option>
+                        <option>BPI Mastercard Gold (•••• 5517)</option>
+                        <option>Metrobank World Mastercard (•••• 1100)</option>
+                    </select>
+                    <div
+                        class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-muted-foreground">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label
+                        class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Period
+                        Start</label>
+                    <input type="date" class="form-input w-full" value="2026-02-01" />
+                </div>
+                <div>
+                    <label
+                        class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Period
+                        End</label>
+                    <input type="date" class="form-input w-full" value="2026-02-28" />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Stmt
+                        Date</label>
+                    <input type="date" class="form-input w-full" value="2026-03-05" />
+                </div>
+                <div>
+                    <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Due
+                        Date</label>
+                    <input type="date" class="form-input w-full" value="2026-03-28" />
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Total
+                    Amount (₱)</label>
+                <div class="relative">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">₱</span>
+                    <input type="number" class="form-input pl-8 py-2.5 w-full" placeholder="0.00" />
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Minimum
+                    Payment (₱)</label>
+                <div class="relative">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">₱</span>
+                    <input type="number" class="form-input pl-8 py-2.5 w-full" placeholder="0.00" />
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="p-6 border-t border-border flex justify-end gap-3 bg-card/50 flex-shrink-0">
+            <button class="btn-outline px-6" onclick="closeAll()">Cancel</button>
+            <button class="btn-primary px-8" onclick="closeAll()">Save</button>
+        </div>
+    </div>
+
+
+
+
+    <script>
+        // Data definition equivalent to original
+        const statementData = {
+            'bdo-jan': {
+                title: 'BDO Visa Platinum',
+                meta: 'Billing Period: Jan 1 – Jan 31, 2026 • Due: Feb 28, 2026',
+                summary: { total: '₱32,450.00', minPayment: '₱1,200.00', status: 'Pending' },
+                txns: [
+                    { date: 'Jan 3', merchant: 'SM Supermarket — BGC', category: 'Groceries', amount: '₱3,420.00' },
+                    { date: 'Jan 7', merchant: 'Grab Food', category: 'Dining', amount: '₱680.00' },
+                    { date: 'Jan 12', merchant: 'Lazada Online Shopping', category: 'Shopping', amount: '₱1,250.00' },
+                    { date: 'Jan 15', merchant: 'Caltex Petrol Station', category: 'Transport', amount: '₱2,800.00' },
+                    { date: 'Jan 19', merchant: 'Netflix Philippines', category: 'Subscriptions', amount: '₱549.00' },
+                    { date: 'Jan 24', merchant: 'Shopee', category: 'Shopping', amount: '₱890.00' },
+                    { date: 'Jan 28', merchant: 'Mercury Drug', category: 'Health', amount: '₱1,340.00' },
+                    { date: 'Jan 30', merchant: 'Jollibee — Makati', category: 'Dining', amount: '₱485.00' },
+                ]
+            },
+            'bpi-jan': {
+                title: 'BPI Mastercard Gold',
+                meta: 'Billing Period: Jan 10 – Feb 9, 2026 • Due: Mar 5, 2026',
+                summary: { total: '₱15,400.00', minPayment: '₱770.00', status: 'Pending' },
+                txns: [
+                    { date: 'Jan 11', merchant: 'Grab Food', category: 'Dining', amount: '₱680.00' },
+                    { date: 'Jan 14', merchant: 'Shopee', category: 'Shopping', amount: '₱890.00' },
+                    { date: 'Jan 18', merchant: 'Caltex Petrol Station', category: 'Transport', amount: '₱2,800.00' },
+                    { date: 'Jan 22', merchant: 'Lazada Online Shopping', category: 'Shopping', amount: '₱1,250.00' },
+                    { date: 'Jan 30', merchant: 'SM Supermarket — Makati', category: 'Groceries', amount: '₱3,400.00' },
+                    { date: 'Feb 5', merchant: 'Netflix Philippines', category: 'Subscriptions', amount: '₱549.00' },
+                ]
+            },
+            'metro-dec': {
+                title: 'Metrobank World MC',
+                meta: 'Billing Period: Dec 1 – Dec 31, 2025 • Paid: Jan 28, 2026',
+                summary: { total: '₱28,500.00', minPayment: '₱1,425.00', status: 'Paid' },
+                txns: [
+                    { date: 'Dec 2', merchant: 'Grab Food', category: 'Dining', amount: '₱680.00' },
+                    { date: 'Dec 5', merchant: 'Lazada 12.12 Sale', category: 'Shopping', amount: '₱4,200.00' },
+                    { date: 'Dec 10', merchant: 'Caltex Petrol Station', category: 'Transport', amount: '₱2,800.00' },
+                    { date: 'Dec 15', merchant: 'SM Supermarket — Aura', category: 'Groceries', amount: '₱3,400.00' },
+                    { date: 'Dec 20', merchant: 'Netflix Philippines', category: 'Subscriptions', amount: '₱549.00' },
+                    { date: 'Dec 24', merchant: 'Shopee Holiday Sale', category: 'Shopping', amount: '₱890.00' },
+                ]
+            },
+            'bdo-dec': {
+                title: 'BDO Visa Platinum',
+                meta: 'Billing Period: Dec 1 – Dec 31, 2025 • Paid: Jan 28, 2026',
+                summary: { total: '₱41,200.00', minPayment: '₱2,060.00', status: 'Paid' },
+                txns: [
+                    { date: 'Dec 1', merchant: 'SM Supermarket — BGC', category: 'Groceries', amount: '₱3,420.00' },
+                    { date: 'Dec 5', merchant: 'Grab Food', category: 'Dining', amount: '₱680.00' },
+                    { date: 'Dec 8', merchant: 'Lazada 12.12 Sale', category: 'Shopping', amount: '₱5,890.00' },
+                    { date: 'Dec 12', merchant: 'Caltex Petrol Station', category: 'Transport', amount: '₱2,800.00' },
+                    { date: 'Dec 18', merchant: 'Netflix Philippines', category: 'Subscriptions', amount: '₱549.00' },
+                    { date: 'Dec 22', merchant: 'Shopee', category: 'Shopping', amount: '₱1,250.00' },
+                    { date: 'Dec 27', merchant: 'Mercury Drug', category: 'Health', amount: '₱890.00' },
+                ]
+            },
+            'bpi-dec': {
+                title: 'BPI Mastercard Gold',
+                meta: 'Billing Period: Dec 10 – Jan 9, 2026 • Paid: Feb 5, 2026',
+                summary: { total: '₱9,800.00', minPayment: '₱490.00', status: 'Paid' },
+                txns: [
+                    { date: 'Dec 12', merchant: 'Grab Food', category: 'Dining', amount: '₱680.00' },
+                    { date: 'Dec 18', merchant: 'Shopee', category: 'Shopping', amount: '₱890.00' },
+                    { date: 'Dec 22', merchant: 'Caltex Petrol Station', category: 'Transport', amount: '₱2,800.00' },
+                    { date: 'Jan 3', merchant: 'SM Supermarket', category: 'Groceries', amount: '₱3,400.00' },
+                    { date: 'Jan 7', merchant: 'Netflix Philippines', category: 'Subscriptions', amount: '₱549.00' },
+                ]
+            }
+        };
+
+
+        // Modal & Sheet Logic
+        const backdrop = document.getElementById('modal-backdrop');
+        const sideSheet = document.getElementById('side-sheet');
+        const viewModal = document.getElementById('view-modal');
+
+        function closeAll() {
+            backdrop.classList.remove('open');
+            sideSheet.classList.remove('open');
+            viewModal.classList.remove('open');
+        }
+
+        function openSheet(id) {
+            if (id === 'add-statement') {
+                backdrop.classList.add('open');
+                setTimeout(() => sideSheet.classList.add('open'), 10);
+            }
+        }
+
+        // Bind original openViewModal globally
+        window.openViewModal = function (key) {
+            const data = statementData[key];
+            if (!data) return;
+
+            document.getElementById('modal-title').textContent = data.title;
+            document.getElementById('modal-meta').textContent = data.meta;
+
+            const isPaid = data.summary.status === 'Paid';
+            const statusColorClass = isPaid ? 'text-[#10b981]' : 'text-[#f59e0b]';
+
+            document.getElementById('modal-summary').innerHTML = `
+        <div class="flex flex-col gap-1 border-r border-border/50 pr-2">
+          <span class="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Total Amount</span>
+          <span class="text-base font-bold text-foreground tabular-nums tracking-tight">${data.summary.total}</span>
+        </div>
+        <div class="flex flex-col gap-1 border-r border-border/50 px-2">
+          <span class="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Min. Payment</span>
+          <span class="text-base font-medium text-muted-foreground tabular-nums tracking-tight">${data.summary.minPayment}</span>
+        </div>
+        <div class="flex flex-col gap-1 pl-2">
+          <span class="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Status</span>
+          <span class="text-base font-bold ${statusColorClass} tracking-tight">${data.summary.status}</span>
+        </div>
+      `;
+
+            let txnsHtml = '';
+            data.txns.forEach(t => {
+                txnsHtml += `
+          <div class="flex items-center justify-between p-3 txn-list-item">
+            <div class="flex items-center gap-3 md:gap-4">
+              <div class="text-xs font-semibold text-muted-foreground w-12 text-center flex-shrink-0">${t.date}</div>
+              <div>
+                <div class="text-sm font-semibold text-foreground">${t.merchant}</div>
+                <div class="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">${t.category}</div>
+              </div>
+            </div>
+            <div class="text-sm font-bold text-foreground tabular-nums text-right pl-2">${t.amount}</div>
+          </div>
+        `;
+            });
+            document.getElementById('modal-transactions').innerHTML = txnsHtml;
+
+            backdrop.classList.add('open');
+            setTimeout(() => viewModal.classList.add('open'), 10);
+        };
+
+        // Mark Paid Logic
+        window.markPaid = function (btn) {
+            event.stopPropagation();
+            const row = btn.closest('tr');
+            const badge = row.querySelector('.badge-indicator');
+            const dueDateCell = row.querySelector('.due-date-cell') || row.cells[3];
+
+            if (badge) {
+                badge.className = 'status-badge status-paid badge-indicator';
+                badge.textContent = 'Paid';
+            }
+
+            if (dueDateCell) {
+                dueDateCell.classList.remove('text-[#ef4444]', 'font-medium');
+                dueDateCell.classList.add('text-muted-foreground');
+            }
+
+            // Hide the Mark Paid button
+            btn.style.display = 'none';
+        };
+
+        // Mobile Sidebar Logic
+        const mobileBtn = document.getElementById('mobile-menu-btn');
+        const sidebar = document.getElementById('sidebar');
+        const navOverlay = document.getElementById('sidebar-overlay');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            navOverlay.classList.toggle('open');
+            document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
+        }
+        mobileBtn.addEventListener('click', toggleSidebar);
+        navOverlay.addEventListener('click', toggleSidebar);
+    </script>
+</body>
+
+</html>

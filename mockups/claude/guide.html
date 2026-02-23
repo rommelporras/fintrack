@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinTrack — User Guide</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --background: oklch(0.14 0.005 260); --foreground: oklch(0.95 0.005 260);
+      --card: oklch(0.18 0.005 260); --primary: oklch(0.72 0.17 162);
+      --primary-foreground: oklch(0.14 0.005 260); --muted: oklch(0.22 0.005 260);
+      --muted-foreground: oklch(0.65 0.01 260); --border: oklch(0.25 0.005 260);
+      --sidebar: oklch(0.12 0.005 260); --destructive: oklch(0.65 0.2 25); --radius: 0.625rem;
+    }
+    body { background: var(--background); color: var(--foreground); font-family: system-ui, sans-serif; margin: 0; height: 100vh; overflow: hidden; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: var(--muted-foreground); border-radius: 0.5rem; text-decoration: none; }
+    .nav-item:hover { background: var(--muted); }
+    .nav-active { background: var(--primary); color: var(--primary-foreground) !important; }
+    .toc-item { display:block; padding:6px 12px; font-size:13px; color:var(--muted-foreground); text-decoration:none; border-radius:0.375rem; transition: color 0.15s, background 0.15s; }
+    .toc-item:hover { background:var(--muted); color:var(--foreground); }
+    .toc-item.active { color:var(--primary); font-weight:600; background: oklch(0.72 0.17 162 / 0.08); }
+    .guide-h2 { font-size:20px; font-weight:700; margin:0 0 8px; padding-top:32px; }
+    .guide-h3 { font-size:15px; font-weight:600; margin:20px 0 8px; }
+    .guide-p { font-size:14px; color:var(--muted-foreground); line-height:1.7; margin:0 0 12px; }
+    .guide-ol { font-size:14px; color:var(--muted-foreground); line-height:1.9; padding-left:20px; margin:0 0 12px; }
+    .guide-ol li { margin-bottom:4px; }
+    .tip-box { background:oklch(0.72 0.17 162 / 0.08); border:1px solid oklch(0.72 0.17 162 / 0.25); border-radius:0.5rem; padding:12px 16px; margin:16px 0; }
+    .tip-box-title { font-size:13px; font-weight:600; color:oklch(0.72 0.17 162); margin-bottom:4px; }
+    .tip-box-body { font-size:13px; color:var(--muted-foreground); line-height:1.6; }
+    .warn-box { background:oklch(0.85 0.18 90 / 0.08); border:1px solid oklch(0.85 0.18 90 / 0.25); border-radius:0.5rem; padding:12px 16px; margin:16px 0; }
+    .warn-box-title { font-size:13px; font-weight:600; color:oklch(0.85 0.18 90); margin-bottom:4px; }
+    .warn-box-body { font-size:13px; color:var(--muted-foreground); line-height:1.6; }
+    .badge-feature { background:var(--muted); color:var(--muted-foreground); border-radius:0.375rem; padding:2px 6px; font-size:11px; font-weight:500; font-family:monospace; }
+    .section-divider { border:none; border-top:1px solid var(--border); margin:8px 0 0; }
+    /* Dialog */
+    .dialog-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 60; align-items: center; justify-content: center; }
+    .dialog-backdrop.open { display: flex; }
+    .dialog-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; width: 400px; max-width: 90vw; }
+    .btn-ghost { background: var(--muted); color: var(--foreground); border: none; border-radius: 0.5rem; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; flex: 1; }
+    .btn-destructive { background: var(--destructive); color: #fff; border: none; border-radius: 0.5rem; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; flex: 1; }
+    /* Scroll to top button */
+    #back-to-top { position: fixed; bottom: 24px; right: 24px; background: var(--primary); color: var(--primary-foreground); border: none; border-radius: 9999px; width: 40px; height: 40px; font-size: 18px; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 40; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+    #back-to-top.visible { display: flex; }
+  </style>
+</head>
+<body class="flex min-h-screen">
+
+  <!-- Sign Out Confirmation Dialog -->
+  <div id="signout-dialog" class="dialog-backdrop" onclick="if(event.target===this)closeSignout()">
+    <div class="dialog-box">
+      <h3 style="font-size:16px;font-weight:700;margin:0 0 8px;color:var(--foreground)">Sign out</h3>
+      <p style="font-size:14px;color:var(--muted-foreground);margin:0 0 24px;">Are you sure you want to sign out of FinTrack?</p>
+      <div style="display:flex;gap:12px;">
+        <button class="btn-ghost" onclick="closeSignout()">Cancel</button>
+        <button class="btn-destructive" onclick="closeSignout()">Sign out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Back to top button -->
+  <button id="back-to-top" onclick="scrollToTop()" title="Back to top">↑</button>
+
+<aside style="width:256px;height:100vh;background:var(--sidebar);border-right:1px solid var(--border);padding:16px 12px;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;">
+  <div style="padding:0 12px;margin-bottom:24px;"><div style="font-size:20px;font-weight:700;">FinTrack</div><div style="font-size:12px;color:var(--muted-foreground);">Personal Finance</div></div>
+  <nav style="flex:1;display:flex;flex-direction:column;gap:2px;">
+    <a href="dashboard.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
+    <a href="transactions.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>Transactions</a>
+    <a href="recurring.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Recurring</a>
+    <a href="budgets.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 9c0 3.314-3.134 6-7 6s-7-2.686-7-6 3.134-6 7-6 7 2.686 7 6z"/><path d="M5 15.5c0 2.485 3.134 4.5 7 4.5s7-2.015 7-4.5"/></svg>Budgets</a>
+    <a href="analytics.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</a>
+    <a href="scan.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>Scan Receipt</a>
+    <a href="accounts.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H4v4"/><path d="M20 12a2 2 0 0 0-2 2v2H6v-2a2 2 0 0 0-2-2"/><path d="M2 8l2-4h16l2 4"/></svg>Accounts</a>
+    <a href="credit-cards.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Credit Cards</a>
+    <a href="statements.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l4-2 4 2 4-2 4 2V2z"/></svg>Statements</a>
+    <a href="documents.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Documents</a>
+    <a href="notifications.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span style="margin-left:auto;background:var(--destructive);color:#fff;border-radius:9999px;padding:1px 6px;font-size:11px;">3</span></a>
+    <a href="settings.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>Settings</a>
+    <a href="guide.html" class="nav-item nav-active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>User Guide</a>
+  </nav>
+  <button onclick="openSignout()" style="display:flex;align-items:center;gap:12px;padding:8px 12px;font-size:14px;color:var(--muted-foreground);background:transparent;border:none;cursor:pointer;border-radius:0.5rem;width:100%;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign out</button>
+</aside>
+
+<main id="main-content" style="flex:1;padding:24px;overflow-y:auto;height:100vh;">
+  <div style="max-width:1040px;margin:0 auto;display:grid;grid-template-columns:1fr 220px;gap:32px;align-items:start;">
+
+    <!-- Guide content -->
+    <div>
+      <div style="margin-bottom:32px;">
+        <h1 style="font-size:28px;font-weight:700;margin:0 0 8px;">User Guide</h1>
+        <p style="color:var(--muted-foreground);font-size:15px;margin:0;">Everything you need to know to get the most out of FinTrack.</p>
+      </div>
+
+      <!-- Getting Started -->
+      <div id="getting-started">
+        <h2 class="guide-h2">Getting Started</h2>
+        <hr class="section-divider" />
+        <p class="guide-p" style="margin-top:16px;">FinTrack is a personal finance manager built for the Philippines. It tracks your spending across bank accounts and credit cards, lets you set budgets by category, and uses AI to extract transactions from receipts and bank statements.</p>
+
+        <h3 class="guide-h3">1. Add your accounts</h3>
+        <p class="guide-p">Go to <strong>Accounts</strong> in the sidebar and click <em>Add Account</em>. Enter your bank name, account type (Savings, Checking, GCash, etc.), and current balance. FinTrack does not connect to banks directly — you enter balances manually.</p>
+
+        <h3 class="guide-h3">2. Add your credit cards</h3>
+        <p class="guide-p">Go to <strong>Credit Cards</strong> and click <em>Add Card</em>. Enter the card name, credit limit, statement day (when your billing cycle closes), and due day (when payment is due).</p>
+
+        <h3 class="guide-h3">3. Set up budgets</h3>
+        <p class="guide-p">Go to <strong>Budgets</strong> and click <em>Add Budget</em>. Choose a category (Food &amp; Dining, Shopping, Transport, etc.), set a monthly limit in pesos, and save. FinTrack will alert you when you're approaching or exceeding the limit.</p>
+      </div>
+
+      <!-- Transactions -->
+      <div id="transactions">
+        <h2 class="guide-h2">Transactions</h2>
+        <hr class="section-divider" />
+        <p class="guide-p" style="margin-top:16px;">Transactions are the core of FinTrack. Every expense, income, or transfer you record is stored here.</p>
+
+        <h3 class="guide-h3">Adding transactions manually</h3>
+        <ol class="guide-ol">
+          <li>Click <em>Add Transaction</em> on the Transactions page.</li>
+          <li>Choose the type: <span class="badge-feature">expense</span>, <span class="badge-feature">income</span>, or <span class="badge-feature">transfer</span>.</li>
+          <li>Enter the amount in pesos, description, category, date, and the account or card it came from.</li>
+          <li>Click Save. The transaction appears immediately in your list and updates your budget totals.</li>
+        </ol>
+
+        <h3 class="guide-h3">Filtering and searching</h3>
+        <p class="guide-p">Use the search bar to find transactions by description. Use the category and account dropdowns to filter. The date range picker lets you view any custom period.</p>
+
+        <div class="tip-box">
+          <div class="tip-box-title">Tip: Inline editing</div>
+          <div class="tip-box-body">Click any transaction row to open an edit sheet without leaving the page. You can change the amount, category, or description directly.</div>
+        </div>
+      </div>
+
+      <!-- Scan Receipt -->
+      <div id="scan-receipt">
+        <h2 class="guide-h2">Scan Receipt / AI Import</h2>
+        <hr class="section-divider" />
+        <p class="guide-p" style="margin-top:16px;">FinTrack uses a copy-paste AI workflow to extract transactions from images and PDFs. It does not have a direct AI API connection — instead, you use your own AI assistant (Gemini, ChatGPT, or Claude).</p>
+
+        <h3 class="guide-h3">Single receipt workflow</h3>
+        <ol class="guide-ol">
+          <li>Go to <strong>Scan Receipt</strong> and upload your receipt image (JPG, PNG, PDF).</li>
+          <li>Click <em>Copy AI Prompt</em>. This copies a pre-formatted prompt along with your image.</li>
+          <li>Paste the prompt (with image) into Gemini, ChatGPT, or Claude.</li>
+          <li>Copy the AI's JSON response and paste it into the <em>Step 2</em> text area.</li>
+          <li>Click <em>Parse &amp; Review</em> to review the extracted transactions before saving.</li>
+        </ol>
+
+        <h3 class="guide-h3">Bulk import (bank statement)</h3>
+        <p class="guide-p">Switch to the <em>Bulk Import</em> tab. Upload a PDF statement or CSV export. The same AI copy-paste flow applies — the AI will return multiple transactions in one JSON array. You can review all of them in a table before confirming the import.</p>
+
+        <div class="warn-box">
+          <div class="warn-box-title">Note: Review before saving</div>
+          <div class="warn-box-body">Always review AI-extracted transactions before saving. AI can occasionally misread amounts or categories. The review step lets you edit any field before it's saved.</div>
+        </div>
+      </div>
+
+      <!-- Budgets -->
+      <div id="budgets">
+        <h2 class="guide-h2">Budgets</h2>
+        <hr class="section-divider" />
+        <p class="guide-p" style="margin-top:16px;">Budgets reset on the first of each month. The progress bar on each budget card shows how much you've spent relative to your limit.</p>
+
+        <h3 class="guide-h3">Budget alerts</h3>
+        <p class="guide-p">You'll receive a notification when spending reaches 80% of a budget (configurable in Settings). A second alert fires when you exceed 100%. Both alerts also appear in the Notifications page.</p>
+
+        <div class="tip-box">
+          <div class="tip-box-title">Tip: Unlinked budgets</div>
+          <div class="tip-box-body">Budgets track all transactions in a category regardless of which account or card was used. If you have a "Food &amp; Dining" budget, every expense in that category counts toward it.</div>
+        </div>
+      </div>
+
+      <!-- Recurring -->
+      <div id="recurring">
+        <h2 class="guide-h2">Recurring Transactions</h2>
+        <hr class="section-divider" />
+        <p class="guide-p" style="margin-top:16px;">Recurring transactions are subscriptions and bills that repeat on a schedule — monthly, weekly, or yearly. FinTrack auto-logs them on their scheduled date so you don't have to enter them manually.</p>
+
+        <h3 class="guide-h3">Adding a recurring transaction</h3>
+        <ol class="guide-ol">
+          <li>Go to <strong>Recurring</strong> and click <em>Add Recurring</em>.</li>
+          <li>Enter the service name (e.g., Netflix, Spotify), amount, category, account, and frequency.</li>
+          <li>Set the next due date. FinTrack will log a transaction on that date and schedule the next one automatically.</li>
+        </ol>
+      </div>
+
+      <!-- Credit Cards & Statements -->
+      <div id="credit-cards">
+        <h2 class="guide-h2">Credit Cards &amp; Statements</h2>
+        <hr class="section-divider" />
+        <p class="guide-p" style="margin-top:16px;">Each credit card you add has a statement day and a due day. When the billing cycle closes, FinTrack creates a statement record so you can track what's owed and when it's due.</p>
+
+        <h3 class="guide-h3">Marking statements as paid</h3>
+        <p class="guide-p">Go to <strong>Statements</strong>, find the statement, and click <em>Mark Paid</em>. This updates the status and removes the payment reminder from Notifications. You can still view paid statements for historical reference.</p>
+
+        <h3 class="guide-h3">Utilization rate</h3>
+        <p class="guide-p">On the Credit Cards page, each card shows its current balance against the credit limit as a utilization percentage. Keeping this below 30% is recommended for good credit health.</p>
+      </div>
+
+      <!-- Analytics -->
+      <div id="analytics">
+        <h2 class="guide-h2">Analytics</h2>
+        <hr class="section-divider" />
+        <p class="guide-p" style="margin-top:16px;">The Analytics page gives you a visual breakdown of your spending. Charts update in real time as you add transactions.</p>
+
+        <ul style="font-size:14px;color:var(--muted-foreground);line-height:1.9;padding-left:20px;margin:0 0 12px;">
+          <li><strong style="color:var(--foreground);">Spending over time</strong> — bar chart showing daily or monthly totals.</li>
+          <li><strong style="color:var(--foreground);">Category breakdown</strong> — donut chart showing % of spending per category.</li>
+          <li><strong style="color:var(--foreground);">Income vs. expense</strong> — side-by-side comparison for any date range.</li>
+          <li><strong style="color:var(--foreground);">Top merchants</strong> — ranked list of where you spend the most.</li>
+        </ul>
+
+        <p class="guide-p">Use the date range picker in the top right of the Analytics page to change the period. You can compare the current month to any previous month.</p>
+      </div>
+
+    </div>
+
+    <!-- Sticky TOC -->
+    <div style="position:sticky;top:24px;">
+      <div class="card" style="padding:16px;">
+        <div style="font-size:12px;font-weight:600;color:var(--muted-foreground);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">On this page</div>
+        <nav id="toc-nav" style="display:flex;flex-direction:column;gap:2px;">
+          <a href="#getting-started" class="toc-item active" data-section="getting-started">Getting Started</a>
+          <a href="#transactions" class="toc-item" data-section="transactions">Transactions</a>
+          <a href="#scan-receipt" class="toc-item" data-section="scan-receipt">Scan Receipt / AI Import</a>
+          <a href="#budgets" class="toc-item" data-section="budgets">Budgets</a>
+          <a href="#recurring" class="toc-item" data-section="recurring">Recurring Transactions</a>
+          <a href="#credit-cards" class="toc-item" data-section="credit-cards">Credit Cards &amp; Statements</a>
+          <a href="#analytics" class="toc-item" data-section="analytics">Analytics</a>
+        </nav>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+  // Sign out
+  function openSignout() {
+    document.getElementById('signout-dialog').classList.add('open');
+  }
+  function closeSignout() {
+    document.getElementById('signout-dialog').classList.remove('open');
+  }
+
+  // Back to top
+  function scrollToTop() {
+    var main = document.getElementById('main-content');
+    main.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Scroll spy for TOC active state
+  var sections = ['getting-started', 'transactions', 'scan-receipt', 'budgets', 'recurring', 'credit-cards', 'analytics'];
+  var mainEl = document.getElementById('main-content');
+
+  function updateActiveToc() {
+    var scrollTop = mainEl.scrollTop;
+    var mainHeight = mainEl.clientHeight;
+    var activeSection = sections[0];
+
+    for (var i = sections.length - 1; i >= 0; i--) {
+      var el = document.getElementById(sections[i]);
+      if (el) {
+        // Use offsetTop relative to main content's scroll container
+        var rect = el.getBoundingClientRect();
+        var mainRect = mainEl.getBoundingClientRect();
+        var relTop = rect.top - mainRect.top + scrollTop;
+        if (scrollTop >= relTop - 80) {
+          activeSection = sections[i];
+          break;
+        }
+      }
+    }
+
+    // Update TOC
+    document.querySelectorAll('#toc-nav .toc-item').forEach(function(link) {
+      if (link.getAttribute('data-section') === activeSection) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    });
+
+    // Show/hide back to top
+    var backBtn = document.getElementById('back-to-top');
+    if (scrollTop > 300) backBtn.classList.add('visible');
+    else backBtn.classList.remove('visible');
+  }
+
+  mainEl.addEventListener('scroll', updateActiveToc);
+
+  // Smooth scroll for TOC links
+  document.querySelectorAll('#toc-nav .toc-item').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      var sectionId = this.getAttribute('data-section');
+      var target = document.getElementById(sectionId);
+      if (target) {
+        var mainRect = mainEl.getBoundingClientRect();
+        var targetRect = target.getBoundingClientRect();
+        var scrollTarget = mainEl.scrollTop + (targetRect.top - mainRect.top) - 24;
+        mainEl.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+      }
+    });
+  });
+
+  // Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeSignout();
+  });
+</script>
+</body>
+</html>

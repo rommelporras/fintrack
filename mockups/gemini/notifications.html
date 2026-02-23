@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>FinTrack &mdash; Notifications</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="tailwind-config.js"></script>
+    <link rel="stylesheet" href="index.css">
+    <style>
+        /* Filter Tabs */
+        .filter-tabs-container {
+            scrollbar-width: none;
+        }
+
+        .filter-tabs-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .filter-tab {
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .filter-tab.active {
+            color: var(--foreground);
+        }
+
+        .filter-tab:not(.active) {
+            color: var(--muted-foreground);
+        }
+
+        .filter-tab:not(.active):hover {
+            color: var(--foreground);
+        }
+
+        .tab-indicator {
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--primary);
+            transform: scaleX(0);
+            transition: transform 0.2s ease;
+            transform-origin: left;
+            border-radius: 2px 2px 0 0;
+        }
+
+        .filter-tab.active .tab-indicator {
+            transform: scaleX(1);
+        }
+
+        /* Notification Rows */
+        .notif-row {
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .notif-row::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: var(--primary);
+            transform: scaleY(0);
+            transition: transform 0.2s ease;
+            opacity: 0.8;
+        }
+
+        .notif-row.unread::before {
+            transform: scaleY(1);
+        }
+
+        .notif-row:hover {
+            background-color: var(--bg-card-hover);
+        }
+
+        .notif-row.unread {
+            background-color: rgba(114, 23, 162, 0.03);
+        }
+
+        .notif-row.unread:hover {
+            background-color: rgba(114, 23, 162, 0.06);
+        }
+
+        /* Icon Variations */
+        .icon-alert {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .icon-warning {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .icon-reminder {
+            background-color: rgba(14, 165, 233, 0.1);
+            color: #0ea5e9;
+            border: 1px solid rgba(14, 165, 233, 0.2);
+        }
+
+        .icon-success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        /* Dot Indicator */
+        .unread-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            box-shadow: 0 0 8px var(--primary);
+            flex-shrink: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        /* Transition out effect for reading */
+        .marking-read {
+            transition: background-color 0.4s ease;
+        }
+
+        .marking-read .unread-dot {
+            opacity: 0;
+            transform: scale(0);
+        }
+
+        .marking-read::before {
+            transform: scaleY(0);
+        }
+    </style>
+</head>
+
+<body class="bg-background text-foreground antialiased selection:bg-primary selection:text-foreground pb-10 lg:pb-0">
+
+    <!-- Mobile Header -->
+    <header class="mobile-header border-b border-border bg-card/80 backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <button id="mobile-menu-btn" class="p-2 -ml-2 text-muted-foreground hover:text-foreground">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <div class="font-bold text-lg tracking-tight">FinTrack</div>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center overflow-hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="text-muted-foreground">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <div id="sidebar-overlay" class="mobile-nav-overlay lg:hidden"></div>
+
+        <aside id="sidebar" class="app-sidebar flex flex-col py-6 px-4">
+            <div class="mb-8 px-2 hidden lg:block">
+                <h1 class="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                    <div class="w-2 h-6 bg-primary rounded-sm"></div>
+                    FinTrack
+                </h1>
+                <p class="text-xs text-muted-foreground mt-1 ml-4">Personal Finance</p>
+            </div>
+
+            <nav class="flex-1 space-y-1 overflow-y-auto pr-2 -mr-2">
+                <a href="dashboard.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="transactions.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7 16V4m0 0L3 8m4-4 4 4" />
+                        <path d="M17 8v12m0 0 4-4m-4 4-4-4" />
+                    </svg>
+                    Transactions
+                </a>
+                <a href="recurring.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 2l4 4-4 4" />
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                        <path d="M7 22l-4-4 4-4" />
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                    </svg>
+                    Recurring
+                </a>
+                <a href="budgets.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 9a7 7 0 1 0-13.6 2.3C6.4 14.4 8 19 8 19h8s1.6-4.6 2.6-7.7" />
+                        <path d="M12 22v-3" />
+                        <path d="M9 19h6" />
+                    </svg>
+                    Budgets
+                </a>
+                <a href="analytics.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10" />
+                        <line x1="12" y1="20" x2="12" y2="4" />
+                        <line x1="6" y1="20" x2="6" y2="14" />
+                    </svg>
+                    Analytics
+                </a>
+
+                <div class="my-4 border-t border-border px-3 pt-4">
+                    <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Features</span>
+                </div>
+
+                <a href="scan.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                        <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                        <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                        <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                        <line x1="7" y1="12" x2="17" y2="12" />
+                    </svg>
+                    Scan Receipt
+                </a>
+                <a href="accounts.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 12V22H4V12" />
+                        <path d="M22 7H2v5h20V7z" />
+                        <path d="M12 22V7" />
+                        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+                    </svg>
+                    Accounts
+                </a>
+                <a href="credit-cards.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect class="text-foreground shrink-0" ry="2" />
+                        <line x1="1" y1="10" x2="23" y2="10" />
+                    </svg>
+                    Credit Cards
+                </a>
+                <a href="statements.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z" />
+                        <line x1="8" y1="10" x2="16" y2="10" />
+                        <line x1="8" y1="14" x2="16" y2="14" />
+                    </svg>
+                    Statements
+                </a>
+                <a href="documents.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                        <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                    Documents
+                </a>
+            </nav>
+
+            <div class="mt-auto pt-4 flex flex-col gap-1">
+                <!-- Notifications (active) -->
+                <a href="notifications.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium bg-primary/10 text-primary transition-colors relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                    Notifications
+                    <span id="sidebar-notif-count"
+                        class="absolute right-3 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-4 text-center">3</span>
+                </a>
+                <a href="settings.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                    Settings
+                </a>
+                <button onclick="document.documentElement.classList.toggle('dark');"
+                    class="w-full flex items-center justify-between gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors group">
+                    <div class="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dark:hidden">
+                            <circle cx="12" cy="12" r="5" fill="currentColor"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/>
+                            <line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden dark:block">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                        <span class="dark:hidden">Light Mode</span>
+                        <span class="hidden dark:inline">Dark Mode</span>
+                    </div>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="app-main flex flex-col h-screen lg:h-auto overflow-hidden">
+
+            <!-- Sticky Header Region -->
+            <div class="px-5 pt-6 lg:px-10 lg:pt-10 border-b border-border bg-background z-10 flex-shrink-0">
+                <div class="max-w-[800px] mx-auto">
+
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                        <div>
+                            <h1 class="text-3xl font-bold tracking-tight text-foreground mb-1">Notifications</h1>
+                            <p class="text-sm text-muted-foreground">Budget alerts, payment reminders, and system
+                                updates.</p>
+                        </div>
+                        <button
+                            class="btn-outline flex items-center justify-center gap-2 w-full sm:w-auto text-xs py-2 px-3 self-start sm:self-center bg-card/50"
+                            onclick="markAllRead()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M20 6 9 17l-5-5" />
+                            </svg>
+                            Mark all as read
+                        </button>
+                    </div>
+
+                    <!-- Elegant Tabbed Filter -->
+                    <div class="flex items-center gap-6 overflow-x-auto filter-tabs-container mt-6">
+                        <button id="tab-all" class="filter-tab active pb-3 font-medium text-sm whitespace-nowrap"
+                            onclick="filterNotifs('all')">
+                            All Inbox <span id="tab-count-all"
+                                class="ml-1.5 bg-destructive/10 text-destructive rounded-full px-1.5 py-0.5 text-[10px] font-bold">3</span>
+                            <div class="tab-indicator"></div>
+                        </button>
+                        <button id="tab-unread" class="filter-tab pb-3 font-medium text-sm whitespace-nowrap"
+                            onclick="filterNotifs('unread')">
+                            Unread
+                            <div class="tab-indicator"></div>
+                        </button>
+                        <button id="tab-alerts" class="filter-tab pb-3 font-medium text-sm whitespace-nowrap"
+                            onclick="filterNotifs('alerts')">
+                            Alerts
+                            <div class="tab-indicator"></div>
+                        </button>
+                        <button id="tab-reminders" class="filter-tab pb-3 font-medium text-sm whitespace-nowrap"
+                            onclick="filterNotifs('reminders')">
+                            Reminders
+                            <div class="tab-indicator"></div>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Scrollable Content Area -->
+            <div class="flex-1 overflow-y-auto px-0 sm:px-5 lg:px-10 pb-6 lg:pb-10 pt-4 sm:pt-6">
+                <div class="max-w-[800px] mx-auto">
+
+                    <!-- Notifications list -->
+                    <div class="card p-0 overflow-hidden border-x-0 sm:border-x rounded-none sm:rounded-xl">
+
+                        <!-- Unread: Budget alert (alerts) -->
+                        <div class="notif-row unread flex items-start gap-4 p-4 lg:p-5 border-b border-border cursor-pointer group"
+                            data-type="alerts" onclick="markRead(this)">
+                            <div
+                                class="w-10 h-10 rounded-full icon-alert flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path
+                                        d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                                    <line x1="12" y1="9" x2="12" y2="13" />
+                                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0 pr-2">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div
+                                        class="notif-title font-bold text-sm lg:text-base text-foreground tracking-tight mb-1">
+                                        Budget Exceeded &mdash; Food & Dining</div>
+                                    <div class="unread-dot mt-1.5"></div>
+                                </div>
+                                <div class="text-sm text-foreground/80 leading-relaxed max-w-2xl">You've spent <span
+                                        class="font-medium text-foreground">₱12,850</span> of your ₱10,000 monthly food
+                                    budget (128%). Consider reviewing recent restaurant expenses.</div>
+                                <div class="text-xs font-medium text-muted-foreground mt-2 uppercase tracking-wider">2
+                                    hours ago</div>
+                            </div>
+                        </div>
+
+                        <!-- Unread: Payment due (alerts) -->
+                        <div class="notif-row unread flex items-start gap-4 p-4 lg:p-5 border-b border-border cursor-pointer group"
+                            data-type="alerts" onclick="markRead(this)">
+                            <div
+                                class="w-10 h-10 rounded-full icon-warning flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect class="text-foreground shrink-0" />
+                                    <line x1="2" y1="10" x2="22" y2="10" />
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0 pr-2">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div
+                                        class="notif-title font-bold text-sm lg:text-base text-foreground tracking-tight mb-1">
+                                        Payment Due in 5 Days &mdash; BDO Visa</div>
+                                    <div class="unread-dot mt-1.5"></div>
+                                </div>
+                                <div class="text-sm text-foreground/80 leading-relaxed max-w-2xl">Your statement of <span
+                                        class="font-medium text-foreground">₱32,450.00</span> is due on February 28, 2026.
+                                    Minimum payment is ₱1,200.00.</div>
+                                <div class="text-xs font-medium text-muted-foreground mt-2 uppercase tracking-wider">5
+                                    hours ago</div>
+                            </div>
+                        </div>
+
+                        <!-- Unread: Budget warning (alerts) -->
+                        <div class="notif-row unread flex items-start gap-4 p-4 lg:p-5 border-b border-border cursor-pointer group"
+                            data-type="alerts" onclick="markRead(this)">
+                            <div
+                                class="w-10 h-10 rounded-full icon-warning flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M19 9c0 3.314-3.134 6-7 6s-7-2.686-7-6 3.134-6 7-6 7 2.686 7 6z" />
+                                    <path d="M5 15.5c0 2.485 3.134 4.5 7 4.5s7-2.015 7-4.5" />
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0 pr-2">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div
+                                        class="notif-title font-bold text-sm lg:text-base text-foreground tracking-tight mb-1">
+                                        Budget Warning &mdash; Shopping</div>
+                                    <div class="unread-dot mt-1.5"></div>
+                                </div>
+                                <div class="text-sm text-foreground/80 leading-relaxed max-w-2xl">You've used 82% of your
+                                    ₱8,000 shopping budget. <span class="font-medium text-foreground">₱1,440</span> remaining
+                                    for the rest of the month.</div>
+                                <div class="text-xs font-medium text-muted-foreground mt-2 uppercase tracking-wider">
+                                    Yesterday at 3:22 PM</div>
+                            </div>
+                        </div>
+
+                        <!-- Read: Recurring charge (reminders) -->
+                        <div class="notif-row flex items-start gap-4 p-4 lg:p-5 border-b border-border cursor-pointer group"
+                            data-type="reminders" onclick="markRead(this)">
+                            <div
+                                class="w-10 h-10 rounded-full icon-reminder flex items-center justify-center flex-shrink-0 mt-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M17 2l4 4-4 4" />
+                                    <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                                    <path d="M7 22l-4-4 4-4" />
+                                    <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0 pr-2">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div
+                                        class="notif-title font-medium text-sm lg:text-base text-muted-foreground group-hover:text-foreground transition-colors tracking-tight mb-1">
+                                        Recurring Charge &mdash; Netflix</div>
+                                </div>
+                                <div
+                                    class="text-sm text-muted-foreground leading-relaxed max-w-2xl group-hover:text-foreground/80 transition-colors">
+                                    Monthly subscription of <span class="font-medium text-foreground/90">₱549.00</span> was
+                                    automatically logged for February 2026.</div>
+                                <div class="text-xs font-medium text-muted-foreground mt-2 uppercase tracking-wider">Feb
+                                    14, 2026</div>
+                            </div>
+                        </div>
+
+                        <!-- Read: Import complete (reminders) -->
+                        <div class="notif-row flex items-start gap-4 p-4 lg:p-5 border-b border-border cursor-pointer group"
+                            data-type="reminders" onclick="markRead(this)">
+                            <div
+                                class="w-10 h-10 rounded-full icon-success flex items-center justify-center flex-shrink-0 mt-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                    <polyline points="22 4 12 14.01 9 11.01" />
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0 pr-2">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div
+                                        class="notif-title font-medium text-sm lg:text-base text-muted-foreground group-hover:text-foreground transition-colors tracking-tight mb-1">
+                                        Import Complete &mdash; BDO Statement Jan 2026</div>
+                                </div>
+                                <div
+                                    class="text-sm text-muted-foreground leading-relaxed max-w-2xl group-hover:text-foreground/80 transition-colors">
+                                    Successfully parsed 47 transactions from your uploaded statement. <span
+                                        class="font-medium text-foreground/90">2 items need category review.</span></div>
+                                <div class="text-xs font-medium text-muted-foreground mt-2 uppercase tracking-wider">Feb
+                                    10, 2026</div>
+                            </div>
+                        </div>
+
+                        <!-- Read: Payment confirmed (reminders) -->
+                        <div class="notif-row flex items-start gap-4 p-4 lg:p-5 cursor-pointer group"
+                            data-type="reminders" onclick="markRead(this)">
+                            <div
+                                class="w-10 h-10 rounded-full icon-success flex items-center justify-center flex-shrink-0 mt-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect class="text-foreground shrink-0" />
+                                    <line x1="2" y1="10" x2="22" y2="10" />
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0 pr-2">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div
+                                        class="notif-title font-medium text-sm lg:text-base text-muted-foreground group-hover:text-foreground transition-colors tracking-tight mb-1">
+                                        Statement Marked Paid &mdash; Metrobank</div>
+                                </div>
+                                <div
+                                    class="text-sm text-muted-foreground leading-relaxed max-w-2xl group-hover:text-foreground/80 transition-colors">
+                                    December 2025 statement of <span class="font-medium text-foreground/90">₱28,500.00</span>
+                                    was marked as paid.</div>
+                                <div class="text-xs font-medium text-muted-foreground mt-2 uppercase tracking-wider">Feb
+                                    1, 2026</div>
+                            </div>
+                        </div>
+
+                        <!-- Empty State (hidden by default) -->
+                        <div class="hidden items-center justify-center text-center p-10" id="empty-state">
+                            <div
+                                class="w-16 h-16 rounded-full bg-muted/20 flex items-center justify-center text-muted-foreground mb-4 mx-auto">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                                    <line x1="4" y1="4" x2="20" y2="20" />
+                                </svg>
+                            </div>
+                            <h3 class="font-semibold text-lg text-foreground mb-2">No notifications found</h3>
+                            <p class="text-muted-foreground text-sm max-w-[250px] mx-auto">You're all caught up! Check
+                                back later for new alerts and reminders.</p>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let unreadCount = 3;
+
+        function filterNotifs(type) {
+            // Update tab active states
+            ['all', 'unread', 'alerts', 'reminders'].forEach(function (t) {
+                var tab = document.getElementById('tab-' + t);
+                if (tab) {
+                    if (t === type) {
+                        tab.classList.add('active');
+                    } else {
+                        tab.classList.remove('active');
+                    }
+                }
+            });
+
+            let visibleCount = 0;
+
+            // Show/hide rows
+            document.querySelectorAll('.notif-row').forEach(function (row) {
+                let show = false;
+                if (type === 'all') {
+                    show = true;
+                } else if (type === 'unread') {
+                    show = row.classList.contains('unread');
+                } else {
+                    show = row.dataset.type === type;
+                }
+
+                row.style.display = show ? 'flex' : 'none';
+                if (show) visibleCount++;
+            });
+
+            // Show/Hide Empty state
+            const emptyState = document.getElementById('empty-state');
+            if (visibleCount === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex', 'flex-col');
+            } else {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex', 'flex-col');
+            }
+        }
+
+        function updateCounters() {
+            const topBadgeStr = unreadCount > 0 ? unreadCount : '';
+            const sideBadge = document.getElementById('sidebar-notif-count');
+            const tabBadge = document.getElementById('tab-count-all');
+
+            if (unreadCount > 0) {
+                if (sideBadge) { sideBadge.style.display = 'block'; sideBadge.textContent = topBadgeStr; }
+                if (tabBadge) { tabBadge.style.display = 'inline-block'; tabBadge.textContent = topBadgeStr; }
+            } else {
+                if (sideBadge) sideBadge.style.display = 'none';
+                if (tabBadge) tabBadge.style.display = 'none';
+            }
+        }
+
+        function markRead(row) {
+            if (!row.classList.contains('unread')) return;
+
+            // Animate out styles
+            row.classList.add('marking-read');
+            row.classList.remove('unread');
+
+            // Change font styles from unread to read visually immediately, then cleanly
+            const title = row.querySelector('.notif-title');
+            const text = row.querySelector('.text-foreground\\/80');
+
+            if (title) {
+                title.classList.remove('font-bold', 'text-foreground');
+                title.classList.add('font-medium', 'text-muted-foreground');
+            }
+            if (text) {
+                text.classList.remove('text-foreground\\/80');
+                text.classList.add('text-muted-foreground');
+
+                const highlightedNums = text.querySelectorAll('.text-foreground');
+                highlightedNums.forEach(num => {
+                    num.classList.remove('text-foreground');
+                    num.classList.add('text-foreground/90'); // slightly dimmer for read state
+                });
+            }
+
+            const iconContainer = row.querySelector('.rounded-full');
+            if (iconContainer) {
+                iconContainer.classList.add('opacity-70');
+            }
+
+            unreadCount = Math.max(0, unreadCount - 1);
+            updateCounters();
+        }
+
+        function markAllRead() {
+            document.querySelectorAll('.notif-row.unread').forEach(function (row) {
+                markRead(row);
+            });
+        }
+
+        // Mobile Sidebar Logic
+        const mobileBtn = document.getElementById('mobile-menu-btn');
+        const sidebar = document.getElementById('sidebar');
+        const navOverlay = document.getElementById('sidebar-overlay');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            navOverlay.classList.toggle('open');
+            document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
+        }
+        if (mobileBtn && navOverlay) {
+            mobileBtn.addEventListener('click', toggleSidebar);
+            navOverlay.addEventListener('click', toggleSidebar);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,442 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* TAILWIND V4 THEME MAPPING */
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  --color-background: var(--bg-base);
+  --color-foreground: var(--text-primary);
+
+  --color-card: var(--bg-card);
+  --color-card-foreground: var(--text-primary);
+
+  --color-border: var(--border);
+  --color-border-hover: var(--border-hover);
+
+  --color-muted: var(--bg-card-hover);
+  --color-muted-foreground: var(--text-secondary);
+
+  --color-primary: var(--accent-green);
+  --color-primary-foreground: oklch(1 0 0);
+  /* White */
+
+  --color-destructive: var(--accent-red);
+  --color-destructive-foreground: oklch(1 0 0);
+}
+
+/* Base Light Theme (Default) */
+:root {
+  color-scheme: light;
+
+  /* Core Surfaces */
+  --bg-base: oklch(0.97 0.002 260);
+  /* Soft off-white (approx #F5F5F5) for reduced eye strain */
+  --bg-card: oklch(1 0 0);
+  /* Pure white */
+  --bg-card-hover: oklch(0.95 0.002 260);
+  /* Slightly darker gray for hover */
+
+  /* Borders */
+  --border: oklch(0.92 0.005 260);
+  --border-hover: oklch(0.85 0.005 260);
+
+  /* Text */
+  --text-primary: oklch(0.15 0.01 260);
+  /* Near black */
+  --text-secondary: oklch(0.55 0.01 260);
+  /* Muted slate */
+
+  /* Accents */
+  --accent-green: oklch(0.55 0.14 165);
+  --accent-green-dim: oklch(0.69 0.14 165 / 0.15);
+
+  --accent-amber: oklch(0.55 0.16 70);
+  --accent-amber-dim: oklch(0.72 0.16 70 / 0.15);
+
+  --accent-red: oklch(0.55 0.22 25);
+  --accent-red-dim: oklch(0.60 0.22 25 / 0.15);
+
+  --accent-blue: oklch(0.55 0.16 260);
+  --accent-blue-dim: oklch(0.60 0.16 260 / 0.15);
+
+  --radius: 0.75rem;
+}
+
+/* Dark Theme Overrides */
+.dark {
+  color-scheme: dark;
+
+  /* Core Surfaces */
+  --bg-base: oklch(0.13 0.028 261);
+  /* Zinc 950 approx */
+  --bg-card: oklch(0.18 0.028 261);
+  /* Zinc 900 approx */
+  --bg-card-hover: oklch(0.24 0.028 261);
+  /* Zinc 800 approx */
+
+  /* Borders */
+  --border: oklch(0.24 0.028 261);
+  --border-hover: oklch(0.35 0.028 261);
+
+  /* Text */
+  --text-primary: oklch(1 0 0);
+  /* White */
+  --text-secondary: oklch(0.71 0.01 261);
+  /* Zinc 400 approx */
+
+  /* Accents */
+  --accent-green: oklch(0.69 0.14 165);
+  --accent-green-dim: oklch(0.69 0.14 165 / 0.15);
+
+  --accent-amber: oklch(0.72 0.16 70);
+  --accent-amber-dim: oklch(0.72 0.16 70 / 0.15);
+
+  --accent-red: oklch(0.65 0.22 25);
+  --accent-red-dim: oklch(0.60 0.22 25 / 0.15);
+
+  --accent-blue: oklch(0.65 0.16 260);
+  --accent-blue-dim: oklch(0.60 0.16 260 / 0.15);
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Component: Cards */
+.card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  /* Soft shadow for light mode */
+}
+
+.dark .card {
+  box-shadow: none;
+  /* No shadow needed on dark mode usually, relies on borders */
+}
+
+.card-interactive:hover {
+  border-color: var(--color-border-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+}
+
+.dark .card-interactive:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Component: Buttons */
+.btn-primary {
+  background-color: var(--accent-green) !important;
+  color: #ffffff !important;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s ease, filter 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+}
+
+.btn-danger {
+  background-color: var(--accent-red) !important;
+  color: #ffffff !important;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s ease, filter 0.2s ease;
+}
+
+.btn-danger:active {
+  transform: scale(0.97);
+}
+
+.btn-danger:hover {
+  filter: brightness(1.1);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-ghost:hover {
+  background-color: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+/* Component: Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-green {
+  background-color: var(--accent-green-dim);
+  color: var(--accent-green);
+}
+
+.badge-red {
+  background-color: var(--accent-red-dim);
+  color: var(--accent-red);
+}
+
+.badge-blue {
+  background-color: var(--accent-blue-dim);
+  color: var(--accent-blue);
+}
+
+.badge-amber {
+  background-color: var(--accent-amber-dim);
+  color: var(--accent-amber);
+}
+
+/* Form Elements */
+.form-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.375rem;
+  display: block;
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  background-color: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+
+.form-input:focus,
+.form-select:focus {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 2px var(--accent-green-dim);
+}
+
+/* Base structural layout for responsiveness */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.app-sidebar {
+  width: 256px;
+  min-width: 256px;
+  background-color: var(--bg-base);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  height: 100vh;
+  overflow-y: auto;
+  background-color: var(--bg-base);
+}
+
+/* Mobile Nav Overlay */
+.mobile-nav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 40;
+  backdrop-filter: blur(4px);
+}
+
+/* Responsive Overrides */
+@media (max-width: 1023px) {
+
+  /* Tablet / Mobile */
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 50;
+    transform: translateX(-100%);
+  }
+
+  .app-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .mobile-nav-overlay.open {
+    display: block;
+  }
+
+  .app-main {
+    padding-top: 60px;
+    /* Space for mobile header */
+  }
+}
+
+/* Mobile Header (Hidden on Desktop) */
+.mobile-header {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background-color: var(--bg-base);
+  border-bottom: 1px solid var(--border);
+  z-index: 30;
+  align-items: center;
+  padding: 0 1rem;
+  justify-content: space-between;
+}
+
+@media (max-width: 1023px) {
+  .mobile-header {
+    display: flex;
+  }
+}
+
+/* Utils */
+.glass {
+  background: var(--bg-card);
+  opacity: 0.85;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-left: 1px solid var(--border);
+}
+
+/* Interactive Components: Form Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: oklch(0.92 0.005 260);
+  transition: .4s;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+
+.dark .slider {
+  background-color: var(--bg-card-hover);
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 2px;
+  bottom: 2px;
+  background-color: var(--bg-card);
+  transition: .4s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+input:checked+.slider {
+  background-color: var(--accent-green);
+  border-color: var(--accent-green);
+}
+
+input:checked+.slider:before {
+  transform: translateX(16px);
+  background-color: #fff;
+}
+
+input:focus-visible+.slider {
+  outline: 2px solid var(--accent-green-dim);
+  outline-offset: 2px;
+}
+
+/* Modals & Sheets */
+.backdrop {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(4px);
+}
+
+.backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.side-sheet {
+  transform: translateX(100%);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.side-sheet.open {
+  transform: translateX(0);
+}
+
+.modal-dialog {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.modal-dialog.open {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}

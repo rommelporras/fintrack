@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinTrack — Budgets</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --background: oklch(0.14 0.005 260); --foreground: oklch(0.95 0.005 260);
+      --card: oklch(0.18 0.005 260); --primary: oklch(0.72 0.17 162);
+      --primary-foreground: oklch(0.14 0.005 260); --muted: oklch(0.22 0.005 260);
+      --muted-foreground: oklch(0.65 0.01 260); --border: oklch(0.25 0.005 260);
+      --sidebar: oklch(0.12 0.005 260); --destructive: oklch(0.65 0.2 25); --radius: 0.625rem;
+    }
+    body { background: var(--background); color: var(--foreground); font-family: system-ui, sans-serif; margin: 0; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); }
+    .badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 2px 10px; font-size: 11px; font-weight: 600; }
+    .badge-green { background: oklch(0.72 0.17 162 / 0.15); color: oklch(0.72 0.17 162); }
+    .badge-amber { background: oklch(0.85 0.18 90 / 0.15); color: oklch(0.85 0.18 90); }
+    .badge-red { background: oklch(0.65 0.2 25 / 0.15); color: oklch(0.65 0.2 25); }
+    .btn-primary { background: var(--primary); color: var(--primary-foreground); border: none; border-radius: var(--radius); padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-outline { background: transparent; color: var(--foreground); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer; }
+    .btn-destructive { background: var(--destructive); color: white; border: none; border-radius: var(--radius); padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer; }
+    .icon-btn { background: transparent; border: 1px solid var(--border); border-radius: 6px; padding: 5px; cursor: pointer; color: var(--muted-foreground); display: inline-flex; align-items: center; justify-content: center; }
+    .icon-btn:hover { background: var(--muted); }
+    .progress-track { height: 8px; background: var(--muted); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: var(--muted-foreground); border-radius: 0.5rem; text-decoration: none; }
+    .nav-item:hover { background: var(--muted); }
+    .nav-active { background: var(--primary); color: var(--primary-foreground) !important; }
+    .input { width: 100%; background: var(--muted); border: 1px solid var(--border); border-radius: 0.5rem; padding: 10px 12px; font-size: 14px; color: var(--foreground); box-sizing: border-box; outline: none; }
+    .input:focus { border-color: var(--primary); }
+    .label { font-size: 13px; font-weight: 500; display: block; margin-bottom: 6px; }
+
+    /* Overlay backdrop */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      display: none; align-items: center; justify-content: center; z-index: 50;
+    }
+    .overlay.open { display: flex; }
+
+    /* Alert dialog */
+    .dialog {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 24px; width: 400px; max-width: 90vw;
+    }
+
+    /* Right sheet */
+    .sheet-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 50; display: none;
+    }
+    .sheet-overlay.open { display: block; }
+    .sheet {
+      position: fixed; top: 0; right: 0; height: 100%; width: 400px; max-width: 95vw;
+      background: var(--card); border-left: 1px solid var(--border);
+      z-index: 51; padding: 24px; box-sizing: border-box; overflow-y: auto;
+      display: none;
+    }
+    .sheet.open { display: block; }
+  </style>
+</head>
+<body class="flex min-h-screen">
+
+  <!-- Sidebar -->
+  <aside style="width:256px;min-height:100vh;background:var(--sidebar);border-right:1px solid var(--border);padding:16px 12px;display:flex;flex-direction:column;flex-shrink:0;">
+    <div style="padding:0 12px;margin-bottom:24px;"><div style="font-size:20px;font-weight:700;">FinTrack</div><div style="font-size:12px;color:var(--muted-foreground);">Personal Finance</div></div>
+    <nav style="flex:1;display:flex;flex-direction:column;gap:2px;">
+      <a href="dashboard.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
+      <a href="transactions.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>Transactions</a>
+      <a href="recurring.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Recurring</a>
+      <a href="budgets.html" class="nav-item nav-active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 9c0 3.314-3.134 6-7 6s-7-2.686-7-6 3.134-6 7-6 7 2.686 7 6z"/><path d="M5 15.5c0 2.485 3.134 4.5 7 4.5s7-2.015 7-4.5"/></svg>Budgets</a>
+      <a href="analytics.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</a>
+      <a href="scan.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>Scan Receipt</a>
+      <a href="accounts.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H4v4"/><path d="M20 12a2 2 0 0 0-2 2v2H6v-2a2 2 0 0 0-2-2"/><path d="M2 8l2-4h16l2 4"/></svg>Accounts</a>
+      <a href="credit-cards.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Credit Cards</a>
+      <a href="statements.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l4-2 4 2 4-2 4 2V2z"/></svg>Statements</a>
+      <a href="documents.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Documents</a>
+      <a href="notifications.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span style="margin-left:auto;background:var(--destructive);color:#fff;border-radius:9999px;padding:1px 6px;font-size:11px;">3</span></a>
+      <a href="settings.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>Settings</a>
+      <a href="guide.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>User Guide</a>
+    </nav>
+    <button style="display:flex;align-items:center;gap:12px;padding:8px 12px;font-size:14px;color:var(--muted-foreground);background:transparent;border:none;cursor:pointer;border-radius:0.5rem;width:100%;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign out</button>
+  </aside>
+
+  <!-- Main -->
+  <main style="flex:1;overflow-y:auto;padding:24px;">
+    <div style="max-width:640px;margin:0 auto;">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <div>
+          <h1 style="font-size:24px;font-weight:700;margin:0 0 4px;">Budgets</h1>
+          <p style="color:var(--muted-foreground);font-size:14px;margin:0;">February 2026</p>
+        </div>
+        <button class="btn-primary" onclick="openSheet()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Budget
+        </button>
+      </div>
+
+      <div id="budget-list" style="display:flex;flex-direction:column;gap:12px;">
+
+        <!-- Food & Dining — 85% Warning -->
+        <div class="card" style="padding:20px;" data-name="Food &amp; Dining">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+            <div>
+              <div style="font-weight:600;font-size:15px;">Food &amp; Dining</div>
+              <div style="font-size:12px;color:var(--muted-foreground);margin-top:2px;">₱8,500.00 of ₱10,000.00</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="badge badge-amber">Warning</span>
+              <button class="icon-btn" onclick="openDelete(this)" title="Delete budget">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:85%;background:oklch(0.85 0.18 90);"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;">
+            <span style="font-size:12px;color:var(--muted-foreground);">85% used</span>
+            <span style="font-size:12px;color:var(--muted-foreground);">₱1,500.00 remaining</span>
+          </div>
+        </div>
+
+        <!-- Transportation — 70% On Track -->
+        <div class="card" style="padding:20px;" data-name="Transportation">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+            <div>
+              <div style="font-weight:600;font-size:15px;">Transportation</div>
+              <div style="font-size:12px;color:var(--muted-foreground);margin-top:2px;">₱2,100.00 of ₱3,000.00</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="badge badge-green">On Track</span>
+              <button class="icon-btn" onclick="openDelete(this)" title="Delete budget">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:70%;background:oklch(0.72 0.17 162);"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;">
+            <span style="font-size:12px;color:var(--muted-foreground);">70% used</span>
+            <span style="font-size:12px;color:var(--muted-foreground);">₱900.00 remaining</span>
+          </div>
+        </div>
+
+        <!-- Entertainment — 120% Exceeded -->
+        <div class="card" style="padding:20px;border-color:oklch(0.65 0.2 25);" data-name="Entertainment">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+            <div>
+              <div style="font-weight:600;font-size:15px;">Entertainment</div>
+              <div style="font-size:12px;color:var(--muted-foreground);margin-top:2px;">₱1,800.00 of ₱1,500.00</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="badge badge-red">Exceeded</span>
+              <button class="icon-btn" onclick="openDelete(this)" title="Delete budget" style="border-color:oklch(0.65 0.2 25 / 0.5);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.65 0.2 25)" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:100%;background:oklch(0.65 0.2 25);"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;">
+            <span style="font-size:12px;color:oklch(0.65 0.2 25);">120% used — ₱300.00 over budget</span>
+            <span style="font-size:12px;font-weight:600;color:oklch(0.65 0.2 25);">Overspent</span>
+          </div>
+        </div>
+
+        <!-- Utilities — 64% On Track -->
+        <div class="card" style="padding:20px;" data-name="Utilities">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+            <div>
+              <div style="font-weight:600;font-size:15px;">Utilities</div>
+              <div style="font-size:12px;color:var(--muted-foreground);margin-top:2px;">₱3,200.00 of ₱5,000.00</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="badge badge-green">On Track</span>
+              <button class="icon-btn" onclick="openDelete(this)" title="Delete budget">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:64%;background:oklch(0.72 0.17 162);"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;">
+            <span style="font-size:12px;color:var(--muted-foreground);">64% used</span>
+            <span style="font-size:12px;color:var(--muted-foreground);">₱1,800.00 remaining</span>
+          </div>
+        </div>
+
+        <!-- Shopping — 70% On Track -->
+        <div class="card" style="padding:20px;" data-name="Shopping">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+            <div>
+              <div style="font-weight:600;font-size:15px;">Shopping</div>
+              <div style="font-size:12px;color:var(--muted-foreground);margin-top:2px;">₱4,200.00 of ₱6,000.00</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="badge badge-green">On Track</span>
+              <button class="icon-btn" onclick="openDelete(this)" title="Delete budget">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:70%;background:oklch(0.72 0.17 162);"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;">
+            <span style="font-size:12px;color:var(--muted-foreground);">70% used</span>
+            <span style="font-size:12px;color:var(--muted-foreground);">₱1,800.00 remaining</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Delete Confirmation Dialog (hidden by default) -->
+  <div class="overlay" id="delete-overlay" onclick="closeDelete(event)">
+    <div class="dialog" onclick="event.stopPropagation()">
+      <h2 style="font-size:18px;font-weight:600;margin:0 0 8px;">Delete Budget?</h2>
+      <p style="font-size:14px;color:var(--muted-foreground);margin:0 0 24px;line-height:1.5;">
+        Are you sure you want to delete the <strong id="delete-name" style="color:var(--foreground);"></strong> budget? This action cannot be undone.
+      </p>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn-outline" onclick="closeDeleteDialog()">Cancel</button>
+        <button class="btn-destructive" onclick="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Budget Sheet (slide from right, hidden by default) -->
+  <div class="sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+  <div class="sheet" id="sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <h2 style="font-size:18px;font-weight:600;margin:0;">New Budget</h2>
+      <button onclick="closeSheet()" style="background:transparent;border:none;cursor:pointer;color:var(--muted-foreground);padding:4px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <p style="font-size:13px;color:var(--muted-foreground);margin:0 0 24px;">Set a monthly spending limit for a category.</p>
+
+    <div style="margin-bottom:16px;">
+      <label class="label">Category</label>
+      <select class="input" style="cursor:pointer;">
+        <option value="">Select category...</option>
+        <option>Food &amp; Dining</option>
+        <option>Transportation</option>
+        <option>Entertainment</option>
+        <option>Utilities</option>
+        <option>Shopping</option>
+        <option>Healthcare</option>
+        <option>Education</option>
+        <option>Personal Care</option>
+        <option>Travel</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <label class="label">Monthly Limit (₱)</label>
+      <input class="input" type="number" placeholder="0.00" min="0" step="0.01" />
+    </div>
+
+    <div style="margin-bottom:24px;">
+      <label class="label">Alert threshold</label>
+      <select class="input" style="cursor:pointer;">
+        <option>75% of budget</option>
+        <option selected>80% of budget</option>
+        <option>90% of budget</option>
+        <option>100% of budget (exceeded only)</option>
+      </select>
+      <div style="font-size:12px;color:var(--muted-foreground);margin-top:6px;">You'll receive a notification when spending reaches this threshold.</div>
+    </div>
+
+    <div style="display:flex;gap:8px;">
+      <button class="btn-outline" style="flex:1;" onclick="closeSheet()">Cancel</button>
+      <button class="btn-primary" style="flex:1;justify-content:center;" onclick="closeSheet()">Save Budget</button>
+    </div>
+  </div>
+
+  <script>
+    let targetCard = null;
+
+    function openDelete(btn) {
+      targetCard = btn.closest('[data-name]');
+      const name = targetCard.dataset.name;
+      document.getElementById('delete-name').textContent = name;
+      document.getElementById('delete-overlay').classList.add('open');
+    }
+
+    function closeDeleteDialog() {
+      document.getElementById('delete-overlay').classList.remove('open');
+      targetCard = null;
+    }
+
+    function closeDelete(e) {
+      if (e.target === document.getElementById('delete-overlay')) closeDeleteDialog();
+    }
+
+    function confirmDelete() {
+      if (targetCard) {
+        targetCard.style.transition = 'opacity 0.2s';
+        targetCard.style.opacity = '0';
+        setTimeout(() => targetCard.remove(), 200);
+      }
+      closeDeleteDialog();
+    }
+
+    function openSheet() {
+      document.getElementById('sheet-overlay').classList.add('open');
+      document.getElementById('sheet').classList.add('open');
+    }
+
+    function closeSheet() {
+      document.getElementById('sheet-overlay').classList.remove('open');
+      document.getElementById('sheet').classList.remove('open');
+    }
+  </script>
+</body>
+</html>

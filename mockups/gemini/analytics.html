@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>FinTrack &mdash; Analytics</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="tailwind-config.js"></script>
+    <link rel="stylesheet" href="index.css">
+    <style>
+        /* Premium Segmented Control */
+        .segmented-control {
+            display: inline-flex;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 4px;
+            border-radius: 0.75rem;
+            position: relative;
+        }
+
+        .segmented-btn {
+            position: relative;
+            z-index: 10;
+            padding: 6px 16px;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-radius: 0.5rem;
+            transition: color 0.2s ease;
+            cursor: pointer;
+        }
+
+        .segmented-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .segmented-btn.active {
+            color: var(--bg-base);
+            font-weight: 600;
+        }
+
+        /* The sliding active background */
+        .segmented-bg {
+            position: absolute;
+            top: 4px;
+            bottom: 4px;
+            background-color: var(--text-primary);
+            border-radius: 0.5rem;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+            box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Custom Chart Styles */
+        .chart-grid-line {
+            border-bottom: 1px dashed var(--border);
+            position: absolute;
+            left: 0;
+            right: 0;
+            z-index: 0;
+        }
+
+        .chart-bar-group {
+            position: relative;
+            z-index: 10;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            height: 100%;
+            cursor: pointer;
+            group: chart-bar;
+        }
+
+        .chart-bar-income,
+        .chart-bar-expense {
+            width: clamp(8px, 2vw, 24px);
+            border-radius: 4px 4px 0 0;
+            transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s;
+        }
+
+        .chart-bar-income {
+            background: linear-gradient(180deg, var(--accent-green) 0%, rgba(16, 185, 129, 0.4) 100%);
+        }
+
+        .chart-bar-expense {
+            background: linear-gradient(180deg, var(--accent-red) 0%, rgba(239, 68, 68, 0.4) 100%);
+        }
+
+        .chart-tooltip {
+            position: absolute;
+            bottom: calc(100% + 12px);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 0.5rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.2s, transform 0.2s;
+            pointer-events: none;
+            z-index: 20;
+            min-width: 120px;
+        }
+
+        .chart-bar-group:hover .chart-tooltip {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Accordion Table */
+        .accordion-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .accordion-row:hover {
+            background-color: var(--bg-card-hover);
+        }
+
+        .accordion-content {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.3s ease;
+            background-color: rgba(24, 24, 27, 0.4);
+        }
+
+        .accordion-content.open {
+            grid-template-rows: 1fr;
+        }
+
+        .accordion-inner {
+            overflow: hidden;
+        }
+
+        .chevron {
+            transition: transform 0.3s ease;
+        }
+
+        .accordion-content.open+tr .chevron,
+        .accordion-row.open .chevron {
+            transform: rotate(180deg);
+        }
+
+        /* Category Chips */
+        .filter-chip {
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .filter-chip:hover {
+            color: var(--text-primary);
+            border-color: var(--border-hover);
+        }
+
+        .filter-chip.active {
+            background-color: var(--text-primary);
+            color: var(--bg-base);
+            border-color: var(--text-primary);
+        }
+    </style>
+</head>
+
+<body class="bg-background text-foreground antialiased selection:bg-primary selection:text-foreground pb-10 lg:pb-0">
+
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <div class="flex items-center gap-3">
+            <button id="mobile-menu-btn" class="p-2 -ml-2 text-muted-foreground hover:text-foreground">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <div class="font-bold text-lg tracking-tight">FinTrack</div>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center overflow-hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="text-muted-foreground">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <div id="sidebar-overlay" class="mobile-nav-overlay lg:hidden"></div>
+
+        <aside id="sidebar" class="app-sidebar flex flex-col py-6 px-4">
+            <div class="mb-8 px-2 hidden lg:block">
+                <h1 class="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                    <div class="w-2 h-6 bg-primary rounded-sm"></div>
+                    FinTrack
+                </h1>
+                <p class="text-xs text-muted-foreground mt-1 ml-4">Personal Finance</p>
+            </div>
+
+            <nav class="flex-1 space-y-1 overflow-y-auto pr-2 -mr-2">
+                <a href="dashboard.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                        <rect class="text-foreground shrink-0" />
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="transactions.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7 16V4m0 0L3 8m4-4 4 4" />
+                        <path d="M17 8v12m0 0 4-4m-4 4-4-4" />
+                    </svg>
+                    Transactions
+                </a>
+                <a href="recurring.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 2l4 4-4 4" />
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                        <path d="M7 22l-4-4 4-4" />
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                    </svg>
+                    Recurring
+                </a>
+                <a href="budgets.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 9a7 7 0 1 0-13.6 2.3C6.4 14.4 8 19 8 19h8s1.6-4.6 2.6-7.7" />
+                        <path d="M12 22v-3" />
+                        <path d="M9 19h6" />
+                    </svg>
+                    Budgets
+                </a>
+
+                <!-- Analytics (active) -->
+                <a href="analytics.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium bg-primary/10 text-primary transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10" />
+                        <line x1="12" y1="20" x2="12" y2="4" />
+                        <line x1="6" y1="20" x2="6" y2="14" />
+                    </svg>
+                    Analytics
+                </a>
+
+                <div class="my-4 border-t border-border px-3 pt-4">
+                    <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Features</span>
+                </div>
+
+                <a href="scan.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                        <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                        <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                        <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                        <line x1="7" y1="12" x2="17" y2="12" />
+                    </svg>
+                    Scan Receipt
+                </a>
+                <a href="accounts.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 12V22H4V12" />
+                        <path d="M22 7H2v5h20V7z" />
+                        <path d="M12 22V7" />
+                        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+                    </svg>
+                    Accounts
+                </a>
+                <a href="credit-cards.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect class="text-foreground shrink-0" ry="2" />
+                        <line x1="1" y1="10" x2="23" y2="10" />
+                    </svg>
+                    Credit Cards
+                </a>
+                <a href="statements.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z" />
+                        <line x1="8" y1="10" x2="16" y2="10" />
+                        <line x1="8" y1="14" x2="16" y2="14" />
+                    </svg>
+                    Statements
+                </a>
+                <a href="documents.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                        <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                    Documents
+                </a>
+            </nav>
+
+            <div class="mt-auto pt-4 flex flex-col gap-1">
+                <a href="notifications.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                    Notifications
+                </a>
+                <a href="settings.html"
+                    class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                    Settings
+                </a>
+                <button onclick="document.documentElement.classList.toggle('dark');"
+                    class="w-full flex items-center justify-between gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors group">
+                    <div class="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dark:hidden">
+                            <circle cx="12" cy="12" r="5" fill="currentColor"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/>
+                            <line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden dark:block">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                        <span class="dark:hidden">Light Mode</span>
+                        <span class="hidden dark:inline">Dark Mode</span>
+                    </div>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <div class="px-5 py-6 lg:px-10 lg:py-10 max-w-[1400px] mx-auto space-y-8">
+
+                <!-- Header & Controls -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div>
+                        <h1 class="text-3xl font-bold tracking-tight text-foreground mb-2">Analytics</h1>
+                        <p class="text-sm text-muted-foreground">Detailed financial reports and trends.</p>
+                    </div>
+
+                    <div class="flex flex-wrap sm:flex-nowrap items-center gap-4">
+                        <!-- Period Tabs -->
+                        <div class="segmented-control" id="period-tabs">
+                            <div class="segmented-bg" id="segmented-bg"
+                                style="width: 82px; transform: translateX(0px);"></div>
+                            <button class="segmented-btn active" onclick="setPeriod('Monthly', 0, 82)">Monthly</button>
+                            <button class="segmented-btn" onclick="setPeriod('Quarterly', 82, 94)">Quarterly</button>
+                            <button class="segmented-btn" onclick="setPeriod('Yearly', 176, 72)">Yearly</button>
+                        </div>
+
+                        <!-- Year Selector -->
+                        <div class="relative">
+                            <select
+                                class="form-select appearance-none bg-card border-border pr-10 py-2 cursor-pointer font-medium text-sm rounded-xl">
+                                <option>2026</option>
+                                <option>2025</option>
+                                <option>2024</option>
+                            </select>
+                            <div
+                                class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-muted-foreground">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Master Chart Area -->
+                <div class="card p-6 md:p-8">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h2 class="text-lg font-semibold text-foreground tracking-tight">Income vs Expenses</h2>
+                            <p class="text-sm text-muted-foreground" id="chart-subtitle">Showing data for 2026</p>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                                <div class="w-2.5 h-2.5 rounded-[2px] bg-[#10b981]"></div> Income
+                            </div>
+                            <div class="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                                <div class="w-2.5 h-2.5 rounded-[2px] bg-[#ef4444]"></div> Expenses
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CSS Bar Chart container -->
+                    <div class="relative h-[240px] w-full flex pl-12 pr-4 pb-8 mt-4">
+                        <!-- Y-Axis Labels & Grid -->
+                        <div
+                            class="absolute left-0 top-0 bottom-8 w-10 flex flex-col justify-between text-[10px] sm:text-xs text-muted-foreground font-medium text-right pr-2">
+                            <span class="relative z-10 bg-card py-0.5">₱50k</span>
+                            <span class="relative z-10 bg-card py-0.5">₱37k</span>
+                            <span class="relative z-10 bg-card py-0.5">₱25k</span>
+                            <span class="relative z-10 bg-card py-0.5">₱10k</span>
+                            <span class="relative z-10 bg-card py-0.5">0</span>
+                        </div>
+
+                        <!-- Grid Lines -->
+                        <div class="absolute left-10 right-4 top-2 chart-grid-line"></div>
+                        <div class="absolute left-10 right-4 top-[33%] chart-grid-line"></div>
+                        <div class="absolute left-10 right-4 top-[66%] chart-grid-line"></div>
+                        <div class="absolute left-10 right-4 bottom-8 chart-grid-line border-solid border-border/70">
+                        </div>
+
+                        <!-- Bars container -->
+                        <div class="flex-1 flex justify-between items-end h-full relative z-10 pb-[1px]">
+
+                            <!-- Jan -->
+                            <div class="chart-bar-group group relative">
+                                <div class="flex items-end gap-[1px] md:gap-1 w-full justify-center h-full">
+                                    <div class="chart-bar-income" style="height: 90%;"></div>
+                                    <div class="chart-bar-expense" style="height: 62%;"></div>
+                                </div>
+                                <div
+                                    class="absolute -bottom-7 text-[10px] sm:text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                                    Jan</div>
+                                <div class="chart-tooltip">
+                                    <div class="font-semibold text-foreground mb-2 pb-2 border-b border-border/50 text-xs">
+                                        January 2026</div>
+                                    <div class="flex justify-between gap-4 text-xs mb-1">
+                                        <span class="text-muted-foreground">Income</span>
+                                        <span class="text-[#10b981] font-medium">+₱45,200</span>
+                                    </div>
+                                    <div class="flex justify-between gap-4 text-xs">
+                                        <span class="text-muted-foreground">Expenses</span>
+                                        <span class="text-[#ef4444] font-medium">-₱31,200</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Feb -->
+                            <div class="chart-bar-group group relative">
+                                <div class="flex items-end gap-[1px] md:gap-1 w-full justify-center h-full">
+                                    <div class="chart-bar-income" style="height: 90%;"></div>
+                                    <div class="chart-bar-expense" style="height: 57%;"></div>
+                                </div>
+                                <div
+                                    class="absolute -bottom-7 text-[10px] sm:text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                                    Feb</div>
+                                <div class="chart-tooltip">
+                                    <div class="font-semibold text-foreground mb-2 pb-2 border-b border-border/50 text-xs">
+                                        February 2026</div>
+                                    <div class="flex justify-between gap-4 text-xs mb-1">
+                                        <span class="text-muted-foreground">Income</span>
+                                        <span class="text-[#10b981] font-medium">+₱45,200</span>
+                                    </div>
+                                    <div class="flex justify-between gap-4 text-xs">
+                                        <span class="text-muted-foreground">Expenses</span>
+                                        <span class="text-[#ef4444] font-medium">-₱28,750</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Mar (Projected/Dimmed) -->
+                            <div class="chart-bar-group group relative">
+                                <div class="flex items-end gap-[1px] md:gap-1 w-full justify-center h-full opacity-40">
+                                    <div class="chart-bar-income" style="height: 80%;"></div>
+                                    <div class="chart-bar-expense" style="height: 50%;"></div>
+                                </div>
+                                <div
+                                    class="absolute -bottom-7 text-[10px] sm:text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                                    Mar</div>
+                                <div class="chart-tooltip">
+                                    <div class="font-semibold text-foreground mb-2 pb-2 border-b border-border/50 text-xs">
+                                        March 2026 (Projcetion)</div>
+                                    <div class="flex justify-between gap-4 text-xs mb-1">
+                                        <span class="text-muted-foreground">Income</span>
+                                        <span class="text-muted-foreground">~₱40,000</span>
+                                    </div>
+                                    <div class="flex justify-between gap-4 text-xs">
+                                        <span class="text-muted-foreground">Expenses</span>
+                                        <span class="text-muted-foreground">~₱25,000</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- The rest of the months -->
+                            <div class="chart-bar-group text-[10px] sm:text-xs text-muted-foreground">
+                                <div class="absolute -bottom-7">Apr</div>
+                            </div>
+                            <div class="chart-bar-group text-[10px] sm:text-xs text-muted-foreground">
+                                <div class="absolute -bottom-7">May</div>
+                            </div>
+                            <div class="chart-bar-group text-[10px] sm:text-xs text-muted-foreground">
+                                <div class="absolute -bottom-7">Jun</div>
+                            </div>
+                            <div class="chart-bar-group text-[10px] sm:text-xs text-muted-foreground hidden sm:flex">
+                                <div class="absolute -bottom-7">Jul</div>
+                            </div>
+                            <div class="chart-bar-group text-[10px] sm:text-xs text-muted-foreground hidden sm:flex">
+                                <div class="absolute -bottom-7">Aug</div>
+                            </div>
+                            <div class="chart-bar-group text-[10px] sm:text-xs text-muted-foreground hidden sm:flex">
+                                <div class="absolute -bottom-7">Sep</div>
+                            </div>
+                            <div class="chart-bar-group text-[10px] sm:text-xs text-muted-foreground hidden md:flex">
+                                <div class="absolute -bottom-7">Oct</div>
+                            </div>
+                            <div class="chart-bar-group text-[10px] sm:text-xs text-muted-foreground hidden md:flex">
+                                <div class="absolute -bottom-7">Nov</div>
+                            </div>
+                            <div class="chart-bar-group text-[10px] sm:text-xs text-muted-foreground hidden md:flex">
+                                <div class="absolute -bottom-7">Dec</div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lower Section: Split Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+
+                    <!-- Category Spending -->
+                    <div class="card p-6">
+                        <h2 class="text-lg font-semibold text-foreground mb-4">Spending by Category</h2>
+
+                        <!-- Filters -->
+                        <div class="flex flex-wrap gap-2 mb-6">
+                            <button class="filter-chip active" onclick="activateChip(this)">All</button>
+                            <button class="filter-chip" onclick="activateChip(this)">Food</button>
+                            <button class="filter-chip" onclick="activateChip(this)">Utilities</button>
+                            <button class="filter-chip" onclick="activateChip(this)">Transport</button>
+                        </div>
+
+                        <div class="space-y-5">
+                            <!-- Item -->
+                            <div>
+                                <div class="flex justify-between items-end mb-1.5">
+                                    <span class="text-sm font-medium text-foreground">Food &amp; Dining</span>
+                                    <div class="text-right">
+                                        <span class="text-sm font-semibold text-foreground mr-2">₱8,500</span>
+                                        <span class="text-xs text-muted-foreground">30%</span>
+                                    </div>
+                                </div>
+                                <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                    <div class="h-full bg-[#f59e0b] rounded-full" style="width: 30%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Item -->
+                            <div>
+                                <div class="flex justify-between items-end mb-1.5">
+                                    <span class="text-sm font-medium text-foreground">Shopping</span>
+                                    <div class="text-right">
+                                        <span class="text-sm font-semibold text-foreground mr-2">₱4,200</span>
+                                        <span class="text-xs text-muted-foreground">15%</span>
+                                    </div>
+                                </div>
+                                <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                    <div class="h-full bg-[#8b5cf6] rounded-full" style="width: 15%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Item -->
+                            <div>
+                                <div class="flex justify-between items-end mb-1.5">
+                                    <span class="text-sm font-medium text-foreground">Utilities</span>
+                                    <div class="text-right">
+                                        <span class="text-sm font-semibold text-foreground mr-2">₱3,200</span>
+                                        <span class="text-xs text-muted-foreground">11%</span>
+                                    </div>
+                                </div>
+                                <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                    <div class="h-full bg-[#3b82f6] rounded-full" style="width: 11%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Item -->
+                            <div>
+                                <div class="flex justify-between items-end mb-1.5">
+                                    <span class="text-sm font-medium text-foreground">Entertainment</span>
+                                    <div class="text-right">
+                                        <span class="text-sm font-semibold text-foreground mr-2">₱2,218</span>
+                                        <span class="text-xs text-muted-foreground">8%</span>
+                                    </div>
+                                </div>
+                                <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                    <div class="h-full bg-[#ef4444] rounded-full" style="width: 8%;"></div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Monthly Summary Table -->
+                    <div class="card p-0 overflow-hidden">
+                        <div class="p-6 border-b border-border">
+                            <h2 class="text-lg font-semibold text-foreground">Monthly Breakdown</h2>
+                            <p class="text-xs text-muted-foreground mt-1">Click a row to expand top expenses</p>
+                        </div>
+
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-card/50 text-xs text-muted-foreground uppercase tracking-wider">
+                                <tr>
+                                    <th class="px-6 py-3 font-semibold">Month</th>
+                                    <th class="px-6 py-3 font-semibold text-right">Income</th>
+                                    <th class="px-6 py-3 font-semibold text-right">Expenses</th>
+                                    <th class="px-6 py-3 font-semibold text-right">Net</th>
+                                    <th class="px-4 py-3"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-border border-b border-border">
+
+                                <!-- Feb Row -->
+                                <tr class="accordion-row" onclick="toggleRow(this)">
+                                    <td class="px-6 py-4 font-medium text-foreground">Feb 2026</td>
+                                    <td class="px-6 py-4 text-right font-medium text-[#10b981]">₱45,200</td>
+                                    <td class="px-6 py-4 text-right font-medium text-[#ef4444]">₱28,750</td>
+                                    <td class="px-6 py-4 text-right font-medium text-[#10b981]">+₱16,450</td>
+                                    <td class="px-4 py-4 text-right text-muted-foreground">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none"
+                                            stroke="currentColor" stroke-width="2" class="chevron inline-block">
+                                            <polyline points="6 9 12 15 18 9" />
+                                        </svg>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5" class="p-0 border-0">
+                                        <div class="accordion-content">
+                                            <div class="accordion-inner">
+                                                <div
+                                                    class="px-6 py-4 my-2 mx-6 rounded-lg bg-card border border-border/50">
+                                                    <p
+                                                        class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                                                        Top Expenses</p>
+                                                    <div class="flex justify-between text-sm mb-2"><span
+                                                            class="text-foreground">Food & Dining</span><span
+                                                            class="text-[#ef4444]">₱8,500</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span
+                                                            class="text-foreground">Utilities</span><span
+                                                            class="text-[#ef4444]">₱5,099</span></div>
+                                                    <div class="flex justify-between text-sm"><span
+                                                            class="text-foreground">Shopping</span><span
+                                                            class="text-[#ef4444]">₱4,200</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Jan Row -->
+                                <tr class="accordion-row" onclick="toggleRow(this)">
+                                    <td class="px-6 py-4 font-medium text-foreground">Jan 2026</td>
+                                    <td class="px-6 py-4 text-right font-medium text-[#10b981]">₱45,200</td>
+                                    <td class="px-6 py-4 text-right font-medium text-[#ef4444]">₱31,200</td>
+                                    <td class="px-6 py-4 text-right font-medium text-[#10b981]">+₱14,000</td>
+                                    <td class="px-4 py-4 text-right text-muted-foreground">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none"
+                                            stroke="currentColor" stroke-width="2" class="chevron inline-block">
+                                            <polyline points="6 9 12 15 18 9" />
+                                        </svg>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5" class="p-0 border-0">
+                                        <div class="accordion-content">
+                                            <div class="accordion-inner">
+                                                <div
+                                                    class="px-6 py-4 my-2 mx-6 rounded-lg bg-card border border-border/50">
+                                                    <p
+                                                        class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                                                        Top Expenses</p>
+                                                    <div class="flex justify-between text-sm mb-2"><span
+                                                            class="text-foreground">Food & Dining</span><span
+                                                            class="text-[#ef4444]">₱9,200</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span
+                                                            class="text-foreground">Shopping</span><span
+                                                            class="text-[#ef4444]">₱6,100</span></div>
+                                                    <div class="flex justify-between text-sm"><span
+                                                            class="text-foreground">Utilities</span><span
+                                                            class="text-[#ef4444]">₱5,800</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Dec Row -->
+                                <tr class="accordion-row" onclick="toggleRow(this)">
+                                    <td class="px-6 py-4 font-medium text-foreground">Dec 2025</td>
+                                    <td class="px-6 py-4 text-right font-medium text-[#10b981]">₱52,400</td>
+                                    <td class="px-6 py-4 text-right font-medium text-[#ef4444]">₱38,500</td>
+                                    <td class="px-6 py-4 text-right font-medium text-[#10b981]">+₱13,900</td>
+                                    <td class="px-4 py-4 text-right text-muted-foreground">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none"
+                                            stroke="currentColor" stroke-width="2" class="chevron inline-block">
+                                            <polyline points="6 9 12 15 18 9" />
+                                        </svg>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5" class="p-0 border-0">
+                                        <div class="accordion-content">
+                                            <div class="accordion-inner">
+                                                <div
+                                                    class="px-6 py-4 my-2 mx-6 rounded-lg bg-card border border-border/50">
+                                                    <p
+                                                        class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                                                        Top Expenses</p>
+                                                    <div class="flex justify-between text-sm mb-2"><span
+                                                            class="text-foreground">Shopping</span><span
+                                                            class="text-[#ef4444]">₱14,200</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span
+                                                            class="text-foreground">Food & Dining</span><span
+                                                            class="text-[#ef4444]">₱10,500</span></div>
+                                                    <div class="flex justify-between text-sm"><span
+                                                            class="text-foreground">Travel</span><span
+                                                            class="text-[#ef4444]">₱5,800</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Tab Logic
+        function setPeriod(period, transformX, width) {
+            const bg = document.getElementById('segmented-bg');
+            bg.style.transform = `translateX(${transformX}px)`;
+            bg.style.width = `${width}px`;
+
+            const btns = document.querySelectorAll('.segmented-btn');
+            btns.forEach(b => {
+                if (b.textContent === period) b.classList.add('active');
+                else b.classList.remove('active');
+            });
+            document.getElementById('chart-subtitle').textContent = `Showing ${period.toLowerCase()} data for 2026`;
+        }
+
+        // Toggle Accordion Rows
+        function toggleRow(row) {
+            const content = row.nextElementSibling.querySelector('.accordion-content');
+            const isOpen = content.classList.contains('open');
+
+            // Close all others
+            document.querySelectorAll('.accordion-content').forEach(c => c.classList.remove('open'));
+            document.querySelectorAll('.accordion-row').forEach(r => r.classList.remove('open'));
+
+            if (!isOpen) {
+                content.classList.add('open');
+                row.classList.add('open');
+            }
+        }
+
+        // Filter Chips
+        function activateChip(btn) {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        // Mobile Sidebar
+        const mobileBtn = document.getElementById('mobile-menu-btn');
+        const sidebar = document.getElementById('sidebar');
+        const navOverlay = document.getElementById('sidebar-overlay');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            navOverlay.classList.toggle('open');
+            document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
+        }
+        mobileBtn.addEventListener('click', toggleSidebar);
+        navOverlay.addEventListener('click', toggleSidebar);
+    </script>
+</body>
+
+</html>

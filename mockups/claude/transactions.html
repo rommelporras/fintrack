@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinTrack — Transactions</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            background: 'oklch(0.14 0.005 260)',
+            foreground: 'oklch(0.95 0.005 260)',
+            card: 'oklch(0.18 0.005 260)',
+            primary: 'oklch(0.72 0.17 162)',
+            'primary-foreground': 'oklch(0.14 0.005 260)',
+            sidebar: 'oklch(0.12 0.005 260)',
+            border: 'oklch(0.25 0.005 260)',
+            muted: 'oklch(0.22 0.005 260)',
+            'muted-foreground': 'oklch(0.65 0.01 260)',
+            destructive: 'oklch(0.65 0.2 25)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --background: oklch(0.14 0.005 260);
+      --foreground: oklch(0.95 0.005 260);
+      --card: oklch(0.18 0.005 260);
+      --card-foreground: oklch(0.95 0.005 260);
+      --primary: oklch(0.72 0.17 162);
+      --primary-foreground: oklch(0.14 0.005 260);
+      --secondary: oklch(0.22 0.005 260);
+      --muted: oklch(0.22 0.005 260);
+      --muted-foreground: oklch(0.65 0.01 260);
+      --border: oklch(0.25 0.005 260);
+      --input: oklch(0.25 0.005 260);
+      --sidebar: oklch(0.12 0.005 260);
+      --destructive: oklch(0.65 0.2 25);
+      --radius: 0.625rem;
+    }
+    body { background: var(--background); color: var(--foreground); font-family: system-ui, sans-serif; margin: 0; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); }
+    .badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .badge-blue { background: #dbeafe; color: #1e40af; }
+    .form-input { background: var(--input); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; font-size: 13px; color: var(--foreground); width: 100%; box-sizing: border-box; }
+    .form-input:focus { outline: 2px solid var(--primary); outline-offset: -2px; }
+    .btn-primary { background: var(--primary); color: var(--primary-foreground); border: none; border-radius: var(--radius); padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .btn-outline { background: transparent; color: var(--foreground); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 12px; font-size: 13px; font-weight: 500; cursor: pointer; }
+    .btn-destructive { background: var(--destructive); color: white; border: none; border-radius: var(--radius); padding: 6px 12px; font-size: 13px; font-weight: 500; cursor: pointer; }
+    select.form-input option { background: var(--card); }
+  </style>
+</head>
+<body class="flex min-h-screen">
+
+  <!-- Sidebar -->
+  <aside style="width:256px;min-width:256px;background:var(--sidebar);border-right:1px solid var(--border);" class="flex flex-col py-4 px-3 min-h-screen">
+    <div class="mb-6 px-3">
+      <h1 class="text-xl font-bold tracking-tight">FinTrack</h1>
+      <p class="text-xs" style="color:var(--muted-foreground)">Personal Finance</p>
+    </div>
+    <nav class="flex-1 space-y-1">
+      <a href="dashboard.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <!-- Transactions (active) -->
+      <a href="transactions.html" style="background:var(--primary);color:var(--primary-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4m0 0L3 8m4-4 4 4"/><path d="M17 8v12m0 0 4-4m-4 4-4-4"/></svg>
+        Transactions
+      </a>
+      <a href="recurring.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        Recurring
+      </a>
+      <a href="budgets.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9a7 7 0 1 0-13.6 2.3C6.4 14.4 8 19 8 19h8s1.6-4.6 2.6-7.7"/><path d="M12 22v-3"/><path d="M9 19h6"/></svg>
+        Budgets
+      </a>
+      <a href="analytics.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </a>
+      <a href="scan.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+        Scan Receipt
+      </a>
+      <a href="accounts.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+        Accounts
+      </a>
+      <a href="credit-cards.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Credit Cards
+      </a>
+      <a href="statements.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/></svg>
+        Statements
+      </a>
+      <a href="documents.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Documents
+      </a>
+      <a href="notifications.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Notifications
+        <span style="background:var(--destructive);color:white;margin-left:auto;" class="inline-flex items-center justify-center rounded-full text-xs font-semibold px-1.5 py-0.5 min-w-5">3</span>
+      </a>
+      <a href="settings.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </a>
+      <a href="guide.html" style="color:var(--muted-foreground);" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        User Guide
+      </a>
+    </nav>
+    <button style="color:var(--muted-foreground);background:transparent;border:none;cursor:pointer;" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium mt-2">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign out
+    </button>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-y-auto p-6 space-y-4">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl font-bold">Transactions</h1>
+      <button class="btn-primary flex items-center gap-1.5" onclick="openAddSheet()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Transaction
+      </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex flex-wrap gap-2">
+      <input type="text" placeholder="Search transactions..." class="form-input" style="width:220px;" value="grocery" />
+      <select class="form-input" style="width:140px;">
+        <option>All types</option>
+        <option>Income</option>
+        <option>Expense</option>
+        <option>Transfer</option>
+      </select>
+      <select class="form-input" style="width:160px;">
+        <option>All accounts</option>
+        <option>BPI Savings</option>
+        <option>BPI Checking</option>
+        <option>Cash</option>
+      </select>
+      <select class="form-input" style="width:170px;">
+        <option>All categories</option>
+        <option>Food &amp; Dining</option>
+        <option>Transportation</option>
+        <option>Entertainment</option>
+        <option>Utilities</option>
+      </select>
+      <input type="date" class="form-input" style="width:145px;" value="2026-02-01" />
+      <input type="date" class="form-input" style="width:145px;" value="2026-02-28" />
+    </div>
+
+    <!-- Stats row -->
+    <p class="text-sm" style="color:var(--muted-foreground)">Showing 12 of 47 transactions</p>
+
+    <!-- Transaction list card -->
+    <div class="card p-0 overflow-hidden">
+      <ul class="divide-y" style="border-color:var(--border)">
+
+        <!-- Row 1 -->
+        <li class="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 cursor-pointer transition-colors" onclick="openEditSheet('Salary — February','45200.00','Income','BPI Checking','Employment','2026-02-15','')">
+          <input type="checkbox" class="rounded" onclick="event.stopPropagation()" />
+          <span class="badge badge-green">income</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate">Salary — February</p>
+            <p class="text-xs" style="color:var(--muted-foreground)">Employment · BPI Checking</p>
+          </div>
+          <span class="text-xs" style="color:var(--muted-foreground)">Feb 15</span>
+          <span class="text-sm font-semibold tabular-nums" style="color:#22c55e;">+₱45,200.00</span>
+        </li>
+
+        <!-- Row 2 -->
+        <li class="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 cursor-pointer transition-colors" onclick="openEditSheet('Grocery (SM Hypermarket)','2340.00','Expense','BPI Savings','Food &amp; Dining','2026-02-14','')">
+          <input type="checkbox" class="rounded" onclick="event.stopPropagation()" />
+          <span class="badge badge-red">expense</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate">Grocery (SM Hypermarket)</p>
+            <p class="text-xs" style="color:var(--muted-foreground)">Food &amp; Dining · BPI Savings</p>
+          </div>
+          <span class="text-xs" style="color:var(--muted-foreground)">Feb 14</span>
+          <span class="text-sm font-semibold tabular-nums" style="color:#ef4444;">-₱2,340.00</span>
+        </li>
+
+        <!-- Row 3 -->
+        <li class="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 cursor-pointer transition-colors" onclick="openEditSheet('Netflix Subscription','549.00','Expense','BPI Credit Card','Entertainment','2026-02-13','')">
+          <input type="checkbox" class="rounded" onclick="event.stopPropagation()" />
+          <span class="badge badge-red">expense</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate">Netflix Subscription</p>
+            <p class="text-xs" style="color:var(--muted-foreground)">Entertainment · BPI Credit Card</p>
+          </div>
+          <span class="text-xs" style="color:var(--muted-foreground)">Feb 13</span>
+          <span class="text-sm font-semibold tabular-nums" style="color:#ef4444;">-₱549.00</span>
+        </li>
+
+        <!-- Row 4 -->
+        <li class="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 cursor-pointer transition-colors" onclick="openEditSheet('Transfer to Savings','10000.00','Transfer','BPI Checking','Transfer','2026-02-12','BPI Checking → BPI Savings')">
+          <input type="checkbox" class="rounded" onclick="event.stopPropagation()" />
+          <span class="badge badge-blue">transfer</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate">Transfer to Savings</p>
+            <p class="text-xs" style="color:var(--muted-foreground)">Transfer · BPI Checking → BPI Savings</p>
+          </div>
+          <span class="text-xs" style="color:var(--muted-foreground)">Feb 12</span>
+          <span class="text-sm font-semibold tabular-nums" style="color:var(--muted-foreground)">₱10,000.00</span>
+        </li>
+
+        <!-- Row 5 -->
+        <li class="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 cursor-pointer transition-colors" onclick="openEditSheet('Electric Bill (Meralco)','3200.00','Expense','BPI Savings','Utilities','2026-02-10','')">
+          <input type="checkbox" class="rounded" onclick="event.stopPropagation()" />
+          <span class="badge badge-red">expense</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate">Electric Bill (Meralco)</p>
+            <p class="text-xs" style="color:var(--muted-foreground)">Utilities · BPI Savings</p>
+          </div>
+          <span class="text-xs" style="color:var(--muted-foreground)">Feb 10</span>
+          <span class="text-sm font-semibold tabular-nums" style="color:#ef4444;">-₱3,200.00</span>
+        </li>
+
+        <!-- Row 6 -->
+        <li class="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 cursor-pointer transition-colors" onclick="openEditSheet('Jollibee — Lunch','285.00','Expense','Cash','Food &amp; Dining','2026-02-09','')">
+          <input type="checkbox" class="rounded" onclick="event.stopPropagation()" />
+          <span class="badge badge-red">expense</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate">Jollibee — Lunch</p>
+            <p class="text-xs" style="color:var(--muted-foreground)">Food &amp; Dining · Cash</p>
+          </div>
+          <span class="text-xs" style="color:var(--muted-foreground)">Feb 9</span>
+          <span class="text-sm font-semibold tabular-nums" style="color:#ef4444;">-₱285.00</span>
+        </li>
+
+        <!-- Row 7 -->
+        <li class="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 cursor-pointer transition-colors" onclick="openEditSheet('Grab — Transportation','450.00','Expense','GCash','Transportation','2026-02-08','')">
+          <input type="checkbox" class="rounded" onclick="event.stopPropagation()" />
+          <span class="badge badge-red">expense</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate">Grab — Transportation</p>
+            <p class="text-xs" style="color:var(--muted-foreground)">Transportation · GCash</p>
+          </div>
+          <span class="text-xs" style="color:var(--muted-foreground)">Feb 8</span>
+          <span class="text-sm font-semibold tabular-nums" style="color:#ef4444;">-₱450.00</span>
+        </li>
+
+        <!-- Row 8 -->
+        <li class="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 cursor-pointer transition-colors" onclick="openEditSheet('Spotify Premium','169.00','Expense','BPI Credit Card','Entertainment','2026-02-05','')">
+          <input type="checkbox" class="rounded" onclick="event.stopPropagation()" />
+          <span class="badge badge-red">expense</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate">Spotify Premium</p>
+            <p class="text-xs" style="color:var(--muted-foreground)">Entertainment · BPI Credit Card</p>
+          </div>
+          <span class="text-xs" style="color:var(--muted-foreground)">Feb 5</span>
+          <span class="text-sm font-semibold tabular-nums" style="color:#ef4444;">-₱169.00</span>
+        </li>
+
+        <!-- Row 9 -->
+        <li class="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 cursor-pointer transition-colors" onclick="openEditSheet('SM Supermarket','1870.00','Expense','BPI Savings','Food &amp; Dining','2026-02-04','')">
+          <input type="checkbox" class="rounded" onclick="event.stopPropagation()" />
+          <span class="badge badge-red">expense</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate">SM Supermarket</p>
+            <p class="text-xs" style="color:var(--muted-foreground)">Food &amp; Dining · BPI Savings</p>
+          </div>
+          <span class="text-xs" style="color:var(--muted-foreground)">Feb 4</span>
+          <span class="text-sm font-semibold tabular-nums" style="color:#ef4444;">-₱1,870.00</span>
+        </li>
+
+        <!-- Row 10 -->
+        <li class="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 cursor-pointer transition-colors" onclick="openEditSheet('Internet Bill (PLDT)','1899.00','Expense','BPI Savings','Utilities','2026-02-03','')">
+          <input type="checkbox" class="rounded" onclick="event.stopPropagation()" />
+          <span class="badge badge-red">expense</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate">Internet Bill (PLDT)</p>
+            <p class="text-xs" style="color:var(--muted-foreground)">Utilities · BPI Savings</p>
+          </div>
+          <span class="text-xs" style="color:var(--muted-foreground)">Feb 3</span>
+          <span class="text-sm font-semibold tabular-nums" style="color:#ef4444;">-₱1,899.00</span>
+        </li>
+
+        <!-- Row 11 -->
+        <li class="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 cursor-pointer transition-colors" onclick="openEditSheet('Freelance — Design Project','8500.00','Income','BPI Savings','Employment','2026-02-02','')">
+          <input type="checkbox" class="rounded" onclick="event.stopPropagation()" />
+          <span class="badge badge-green">income</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate">Freelance — Design Project</p>
+            <p class="text-xs" style="color:var(--muted-foreground)">Employment · BPI Savings</p>
+          </div>
+          <span class="text-xs" style="color:var(--muted-foreground)">Feb 2</span>
+          <span class="text-sm font-semibold tabular-nums" style="color:#22c55e;">+₱8,500.00</span>
+        </li>
+
+        <!-- Row 12 -->
+        <li class="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 cursor-pointer transition-colors" onclick="openEditSheet('Gym Membership — Anytime','1500.00','Expense','BPI Credit Card','Health &amp; Fitness','2026-02-01','')">
+          <input type="checkbox" class="rounded" onclick="event.stopPropagation()" />
+          <span class="badge badge-red">expense</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate">Gym Membership — Anytime</p>
+            <p class="text-xs" style="color:var(--muted-foreground)">Health &amp; Fitness · BPI Credit Card</p>
+          </div>
+          <span class="text-xs" style="color:var(--muted-foreground)">Feb 1</span>
+          <span class="text-sm font-semibold tabular-nums" style="color:#ef4444;">-₱1,500.00</span>
+        </li>
+      </ul>
+
+      <!-- Pagination -->
+      <div class="flex items-center justify-between px-5 py-3 border-t" style="border-color:var(--border)">
+        <button class="btn-outline" id="btn-prev" disabled style="opacity:0.5" onclick="changePage(-1)">Previous</button>
+        <span class="text-sm" id="page-label" style="color:var(--muted-foreground)">Page 1 of 4</span>
+        <button class="btn-outline" id="btn-next" onclick="changePage(1)">Next</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Sheet overlay (backdrop) -->
+  <div id="sheet-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:50;" onclick="closeSheet()"></div>
+
+  <!-- Add Transaction Sheet -->
+  <div id="add-sheet" style="display:none;position:fixed;top:0;right:0;height:100%;width:420px;max-width:95vw;background:var(--card);border-left:1px solid var(--border);z-index:51;padding:24px;box-sizing:border-box;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <h2 style="font-size:18px;font-weight:600;margin:0 0 4px;">New Transaction</h2>
+        <p style="font-size:13px;color:var(--muted-foreground);margin:0">Enter the transaction details below.</p>
+      </div>
+      <button onclick="closeSheet()" style="background:transparent;border:none;cursor:pointer;color:var(--muted-foreground);font-size:18px;line-height:1;padding:4px;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Type</label>
+        <select class="form-input">
+          <option>Expense</option>
+          <option>Income</option>
+          <option>Transfer</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Description</label>
+        <input class="form-input" placeholder="e.g. Grocery SM" />
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Amount (₱)</label>
+        <input class="form-input" type="number" placeholder="0.00" />
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Category</label>
+        <select class="form-input">
+          <option>Food &amp; Dining</option>
+          <option>Transportation</option>
+          <option>Entertainment</option>
+          <option>Utilities</option>
+          <option>Employment</option>
+          <option>Health &amp; Fitness</option>
+          <option>Transfer</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Account</label>
+        <select class="form-input">
+          <option>BPI Savings</option>
+          <option>BPI Checking</option>
+          <option>BPI Credit Card</option>
+          <option>GCash</option>
+          <option>Cash</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Date</label>
+        <input class="form-input" type="date" value="2026-02-23" />
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Notes</label>
+        <textarea class="form-input" rows="2" placeholder="Optional notes..."></textarea>
+      </div>
+      <div style="display:flex;gap:8px;padding-top:4px;">
+        <button class="btn-primary" style="flex:1;" onclick="closeSheet()">Save Transaction</button>
+        <button class="btn-outline" onclick="closeSheet()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Transaction Sheet -->
+  <div id="edit-sheet" style="display:none;position:fixed;top:0;right:0;height:100%;width:420px;max-width:95vw;background:var(--card);border-left:1px solid var(--border);z-index:51;padding:24px;box-sizing:border-box;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <h2 style="font-size:18px;font-weight:600;margin:0 0 4px;">Edit Transaction</h2>
+        <p style="font-size:13px;color:var(--muted-foreground);margin:0">Update the transaction details below.</p>
+      </div>
+      <button onclick="closeSheet()" style="background:transparent;border:none;cursor:pointer;color:var(--muted-foreground);font-size:18px;line-height:1;padding:4px;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Description</label>
+        <input class="form-input" id="edit-description" value="Netflix Subscription" />
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Amount (₱)</label>
+        <input class="form-input" id="edit-amount" type="number" value="549.00" />
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Type</label>
+        <select class="form-input" id="edit-type">
+          <option>Income</option>
+          <option selected>Expense</option>
+          <option>Transfer</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Account</label>
+        <select class="form-input" id="edit-account">
+          <option>BPI Savings</option>
+          <option selected>BPI Credit Card</option>
+          <option>BPI Checking</option>
+          <option>GCash</option>
+          <option>Cash</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Category</label>
+        <select class="form-input" id="edit-category">
+          <option>Food &amp; Dining</option>
+          <option selected>Entertainment</option>
+          <option>Transportation</option>
+          <option>Utilities</option>
+          <option>Employment</option>
+          <option>Health &amp; Fitness</option>
+          <option>Transfer</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Date</label>
+        <input class="form-input" id="edit-date" type="date" value="2026-02-13" />
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:500;color:var(--muted-foreground);display:block;margin-bottom:5px;">Notes</label>
+        <textarea class="form-input" id="edit-notes" rows="2" placeholder="Optional notes..."></textarea>
+      </div>
+      <div style="display:flex;gap:8px;padding-top:4px;">
+        <button class="btn-primary" style="flex:1;" onclick="closeSheet()">Save Changes</button>
+        <button class="btn-destructive" onclick="openDeleteConfirm()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:60;align-items:center;justify-content:center;" onclick="closeDeleteConfirm()">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:0.625rem;padding:24px;width:400px;max-width:90vw;" onclick="event.stopPropagation()">
+      <h3 style="font-size:16px;font-weight:600;margin:0 0 8px;">Delete Transaction?</h3>
+      <p style="font-size:13px;color:var(--muted-foreground);margin:0 0 20px;">This action cannot be undone. The transaction will be permanently removed from your records.</p>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn-outline" onclick="closeDeleteConfirm()">Cancel</button>
+        <button class="btn-destructive" onclick="closeSheet(); closeDeleteConfirm()">Delete Transaction</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Sheet open/close helpers
+    function openSheet(id) {
+      document.getElementById('sheet-overlay').style.display = 'block';
+      document.getElementById(id).style.display = 'block';
+    }
+    function closeSheet() {
+      document.getElementById('sheet-overlay').style.display = 'none';
+      document.getElementById('add-sheet').style.display = 'none';
+      document.getElementById('edit-sheet').style.display = 'none';
+    }
+
+    // Open Add sheet
+    function openAddSheet() {
+      openSheet('add-sheet');
+    }
+
+    // Open Edit sheet pre-filled with row data
+    function openEditSheet(description, amount, type, account, category, date, notes) {
+      document.getElementById('edit-description').value = description;
+      document.getElementById('edit-amount').value = amount;
+
+      // Set type select
+      var typeSelect = document.getElementById('edit-type');
+      for (var i = 0; i < typeSelect.options.length; i++) {
+        if (typeSelect.options[i].text === type) { typeSelect.selectedIndex = i; break; }
+      }
+
+      // Set account select
+      var accountSelect = document.getElementById('edit-account');
+      for (var i = 0; i < accountSelect.options.length; i++) {
+        if (accountSelect.options[i].text === account) { accountSelect.selectedIndex = i; break; }
+      }
+
+      // Set category select
+      var catSelect = document.getElementById('edit-category');
+      var catDecoded = category.replace(/&amp;/g, '&');
+      for (var i = 0; i < catSelect.options.length; i++) {
+        if (catSelect.options[i].text === catDecoded) { catSelect.selectedIndex = i; break; }
+      }
+
+      document.getElementById('edit-date').value = date;
+      document.getElementById('edit-notes').value = notes || '';
+
+      openSheet('edit-sheet');
+    }
+
+    // Delete confirmation modal
+    function openDeleteConfirm() {
+      document.getElementById('delete-modal').style.display = 'flex';
+    }
+    function closeDeleteConfirm() {
+      document.getElementById('delete-modal').style.display = 'none';
+    }
+
+    // Pagination simulation
+    var currentPage = 1;
+    var totalPages = 4;
+    function changePage(delta) {
+      currentPage = Math.max(1, Math.min(totalPages, currentPage + delta));
+      document.getElementById('page-label').textContent = 'Page ' + currentPage + ' of ' + totalPages;
+      var prevBtn = document.getElementById('btn-prev');
+      var nextBtn = document.getElementById('btn-next');
+      if (currentPage <= 1) {
+        prevBtn.disabled = true;
+        prevBtn.style.opacity = '0.5';
+      } else {
+        prevBtn.disabled = false;
+        prevBtn.style.opacity = '1';
+      }
+      if (currentPage >= totalPages) {
+        nextBtn.disabled = true;
+        nextBtn.style.opacity = '0.5';
+      } else {
+        nextBtn.disabled = false;
+        nextBtn.style.opacity = '1';
+      }
+    }
+  </script>
+</body>
+</html>

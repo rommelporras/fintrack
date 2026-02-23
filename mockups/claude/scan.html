@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinTrack — Scan Receipt</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --background: oklch(0.14 0.005 260); --foreground: oklch(0.95 0.005 260);
+      --card: oklch(0.18 0.005 260); --primary: oklch(0.72 0.17 162);
+      --primary-foreground: oklch(0.14 0.005 260); --muted: oklch(0.22 0.005 260);
+      --muted-foreground: oklch(0.65 0.01 260); --border: oklch(0.25 0.005 260);
+      --sidebar: oklch(0.12 0.005 260); --destructive: oklch(0.65 0.2 25); --radius: 0.625rem;
+    }
+    body { background: var(--background); color: var(--foreground); font-family: system-ui, sans-serif; margin: 0; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: var(--muted-foreground); border-radius: 0.5rem; text-decoration: none; }
+    .nav-item:hover { background: var(--muted); }
+    .nav-active { background: var(--primary); color: var(--primary-foreground) !important; }
+    .btn-primary { background: var(--primary); color: var(--primary-foreground); border: none; border-radius: 0.5rem; padding: 10px 20px; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%; justify-content: center; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-ghost { background: transparent; border: 1px solid var(--border); border-radius: 0.5rem; padding: 8px 16px; font-size: 14px; color: var(--muted-foreground); cursor: pointer; }
+    .btn-ghost:hover { background: var(--muted); }
+    .textarea-code { width: 100%; background: var(--muted); border: 1px solid var(--border); border-radius: 0.5rem; padding: 10px; color: var(--foreground); font-size: 13px; font-family: monospace; resize: vertical; box-sizing: border-box; }
+    .textarea-code:focus { outline: 1px solid var(--primary); }
+    .review-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .review-table th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 600; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+    .review-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .review-table tr:last-child td { border-bottom: none; }
+    .badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 2px 10px; font-size: 11px; font-weight: 600; }
+    .badge-amber { background: rgba(146,64,14,0.3); color: #fbbf24; }
+  </style>
+</head>
+<body class="flex min-h-screen">
+
+<aside style="width:256px;min-height:100vh;background:var(--sidebar);border-right:1px solid var(--border);padding:16px 12px;display:flex;flex-direction:column;flex-shrink:0;">
+  <div style="padding:0 12px;margin-bottom:24px;"><div style="font-size:20px;font-weight:700;">FinTrack</div><div style="font-size:12px;color:var(--muted-foreground);">Personal Finance</div></div>
+  <nav style="flex:1;display:flex;flex-direction:column;gap:2px;">
+    <a href="dashboard.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
+    <a href="transactions.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>Transactions</a>
+    <a href="recurring.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Recurring</a>
+    <a href="budgets.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 9c0 3.314-3.134 6-7 6s-7-2.686-7-6 3.134-6 7-6 7 2.686 7 6z"/><path d="M5 15.5c0 2.485 3.134 4.5 7 4.5s7-2.015 7-4.5"/></svg>Budgets</a>
+    <a href="analytics.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</a>
+    <a href="scan.html" class="nav-item nav-active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>Scan Receipt</a>
+    <a href="accounts.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H4v4"/><path d="M20 12a2 2 0 0 0-2 2v2H6v-2a2 2 0 0 0-2-2"/><path d="M2 8l2-4h16l2 4"/></svg>Accounts</a>
+    <a href="credit-cards.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Credit Cards</a>
+    <a href="statements.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l4-2 4 2 4-2 4 2V2z"/></svg>Statements</a>
+    <a href="documents.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Documents</a>
+    <a href="notifications.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications<span style="margin-left:auto;background:var(--destructive);color:#fff;border-radius:9999px;padding:1px 6px;font-size:11px;">3</span></a>
+    <a href="settings.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>Settings</a>
+    <a href="guide.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>User Guide</a>
+  </nav>
+  <button style="display:flex;align-items:center;gap:12px;padding:8px 12px;font-size:14px;color:var(--muted-foreground);background:transparent;border:none;cursor:pointer;border-radius:0.5rem;width:100%;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign out</button>
+</aside>
+
+<main style="flex:1;padding:24px;overflow-y:auto;">
+  <div style="max-width:640px;margin:0 auto;">
+    <h1 style="font-size:24px;font-weight:700;margin:0 0 8px;">Scan / Import</h1>
+    <p style="color:var(--muted-foreground);font-size:14px;margin:0 0 24px;">Upload a receipt or bank statement to extract transactions using AI.</p>
+
+    <!-- ── Tabs ─────────────────────────────────────────────────────────── -->
+    <div style="display:flex;gap:4px;background:var(--muted);border-radius:0.625rem;padding:4px;margin-bottom:24px;">
+      <button id="tab-btn-1" onclick="showTab('tab1')" style="flex:1;padding:8px;border-radius:0.5rem;font-size:13px;font-weight:500;border:none;cursor:pointer;background:var(--card);color:var(--foreground);">Single Receipt</button>
+      <button id="tab-btn-2" onclick="showTab('tab2')" style="flex:1;padding:8px;border-radius:0.5rem;font-size:13px;font-weight:500;border:none;cursor:pointer;background:transparent;color:var(--muted-foreground);">Bulk Import (Statement)</button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         TAB 1 — Single Receipt
+    ═══════════════════════════════════════════════ -->
+    <div id="tab1">
+
+      <!-- Uploaded file state -->
+      <div id="single-file-card" class="card" style="margin-bottom:16px;">
+        <div id="single-file-info" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--muted);border-radius:0.5rem;margin-bottom:16px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>
+          <div>
+            <div style="font-size:14px;font-weight:500;">grocery_receipt_feb14.jpg</div>
+            <div style="font-size:12px;color:var(--muted-foreground);">245 KB · Uploaded</div>
+          </div>
+          <button onclick="clearSingleFile()" style="margin-left:auto;background:transparent;border:none;cursor:pointer;color:var(--muted-foreground);" title="Remove file">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <!-- Receipt image preview -->
+        <div id="single-preview" style="background:var(--muted);border-radius:0.5rem;height:160px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+          <div style="text-align:center;color:var(--muted-foreground);">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <div style="font-size:12px;">Receipt preview</div>
+          </div>
+        </div>
+
+        <!-- Step 1 -->
+        <div style="border:1px solid var(--border);border-radius:0.5rem;padding:16px;margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:600;color:var(--muted-foreground);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Step 1</div>
+          <div style="font-size:14px;font-weight:500;margin-bottom:12px;">Copy the AI prompt</div>
+          <button id="copy-btn" class="btn-primary" onclick="copyPrompt()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span id="copy-btn-label">Copy AI Prompt</span>
+          </button>
+        </div>
+
+        <!-- Step 2 -->
+        <div style="border:1px solid var(--border);border-radius:0.5rem;padding:16px;">
+          <div style="font-size:11px;font-weight:600;color:var(--muted-foreground);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Step 2</div>
+          <div style="font-size:14px;font-weight:500;margin-bottom:4px;">Paste the AI response</div>
+          <div style="font-size:12px;color:var(--muted-foreground);margin-bottom:12px;">Paste the JSON response from Gemini, ChatGPT, or Claude here.</div>
+          <textarea id="single-paste" class="textarea-code" style="height:100px;" placeholder="Paste AI response here..."></textarea>
+          <button onclick="parseAndReview('single')" style="background:var(--primary);color:var(--primary-foreground);border:none;border-radius:0.5rem;padding:8px 16px;font-size:14px;font-weight:500;cursor:pointer;margin-top:10px;width:100%;">Parse &amp; Review</button>
+        </div>
+      </div>
+
+      <!-- Upload drop zone (shown when file is cleared) -->
+      <div id="single-dropzone" style="display:none;border:1px dashed var(--border);border-radius:0.625rem;padding:40px;text-align:center;cursor:pointer;margin-bottom:16px;" onclick="showSingleFile()">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" stroke-width="1.5" style="margin:0 auto 12px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div style="font-size:14px;font-weight:500;margin-bottom:4px;">Upload a receipt</div>
+        <div style="font-size:12px;color:var(--muted-foreground);">JPG, PNG, PDF · Max 10 MB</div>
+      </div>
+
+      <!-- Review panel (hidden until Parse & Review clicked) -->
+      <div id="review-panel-single" style="display:none;">
+        <div class="card" style="margin-bottom:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div>
+              <div style="font-size:16px;font-weight:600;">Review Transactions</div>
+              <div style="font-size:12px;color:var(--muted-foreground);margin-top:2px;">3 items extracted from grocery_receipt_feb14.jpg</div>
+            </div>
+            <span class="badge badge-amber">Pending review</span>
+          </div>
+          <table class="review-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Category</th>
+                <th style="text-align:right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Magnolia Fresh Milk 1L</td>
+                <td><span style="font-size:12px;color:var(--muted-foreground);">Groceries</span></td>
+                <td style="text-align:right;color:#f87171;font-weight:600;">-₱95.00</td>
+              </tr>
+              <tr>
+                <td>Lucky Me Pancit Canton (3-pack)</td>
+                <td><span style="font-size:12px;color:var(--muted-foreground);">Groceries</span></td>
+                <td style="text-align:right;color:#f87171;font-weight:600;">-₱78.00</td>
+              </tr>
+              <tr>
+                <td>Del Monte Tomato Sauce</td>
+                <td><span style="font-size:12px;color:var(--muted-foreground);">Groceries</span></td>
+                <td style="text-align:right;color:#f87171;font-weight:600;">-₱45.00</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+            <div style="font-size:14px;color:var(--muted-foreground);">Total: <strong style="color:var(--foreground);">₱218.00</strong></div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn-ghost" onclick="dismissReview('single')">Discard</button>
+              <button onclick="confirmSave('single')" style="background:var(--primary);color:var(--primary-foreground);border:none;border-radius:0.5rem;padding:8px 16px;font-size:14px;font-weight:500;cursor:pointer;">Confirm &amp; Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success message (hidden until save) -->
+      <div id="save-success-single" style="display:none;background:rgba(21,128,61,0.15);border:1px solid rgba(74,222,128,0.3);border-radius:0.625rem;padding:16px;margin-bottom:16px;display:none;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:#4ade80;">3 transactions saved!</div>
+            <div style="font-size:12px;color:var(--muted-foreground);">Added to your transactions for Feb 14, 2026.</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end tab1 -->
+
+    <!-- ══════════════════════════════════════════════
+         TAB 2 — Bulk Import (Statement)
+    ═══════════════════════════════════════════════ -->
+    <div id="tab2" style="display:none;">
+
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-size:16px;font-weight:600;margin-bottom:4px;">Paste Statement Data</div>
+        <div style="font-size:13px;color:var(--muted-foreground);margin-bottom:16px;">Paste your exported CSV or the plain-text copy of your bank statement below.</div>
+
+        <!-- Step 1 -->
+        <div style="border:1px solid var(--border);border-radius:0.5rem;padding:16px;margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:600;color:var(--muted-foreground);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Step 1</div>
+          <div style="font-size:14px;font-weight:500;margin-bottom:12px;">Copy the bulk AI prompt</div>
+          <button id="bulk-copy-btn" class="btn-primary" onclick="copyBulkPrompt()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span id="bulk-copy-label">Copy Bulk Prompt</span>
+          </button>
+        </div>
+
+        <!-- Step 2 -->
+        <div style="border:1px solid var(--border);border-radius:0.5rem;padding:16px;">
+          <div style="font-size:11px;font-weight:600;color:var(--muted-foreground);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Step 2</div>
+          <div style="font-size:14px;font-weight:500;margin-bottom:4px;">Paste the AI response</div>
+          <div style="font-size:12px;color:var(--muted-foreground);margin-bottom:12px;">Paste the JSON array returned by the AI. Each item should include date, description, amount, and category.</div>
+          <textarea id="bulk-paste" class="textarea-code" style="height:140px;" placeholder='[{"date":"2026-02-01","description":"Jollibee SM Mall","amount":-185,"category":"Food &amp; Dining"},...]'></textarea>
+          <button onclick="parseAndReview('bulk')" style="background:var(--primary);color:var(--primary-foreground);border:none;border-radius:0.5rem;padding:8px 16px;font-size:14px;font-weight:500;cursor:pointer;margin-top:10px;width:100%;">Parse &amp; Review</button>
+        </div>
+      </div>
+
+      <!-- Review panel (hidden until Parse & Review clicked) -->
+      <div id="review-panel-bulk" style="display:none;">
+        <div class="card" style="margin-bottom:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div>
+              <div style="font-size:16px;font-weight:600;">Review Transactions</div>
+              <div style="font-size:12px;color:var(--muted-foreground);margin-top:2px;">5 items extracted from statement</div>
+            </div>
+            <span class="badge badge-amber">Pending review</span>
+          </div>
+          <table class="review-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th style="text-align:right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="color:var(--muted-foreground);font-size:12px;">Feb 1</td>
+                <td>Jollibee SM Mall</td>
+                <td><span style="font-size:12px;color:var(--muted-foreground);">Food &amp; Dining</span></td>
+                <td style="text-align:right;color:#f87171;font-weight:600;">-₱185.00</td>
+              </tr>
+              <tr>
+                <td style="color:var(--muted-foreground);font-size:12px;">Feb 3</td>
+                <td>Grab ride — Makati CBD</td>
+                <td><span style="font-size:12px;color:var(--muted-foreground);">Transportation</span></td>
+                <td style="text-align:right;color:#f87171;font-weight:600;">-₱142.00</td>
+              </tr>
+              <tr>
+                <td style="color:var(--muted-foreground);font-size:12px;">Feb 5</td>
+                <td>Watsons Personal Care</td>
+                <td><span style="font-size:12px;color:var(--muted-foreground);">Personal Care</span></td>
+                <td style="text-align:right;color:#f87171;font-weight:600;">-₱430.00</td>
+              </tr>
+              <tr>
+                <td style="color:var(--muted-foreground);font-size:12px;">Feb 8</td>
+                <td>SM Supermarket — Groceries</td>
+                <td><span style="font-size:12px;color:var(--muted-foreground);">Groceries</span></td>
+                <td style="text-align:right;color:#f87171;font-weight:600;">-₱1,256.00</td>
+              </tr>
+              <tr>
+                <td style="color:var(--muted-foreground);font-size:12px;">Feb 10</td>
+                <td>Mercury Drug</td>
+                <td><span style="font-size:12px;color:var(--muted-foreground);">Health</span></td>
+                <td style="text-align:right;color:#f87171;font-weight:600;">-₱318.00</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+            <div style="font-size:14px;color:var(--muted-foreground);">Total: <strong style="color:var(--foreground);">₱2,331.00</strong></div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn-ghost" onclick="dismissReview('bulk')">Discard</button>
+              <button onclick="confirmSave('bulk')" style="background:var(--primary);color:var(--primary-foreground);border:none;border-radius:0.5rem;padding:8px 16px;font-size:14px;font-weight:500;cursor:pointer;">Confirm &amp; Save All</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success message -->
+      <div id="save-success-bulk" style="display:none;background:rgba(21,128,61,0.15);border:1px solid rgba(74,222,128,0.3);border-radius:0.625rem;padding:16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:#4ade80;">5 transactions saved!</div>
+            <div style="font-size:12px;color:var(--muted-foreground);">Added to your transactions from this statement.</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end tab2 -->
+
+  </div>
+</main>
+
+<script>
+  // ── Tab switching ──────────────────────────────────────────────────────────
+  function showTab(id) {
+    ['tab1', 'tab2'].forEach(function(t) {
+      var num = t.replace('tab', '');
+      document.getElementById(t).style.display = t === id ? 'block' : 'none';
+      document.getElementById('tab-btn-' + num).style.background = t === id ? 'var(--card)' : 'transparent';
+      document.getElementById('tab-btn-' + num).style.color = t === id ? 'var(--foreground)' : 'var(--muted-foreground)';
+    });
+  }
+
+  // ── Copy AI Prompt (single) ───────────────────────────────────────────────
+  var SINGLE_PROMPT = 'You are a receipt parser. Extract all line items from the receipt image I will share. Return a JSON array where each object has: "description" (string), "amount" (number, negative for expenses), "category" (string). Respond with raw JSON only, no markdown.';
+
+  function copyPrompt() {
+    navigator.clipboard.writeText(SINGLE_PROMPT).catch(function() {});
+    var label = document.getElementById('copy-btn-label');
+    label.textContent = 'Copied!';
+    setTimeout(function() { label.textContent = 'Copy AI Prompt'; }, 2000);
+  }
+
+  // ── Copy Bulk Prompt ──────────────────────────────────────────────────────
+  var BULK_PROMPT = 'You are a bank statement parser. Extract all transactions from the text I will paste. Return a JSON array where each object has: "date" (YYYY-MM-DD), "description" (string), "amount" (number, negative for debits/expenses, positive for credits), "category" (string). Respond with raw JSON only, no markdown.';
+
+  function copyBulkPrompt() {
+    navigator.clipboard.writeText(BULK_PROMPT).catch(function() {});
+    var label = document.getElementById('bulk-copy-label');
+    label.textContent = 'Copied!';
+    setTimeout(function() { label.textContent = 'Copy Bulk Prompt'; }, 2000);
+  }
+
+  // ── Parse & Review ────────────────────────────────────────────────────────
+  function parseAndReview(which) {
+    var panelId = which === 'single' ? 'review-panel-single' : 'review-panel-bulk';
+    document.getElementById(panelId).style.display = 'block';
+    document.getElementById(panelId).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ── Discard review ────────────────────────────────────────────────────────
+  function dismissReview(which) {
+    var panelId = which === 'single' ? 'review-panel-single' : 'review-panel-bulk';
+    document.getElementById(panelId).style.display = 'none';
+    var pasteId = which === 'single' ? 'single-paste' : 'bulk-paste';
+    document.getElementById(pasteId).value = '';
+  }
+
+  // ── Confirm & Save ────────────────────────────────────────────────────────
+  function confirmSave(which) {
+    var panelId = which === 'single' ? 'review-panel-single' : 'review-panel-bulk';
+    var successId = which === 'single' ? 'save-success-single' : 'save-success-bulk';
+    document.getElementById(panelId).style.display = 'none';
+    document.getElementById(successId).style.display = 'block';
+    var pasteId = which === 'single' ? 'single-paste' : 'bulk-paste';
+    document.getElementById(pasteId).value = '';
+    setTimeout(function() {
+      document.getElementById(successId).style.display = 'none';
+    }, 5000);
+  }
+
+  // ── Remove file (single) ──────────────────────────────────────────────────
+  function clearSingleFile() {
+    document.getElementById('single-file-card').style.display = 'none';
+    document.getElementById('single-dropzone').style.display = 'block';
+  }
+
+  function showSingleFile() {
+    document.getElementById('single-dropzone').style.display = 'none';
+    document.getElementById('single-file-card').style.display = 'block';
+  }
+</script>
+</body>
+</html>
