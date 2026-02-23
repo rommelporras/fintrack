@@ -357,7 +357,7 @@ _Priority: high. These prevent silent data corruption and query performance issu
 
 ### Task B1: Add missing database indexes (migration)
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: model files to add `index=True` to FK columns
@@ -676,7 +676,7 @@ _Priority: medium. These fix broken UX, missing feedback, and accessibility fail
 
 ### Task D1: MobileSidebar close on navigation
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/components/app/MobileSidebar.tsx`
@@ -893,7 +893,7 @@ function openEditSheet(t: Transaction) {
 
 ### Task D6: Statements proper empty state
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `frontend/src/app/(dashboard)/statements/page.tsx:250`
