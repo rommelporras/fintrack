@@ -84,14 +84,7 @@ async def refresh(
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
-    new_access = create_access_token(str(user.id))
-    kw = _cookie_kwargs()
-    response.set_cookie(
-        "access_token",
-        new_access,
-        max_age=settings.jwt_access_token_expire_minutes * 60,
-        **kw,
-    )
+    _set_auth_cookies(response, user.id)
     return user
 
 
