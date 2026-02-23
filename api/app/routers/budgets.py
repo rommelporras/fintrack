@@ -1,14 +1,15 @@
 import uuid
 from datetime import date
+from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func as sa_func, extract
 from app.core.database import get_db
 from app.dependencies import get_current_user
 from app.models.budget import Budget
+from app.models.transaction import Transaction, TransactionType
 from app.models.user import User
 from app.schemas.budget import BudgetCreate, BudgetUpdate, BudgetResponse, BudgetStatusItem
-from app.services.budget_alerts import get_month_spending
 
 router = APIRouter(prefix="/budgets", tags=["budgets"])
 
@@ -52,9 +53,47 @@ async def get_budget_status(
     )
     budgets = budgets_result.scalars().all()
 
+    # Single aggregate query replaces the per-budget N+1 loop.
+    # Group by (category_id, account_id) so both budget types can be resolved
+    # from one result set.
+    spending_result = await db.execute(
+        select(
+            Transaction.category_id,
+            Transaction.account_id,
+            sa_func.sum(Transaction.amount).label("spent"),
+        )
+        .where(
+            Transaction.user_id == current_user.id,
+            Transaction.type == TransactionType.expense,
+            Transaction.date >= month_start,
+            extract("month", Transaction.date) == month_start.month,
+            extract("year", Transaction.date) == month_start.year,
+        )
+        .group_by(Transaction.category_id, Transaction.account_id)
+    )
+    # Build a nested map: category_id -> account_id -> spent
+    # Both keys are stored as strings (or None) for easy lookup.
+    spending_map: dict[tuple[str | None, str | None], Decimal] = {}
+    for row in spending_result.all():
+        cat_key = str(row.category_id) if row.category_id is not None else None
+        acc_key = str(row.account_id) if row.account_id is not None else None
+        spending_map[(cat_key, acc_key)] = Decimal(row.spent)
+
     items = []
     for budget in budgets:
-        spent = await get_month_spending(db, current_user.id, budget, month_start)
+        if budget.type == "category":
+            cat_str = str(budget.category_id)
+            spent = sum(
+                (v for (cat, _), v in spending_map.items() if cat == cat_str),
+                Decimal("0.00"),
+            )
+        else:
+            acc_str = str(budget.account_id)
+            spent = sum(
+                (v for (_, acc), v in spending_map.items() if acc == acc_str),
+                Decimal("0.00"),
+            )
+
         percent = float(spent / budget.amount * 100) if budget.amount > 0 else 0.0
 
         if percent >= 100:
