@@ -1063,7 +1063,7 @@ def check_budget_alerts_task(user_id: str) -> None:
 
 ### Task E2: Fix N+1 budget status query
 
-- [ ] **Complete**
+- [x] **Complete**
 
 **Files:**
 - Modify: `api/app/routers/budgets.py:56-72`
