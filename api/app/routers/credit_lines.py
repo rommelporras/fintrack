@@ -32,7 +32,7 @@ def _card_to_summary(card: CreditCard) -> CreditCardInLine:
         **card.__dict__,
         "closed_period": {k: str(v) for k, v in closed.items()},
         "open_period": {k: str(v) for k, v in open_.items()},
-        "due_date": due,
+        "due_date": str(due) if due else None,
         "days_until_due": days_until_due(due),
     })
 
