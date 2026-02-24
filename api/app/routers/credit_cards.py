@@ -17,16 +17,21 @@ from app.services.credit_card import (
 router = APIRouter(prefix="/credit-cards", tags=["credit-cards"])
 
 
-def _enrich(card: CreditCard) -> CreditCardResponse:
+async def _enrich(card: CreditCard, db: AsyncSession) -> CreditCardResponse:
+    from app.services.credit_line import compute_card_available_credit
     closed = get_closed_statement_period(card.statement_day)
     open_ = get_open_billing_period(card.statement_day)
     due = get_due_date(card.statement_day, card.due_day)
+    available = None
+    if card.credit_line_id is None:
+        available = await compute_card_available_credit(db, card)
     return CreditCardResponse.model_validate({
         **card.__dict__,
         "closed_period": {k: str(v) for k, v in closed.items()},
         "open_period": {k: str(v) for k, v in open_.items()},
         "due_date": due,
         "days_until_due": days_until_due(due),
+        "available_credit": available,
     })
 
 
@@ -38,7 +43,7 @@ async def list_credit_cards(
     result = await db.execute(
         select(CreditCard).where(CreditCard.user_id == current_user.id)
     )
-    return [_enrich(c) for c in result.scalars().all()]
+    return [await _enrich(c, db) for c in result.scalars().all()]
 
 
 @router.post("", response_model=CreditCardResponse, status_code=201)
@@ -51,7 +56,7 @@ async def create_credit_card(
     db.add(card)
     await db.commit()
     await db.refresh(card)
-    return _enrich(card)
+    return await _enrich(card, db)
 
 
 @router.patch("/{card_id}", response_model=CreditCardResponse)
@@ -71,7 +76,7 @@ async def update_credit_card(
         setattr(card, field, value)
     await db.commit()
     await db.refresh(card)
-    return _enrich(card)
+    return await _enrich(card, db)
 
 
 @router.delete("/{card_id}", status_code=204)
