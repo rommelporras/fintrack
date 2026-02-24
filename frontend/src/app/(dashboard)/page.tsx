@@ -47,7 +47,8 @@ interface AccountItem {
 
 interface CardItem {
   id: string;
-  bank_name: string;
+  card_name: string | null;
+  last_four: string;
 }
 
 interface RecurringTransaction {

@@ -44,3 +44,6 @@ class Institution(Base):
     credit_lines: Mapped[list["CreditLine"]] = relationship(  # type: ignore[name-defined]
         "CreditLine", back_populates="institution", lazy="select"
     )
+    loans: Mapped[list["Loan"]] = relationship(  # type: ignore[name-defined]
+        "Loan", back_populates="institution", lazy="select"
+    )
