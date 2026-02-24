@@ -25,12 +25,10 @@ def _set_auth_cookies(response: Response, user_id: uuid.UUID, remember_me: bool 
     access_token = create_access_token(str(user_id))
     refresh_token = create_refresh_token(str(user_id))
     kw = _cookie_kwargs()
-    response.set_cookie(
-        "access_token",
-        access_token,
-        max_age=settings.jwt_access_token_expire_minutes * 60,
-        **kw,
-    )
+    access_kw = {**kw}
+    if remember_me:
+        access_kw["max_age"] = settings.jwt_access_token_expire_minutes * 60
+    response.set_cookie("access_token", access_token, **access_kw)
     refresh_kw = {**kw}
     if remember_me:
         refresh_kw["max_age"] = settings.jwt_refresh_token_expire_days * 86400
