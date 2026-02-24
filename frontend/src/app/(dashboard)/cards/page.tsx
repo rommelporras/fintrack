@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, CreditCard as CreditCardIcon } from "lucide-react";
 import { CrudSheet } from "@/components/app/CrudSheet";
 import { CurrencyInput } from "@/components/app/CurrencyInput";
+import { formatPeso } from "@/lib/utils";
 
 interface Account {
   id: string;
@@ -22,26 +23,97 @@ interface Account {
   type: string;
 }
 
-interface BillingPeriod {
-  period_start: string;
-  period_end: string;
+interface CreditCardInLine {
+  id: string;
+  bank_name: string;
+  card_name: string | null;
+  last_four: string;
+  statement_day: number;
+  due_day: number;
+  account_id: string;
+  closed_period: { period_start: string; period_end: string } | null;
+  open_period: { period_start: string; period_end: string } | null;
+  due_date: string | null;
+  days_until_due: number | null;
+}
+
+interface CreditLine {
+  id: string;
+  name: string;
+  total_limit: string | null;
+  available_override: string | null;
+  available_credit: string | null;
+  cards: CreditCardInLine[];
 }
 
 interface CreditCard {
   id: string;
   bank_name: string;
+  card_name: string | null;
   last_four: string;
   statement_day: number;
   due_day: number;
   credit_limit: string | null;
-  closed_period: BillingPeriod | null;
-  open_period: BillingPeriod | null;
+  available_credit: string | null;
+  available_override: string | null;
+  credit_line_id: string | null;
+  closed_period: { period_start: string; period_end: string } | null;
+  open_period: { period_start: string; period_end: string } | null;
   due_date: string | null;
   days_until_due: number | null;
 }
 
+function BillingInfo({ card }: { card: CreditCard | CreditCardInLine }) {
+  return (
+    <div className="space-y-2 mt-3">
+      {card.closed_period && (
+        <div>
+          <p className="text-xs font-medium text-muted-foreground mb-0.5">
+            Current Statement
+          </p>
+          <p className="text-sm">
+            {card.closed_period.period_start} →{" "}
+            {card.closed_period.period_end}
+          </p>
+          {card.due_date && (
+            <p className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
+              Due: {card.due_date}
+              {card.days_until_due !== null && (
+                <span
+                  className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                    card.days_until_due < 0
+                      ? "bg-accent-red-dim text-accent-red"
+                      : card.days_until_due <= 5
+                        ? "bg-accent-amber-dim text-accent-amber"
+                        : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {card.days_until_due < 0
+                    ? "Overdue"
+                    : `${card.days_until_due}d left`}
+                </span>
+              )}
+            </p>
+          )}
+        </div>
+      )}
+      {card.open_period && (
+        <div>
+          <p className="text-xs font-medium text-muted-foreground mb-0.5">
+            Open Period
+          </p>
+          <p className="text-sm">
+            {card.open_period.period_start} → {card.open_period.period_end}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CardsPage() {
   const [cards, setCards] = useState<CreditCard[]>([]);
+  const [creditLines, setCreditLines] = useState<CreditLine[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -60,12 +132,14 @@ export default function CardsPage() {
 
   async function loadData() {
     try {
-      const [c, a] = await Promise.all([
+      const [c, a, cl] = await Promise.all([
         api.get<CreditCard[]>("/credit-cards"),
         api.get<Account[]>("/accounts"),
+        api.get<CreditLine[]>("/credit-lines"),
       ]);
       setCards(c);
       setAccounts(a);
+      setCreditLines(cl);
     } catch {
       setLoadError("Failed to load cards. Please refresh.");
     } finally {
@@ -118,15 +192,22 @@ export default function CardsPage() {
     }
   }
 
+  const standaloneCards = cards.filter((c) => c.credit_line_id === null);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Credit Cards</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage your cards and billing cycles</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Credit Cards
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage your cards and billing cycles
+          </p>
         </div>
         <Button size="sm" onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" />Add Card
+          <Plus className="h-4 w-4 mr-1" />
+          Add Card
         </Button>
       </div>
 
@@ -149,7 +230,9 @@ export default function CardsPage() {
               <SelectContent>
                 <SelectItem value="__new__">+ Create new account</SelectItem>
                 {accounts.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -166,11 +249,20 @@ export default function CardsPage() {
           )}
           <div className="space-y-2">
             <Label>Bank</Label>
-            <Input value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="BPI" />
+            <Input
+              value={bankName}
+              onChange={(e) => setBankName(e.target.value)}
+              placeholder="BPI"
+            />
           </div>
           <div className="space-y-2">
             <Label>Last 4 Digits</Label>
-            <Input value={lastFour} onChange={(e) => setLastFour(e.target.value)} placeholder="1234" maxLength={4} />
+            <Input
+              value={lastFour}
+              onChange={(e) => setLastFour(e.target.value)}
+              placeholder="1234"
+              maxLength={4}
+            />
           </div>
           <div className="space-y-2">
             <Label>Credit Limit</Label>
@@ -183,11 +275,23 @@ export default function CardsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Statement Day</Label>
-              <Input type="number" min="1" max="28" value={statementDay} onChange={(e) => setStatementDay(e.target.value)} />
+              <Input
+                type="number"
+                min="1"
+                max="28"
+                value={statementDay}
+                onChange={(e) => setStatementDay(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>Due Day</Label>
-              <Input type="number" min="1" max="28" value={dueDay} onChange={(e) => setDueDay(e.target.value)} />
+              <Input
+                type="number"
+                min="1"
+                max="28"
+                value={dueDay}
+                onChange={(e) => setDueDay(e.target.value)}
+              />
             </div>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
@@ -197,9 +301,11 @@ export default function CardsPage() {
       {loadError && <p className="text-sm text-destructive">{loadError}</p>}
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2">
-          {[1, 2].map((i) => <Skeleton key={i} className="h-40 w-full rounded-xl" />)}
+          {[1, 2].map((i) => (
+            <Skeleton key={i} className="h-40 w-full rounded-xl" />
+          ))}
         </div>
-      ) : cards.length === 0 ? (
+      ) : cards.length === 0 && creditLines.length === 0 ? (
         <div className="rounded-xl border-2 border-dashed border-border p-12 text-center space-y-3">
           <CreditCardIcon className="h-12 w-12 mx-auto text-muted-foreground" />
           <p className="text-lg font-medium">No credit cards yet</p>
@@ -207,51 +313,109 @@ export default function CardsPage() {
             Add a card to track statements and due dates
           </p>
           <Button size="sm" onClick={() => setOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" />Add Card
+            <Plus className="h-4 w-4 mr-1" />
+            Add Card
           </Button>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {cards.map((c) => (
-            <div key={c.id} className="rounded-xl border bg-card p-5 card-interactive">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-accent-blue-dim flex items-center justify-center shrink-0">
-                  <CreditCardIcon className="h-4 w-4 text-accent-blue" />
-                </div>
-                <span className="font-semibold text-foreground">{c.bank_name} ···{c.last_four}</span>
-              </div>
-              <div className="space-y-3">
-                {c.closed_period && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Current Statement</p>
-                    <p className="text-sm">{c.closed_period.period_start} → {c.closed_period.period_end}</p>
-                    {c.due_date && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
-                        Due: {c.due_date}
-                        {c.days_until_due !== null && (
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                            c.days_until_due < 0
-                              ? "bg-accent-red-dim text-accent-red"
-                              : c.days_until_due <= 5
-                              ? "bg-accent-amber-dim text-accent-amber"
-                              : "bg-muted text-muted-foreground"
-                          }`}>
-                            {c.days_until_due < 0 ? "Overdue" : `${c.days_until_due}d left`}
-                          </span>
-                        )}
-                      </p>
+        <div className="space-y-6">
+          {/* Credit Lines */}
+          {creditLines.map((line) => (
+            <div key={line.id} className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {line.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {line.total_limit != null &&
+                      `Total: ${formatPeso(line.total_limit)}`}
+                    {line.available_credit != null &&
+                      ` · Available: ${formatPeso(line.available_credit)}`}
+                    {line.available_override != null && (
+                      <span className="ml-1 text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                        manual
+                      </span>
                     )}
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {line.cards.map((c) => (
+                  <div
+                    key={c.id}
+                    className="rounded-xl border bg-card p-5 card-interactive"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-8 h-8 rounded-lg bg-accent-blue-dim flex items-center justify-center shrink-0">
+                        <CreditCardIcon className="h-4 w-4 text-accent-blue" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground text-sm">
+                          {c.bank_name} ···{c.last_four}
+                        </p>
+                        {c.card_name && (
+                          <p className="text-xs text-muted-foreground">
+                            {c.card_name}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <BillingInfo card={c} />
                   </div>
-                )}
-                {c.open_period && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Open Billing Period</p>
-                    <p className="text-sm">{c.open_period.period_start} → {c.open_period.period_end}</p>
-                  </div>
-                )}
+                ))}
               </div>
             </div>
           ))}
+
+          {/* Standalone cards */}
+          {standaloneCards.length > 0 && (
+            <div className="space-y-3">
+              {creditLines.length > 0 && (
+                <p className="text-sm font-semibold text-foreground px-1">
+                  Standalone
+                </p>
+              )}
+              <div className="grid gap-4 sm:grid-cols-2">
+                {standaloneCards.map((c) => (
+                    <div
+                      key={c.id}
+                      className="rounded-xl border bg-card p-5 card-interactive"
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-8 h-8 rounded-lg bg-accent-blue-dim flex items-center justify-center shrink-0">
+                          <CreditCardIcon className="h-4 w-4 text-accent-blue" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground text-sm">
+                            {c.bank_name} ···{c.last_four}
+                          </p>
+                          {c.card_name && (
+                            <p className="text-xs text-muted-foreground">
+                              {c.card_name}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      {(c.credit_limit != null || c.available_credit != null) && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {c.credit_limit != null &&
+                            `Total: ${formatPeso(c.credit_limit)}`}
+                          {c.available_credit != null &&
+                            ` · Available: ${formatPeso(c.available_credit)}`}
+                          {c.available_override != null && (
+                            <span className="ml-1 text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                              manual
+                            </span>
+                          )}
+                        </p>
+                      )}
+                      <BillingInfo card={c} />
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
