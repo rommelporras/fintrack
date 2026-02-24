@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { CurrencyInput } from "@/components/app/CurrencyInput";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -215,28 +216,21 @@ export default function NewTransactionPage() {
             )}
 
             <div className="space-y-2">
-              <Label>Amount (₱)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="0.00"
+              <Label>Amount</Label>
+              <CurrencyInput
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
+                onChange={setAmount}
+                placeholder="0.00"
               />
             </div>
 
             {isAtmWithdrawal && (
               <div className="space-y-2">
-                <Label>ATM Fee (₱)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="18.00"
+                <Label>ATM Fee</Label>
+                <CurrencyInput
                   value={feeAmount}
-                  onChange={(e) => setFeeAmount(e.target.value)}
+                  onChange={setFeeAmount}
+                  placeholder="18.00"
                 />
                 {amount && feeAmount && (
                   <p className="text-xs text-muted-foreground">
