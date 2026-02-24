@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Repeat, Trash2, Pencil } from "lucide-react";
 import { CrudSheet } from "@/components/app/CrudSheet";
+import { CurrencyInput } from "@/components/app/CurrencyInput";
 
 interface RecurringTransaction {
   id: string;
@@ -370,16 +371,11 @@ export default function RecurringPage() {
             />
           </div>
           <div className="space-y-1">
-            <Label>Amount (₱)</Label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
+            <Label>Amount</Label>
+            <CurrencyInput
               value={createForm.amount}
-              onChange={(e) =>
-                setCreateForm((f) => ({ ...f, amount: e.target.value }))
-              }
+              onChange={(raw) => setCreateForm((f) => ({ ...f, amount: raw }))}
+              placeholder="0.00"
             />
           </div>
           <div className="space-y-1">
@@ -537,15 +533,10 @@ export default function RecurringPage() {
             />
           </div>
           <div className="space-y-1">
-            <Label>Amount (₱)</Label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
+            <Label>Amount</Label>
+            <CurrencyInput
               value={editForm.amount}
-              onChange={(e) =>
-                setEditForm((f) => ({ ...f, amount: e.target.value }))
-              }
+              onChange={(raw) => setEditForm((f) => ({ ...f, amount: raw }))}
             />
           </div>
           <div className="space-y-1">
