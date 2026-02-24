@@ -1,3 +1,4 @@
+import uuid
 import pytest_asyncio
 from decimal import Decimal
 from httpx import AsyncClient
@@ -85,7 +86,6 @@ async def test_delete_credit_line_detaches_cards(auth_client, credit_line_id, cc
 
 
 async def test_delete_credit_line_not_found(auth_client):
-    import uuid
     r = await auth_client.delete(f"/credit-lines/{uuid.uuid4()}")
     assert r.status_code == 404
 
@@ -127,7 +127,7 @@ async def test_credit_line_available_credit_decreases_with_spending(
     auth_client, credit_line_id, cc_account_id
 ):
     # Attach card to the line
-    await auth_client.post("/credit-cards", json={
+    r_card = await auth_client.post("/credit-cards", json={
         "account_id": cc_account_id,
         "bank_name": "BPI",
         "last_four": "9999",
@@ -135,6 +135,7 @@ async def test_credit_line_available_credit_decreases_with_spending(
         "due_day": 5,
         "credit_line_id": credit_line_id,
     })
+    assert r_card.status_code == 201
 
     # Create a category to use for the transaction
     cat_r = await auth_client.post("/categories", json={
@@ -143,7 +144,7 @@ async def test_credit_line_available_credit_decreases_with_spending(
     assert cat_r.status_code == 201
     category_id = cat_r.json()["id"]
 
-    await auth_client.post("/transactions", json={
+    r_tx = await auth_client.post("/transactions", json={
         "account_id": cc_account_id,
         "type": "expense",
         "amount": "5000.00",
@@ -151,8 +152,9 @@ async def test_credit_line_available_credit_decreases_with_spending(
         "category_id": category_id,
         "description": "Test purchase",
     })
+    assert r_tx.status_code == 201
 
     # Available credit should now be 50000 - 5000 = 45000
     line_r = await auth_client.get("/credit-lines")
-    line = next(l for l in line_r.json() if l["id"] == credit_line_id)
+    line = next(ln for ln in line_r.json() if ln["id"] == credit_line_id)
     assert Decimal(line["available_credit"]) == Decimal("45000.00")
