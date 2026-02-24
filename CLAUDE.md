@@ -2,9 +2,28 @@
 
 ## Rules
 
-- **No dev server management** — never run `uvicorn` or `pnpm dev` yourself. Use `docker compose` for local development.
+- **No dev server management** — never run `uvicorn` or `bun dev` yourself. Use `docker compose` for local development.
 - **Python 3.14+** — do not use syntax or APIs unavailable in 3.14.
 - **WSL2**: use `127.0.0.1` instead of `localhost` in `DATABASE_URL` when running alembic commands — asyncpg has intermittent DNS failures with `localhost`.
+- **Docker service names** — containers must reference each other by service name (`postgres`, `redis`), not `localhost`.
+
+## Common commands
+
+```bash
+# Run API tests
+docker compose run --rm api pytest
+
+# Apply a new migration
+DATABASE_URL="postgresql+asyncpg://finance:changeme@127.0.0.1:5435/finance_db" \
+  docker compose run --rm api alembic upgrade head
+
+# Rebuild frontend (use -V to renew anonymous node_modules/.next volumes)
+docker compose up -d --build -V frontend
+
+# Tail logs
+docker compose logs -f api
+docker compose logs -f frontend
+```
 
 ## MCP Servers
 

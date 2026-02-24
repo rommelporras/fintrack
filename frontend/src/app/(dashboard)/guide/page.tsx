@@ -283,12 +283,12 @@ export default function GuidePage() {
             rows={[
               ["📈 Monthly Income", "Total income transactions this calendar month"],
               ["📉 Monthly Expenses", "Total expense transactions this calendar month"],
-              ["⚖️ Net", "Income minus expenses. Green = positive cash flow"],
+              ["⚖️ Net Cash Flow", "Income minus expenses. Green = positive cash flow"],
               [
                 "💰 Net Worth",
                 "Sum of all account balances (credit cards contribute negatively)",
               ],
-              ["🔁 Upcoming Recurring", "Next 5 active recurring transactions by due date"],
+              ["🔁 Upcoming Bills", "Next 5 active recurring transactions by due date"],
               ["🕐 Recent Transactions", "Last 10 transactions across all accounts"],
             ]}
           />
@@ -485,7 +485,7 @@ export default function GuidePage() {
               </>,
               <>Review pre-filled fields — amber highlights mean low confidence</>,
               <>
-                Click <strong>Save Transaction</strong>
+                Click <strong>Add Transaction</strong>
               </>,
             ]}
           />
@@ -753,7 +753,7 @@ export default function GuidePage() {
             Recurring transactions and statement notifications run via Celery Beat. If transactions
             aren&apos;t generating:
           </P>
-          <CodeBlock>{`docker compose logs celery --tail=50`}</CodeBlock>
+          <CodeBlock>{`docker compose logs worker --tail=50`}</CodeBlock>
           <P>
             Look for <Code>generate_recurring_transactions_task</Code> and{" "}
             <Code>send_statement_due_notifications_task</Code>.
@@ -767,8 +767,7 @@ export default function GuidePage() {
         </section>
 
         <div className="border-t pt-6 text-xs text-muted-foreground">
-          FinTrack User Guide — Updated February 2026 · Phase 7 (recurring transactions, session
-          refresh, dark theme, PWA, push notifications)
+          FinTrack User Guide — February 2026
         </div>
       </div>
 

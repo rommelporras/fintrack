@@ -36,14 +36,8 @@ interface Transaction {
   date: string;
 }
 
-interface NetWorthTypeItem {
-  type: string;
-  total: string;
-}
-
 interface NetWorthData {
   total: string;
-  by_type: NetWorthTypeItem[];
 }
 
 interface AccountItem {
@@ -62,8 +56,6 @@ interface RecurringTransaction {
   description: string;
   frequency: string;
   next_due_date: string;
-  is_active: boolean;
-  type: string;
 }
 
 export default function DashboardPage() {
