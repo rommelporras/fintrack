@@ -34,6 +34,25 @@ async def test_create_credit_card(auth_client, cc_account_id):
     assert data["last_four"] == "1234"
     assert "closed_period" in data
     assert "due_date" in data
+    assert data["credit_line_id"] is None
+    assert data["card_name"] is None
+    assert data["available_credit"] == "50000.00"
+
+
+async def test_create_credit_card_with_card_name(auth_client, cc_account_id):
+    r = await auth_client.post("/credit-cards", json={
+        "account_id": cc_account_id,
+        "bank_name": "RCBC",
+        "last_four": "4321",
+        "credit_limit": "30000.00",
+        "card_name": "Gold",
+        "statement_day": 20,
+        "due_day": 10,
+    })
+    assert r.status_code == 201
+    data = r.json()
+    assert data["card_name"] == "Gold"
+    assert data["available_credit"] == "30000.00"
 
 
 async def test_create_credit_card_invalid_last_four(auth_client, cc_account_id):
