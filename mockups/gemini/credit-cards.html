@@ -147,10 +147,10 @@
                     class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <rect class="text-foreground shrink-0" />
-                        <rect class="text-foreground shrink-0" />
-                        <rect class="text-foreground shrink-0" />
-                        <rect class="text-foreground shrink-0" />
+                        <rect class="shrink-0" x="3" y="3" width="7" height="9" rx="1" />
+            <rect class="shrink-0" x="14" y="3" width="7" height="5" rx="1" />
+            <rect class="shrink-0" x="14" y="12" width="7" height="9" rx="1" />
+            <rect class="shrink-0" x="3" y="16" width="7" height="5" rx="1" />
                     </svg>
                     Dashboard
                 </a>
@@ -230,8 +230,8 @@
                     class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium bg-primary/10 text-primary transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect class="text-foreground shrink-0" ry="2" />
-                        <line x1="1" y1="10" x2="23" y2="10" />
+                        <rect class="shrink-0" width="20" height="14" x="2" y="5" rx="2" ry="2" />
+            <line x1="1" y1="10" x2="23" y2="10" />
                     </svg>
                     Credit Cards
                 </a>
@@ -270,7 +270,7 @@
                     </svg>
                     Notifications
                     <span
-                        class="absolute right-3 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-4 text-center">3</span>
+                        class="ml-auto bg-destructive text-white h-5 min-w-5 flex items-center justify-center rounded-full text-[10px] font-bold px-1.5">3</span>
                 </a>
                 <a href="settings.html"
                     class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
@@ -621,7 +621,7 @@
             <div class="flex gap-3 w-full">
                 <button class="btn-outline flex-1 py-2.5" onclick="closeAll()">Cancel</button>
                 <button
-                    class="bg-destructive hover:bg-red-600 text-foreground font-medium rounded-lg flex-1 py-2.5 transition-colors"
+                    class="bg-destructive hover:bg-red-600 text-white font-medium rounded-lg flex-1 py-2.5 transition-colors"
                     onclick="closeAll()">Delete Data</button>
             </div>
         </div>

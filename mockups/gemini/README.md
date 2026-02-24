@@ -36,7 +36,9 @@ When building the React components, look out for these established patterns in t
 3. **Data Display**
    - **Cards:** Use the `.card` class for standard containers. Some cards (like in `accounts.html`) use a `--card-glow` CSS variable for a subtle radial gradient hover effect.
    - **Status Badges:** Semantic colors are used consistently (Green for income/success, Red for expenses/errors, Blue for transfers, Amber for warnings).
-   - **Progress Bars:** Fully styling using Tailwind to represent budget utilization or category spending.
+   - **Notification Badges:** Uniformly styled as perfect circles (using `h-5 min-w-5 rounded-full px-1.5`) with `ml-auto` alignment inside navigation links.
+   - **Icons:** Inline SVGs inherit text color properly via `currentColor` and `shrink-0`.
+   - **Progress Bars:** Fully styled using Tailwind to represent budget utilization or category spending.
    - **Tables:** Wrapped in `.overflow-x-auto` to ensure horizontal scrolling on smaller screens without breaking the main layout.
 
 4. **Responsive CRUD Interactions (Side Sheets)**
