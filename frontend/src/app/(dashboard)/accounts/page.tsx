@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { cn, formatPeso } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CurrencyInput } from "@/components/app/CurrencyInput";
 import {
   Select,
   SelectContent,
@@ -205,13 +206,11 @@ export default function AccountsPage() {
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="account-opening-balance">Opening Balance (₱)</Label>
-          <Input
+          <Label htmlFor="account-opening-balance">Opening Balance</Label>
+          <CurrencyInput
             id="account-opening-balance"
-            type="number"
-            step="0.01"
             value={openingBalance}
-            onChange={(e) => setOpeningBalance(e.target.value)}
+            onChange={setOpeningBalance}
           />
         </div>
         {error !== null && <p className="text-sm text-destructive">{error}</p>}
@@ -236,13 +235,11 @@ export default function AccountsPage() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="edit-account-balance">Opening Balance (₱)</Label>
-          <Input
+          <Label htmlFor="edit-account-balance">Opening Balance</Label>
+          <CurrencyInput
             id="edit-account-balance"
-            type="number"
-            step="0.01"
             value={editBalance}
-            onChange={(e) => setEditBalance(e.target.value)}
+            onChange={setEditBalance}
           />
         </div>
         {editError !== null && <p className="text-sm text-destructive">{editError}</p>}
