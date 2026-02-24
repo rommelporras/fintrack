@@ -1,10 +1,8 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { formatPeso } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { cn, formatPeso } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -17,13 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -34,7 +25,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Filter, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Plus,
+  Filter,
+  ChevronDown,
+  ChevronUp,
+  Search,
+  MoreHorizontal,
+} from "lucide-react";
+import { CrudSheet } from "@/components/app/CrudSheet";
+import { TypeBadge, CategoryChip, TxnType } from "@/components/app/TypeBadge";
 
 interface Transaction {
   id: string;
@@ -68,16 +68,12 @@ interface TransactionEditForm {
   description: string;
 }
 
-const TYPE_COLORS: Record<string, string> = {
-  income: "bg-green-100 text-green-800",
-  expense: "bg-red-100 text-red-800",
-  transfer: "bg-blue-100 text-blue-800",
-};
-
 interface TransactionListResponse {
   items: Transaction[];
   total: number;
 }
+
+const LIMIT = 50;
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -89,7 +85,6 @@ export default function TransactionsPage() {
   const [offset, setOffset] = useState(0);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const LIMIT = 50;
 
   // Edit sheet state
   const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
@@ -145,6 +140,8 @@ export default function TransactionsPage() {
     ]).then(([accts, cats]) => {
       setAccounts(accts);
       setCategories(cats);
+    }).catch(() => {
+      // non-fatal — filters still work, dropdowns will be empty
     });
   }, []);
 
@@ -184,11 +181,16 @@ export default function TransactionsPage() {
 
   async function handleDelete() {
     if (!selectedTxn) return;
-    await api.delete(`/transactions/${selectedTxn.id}`);
-    setDeleteDialogOpen(false);
-    setEditSheetOpen(false);
-    setSelectedTxn(null);
-    await load();
+    try {
+      await api.delete(`/transactions/${selectedTxn.id}`);
+      setDeleteDialogOpen(false);
+      setEditSheetOpen(false);
+      setSelectedTxn(null);
+      await load();
+    } catch (e: unknown) {
+      setDeleteDialogOpen(false);
+      setSaveError(e instanceof Error ? e.message : "Failed to delete transaction.");
+    }
   }
 
   function clearFilters() {
@@ -201,33 +203,42 @@ export default function TransactionsPage() {
     setOffset(0);
   }
 
-  const accountMap = new Map(accounts.map((a) => [a.id, a.name]));
-  const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
+  const accountMap = useMemo(() => new Map(accounts.map((a) => [a.id, a.name])), [accounts]);
+  const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Transactions</h1>
-        <Button asChild size="sm">
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Transactions</h1>
+          <div className="flex items-center gap-3 mt-1">
+            <p className="text-sm text-muted-foreground">This Month</p>
+          </div>
+        </div>
+        <Button asChild className="w-full sm:w-auto gap-2">
           <Link href="/transactions/new">
-            <Plus className="h-4 w-4 mr-1" />
-            New
+            <Plus className="h-4 w-4" />
+            New Transaction
           </Link>
         </Button>
       </div>
 
-      <div className="flex gap-2">
-        <Input
-          placeholder="Search transactions…"
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setOffset(0); }}
-          className="max-w-xs"
-        />
-      </div>
-
-      <div className="flex gap-2">
+      {/* Filter toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search transactions…"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setOffset(0); }}
+            className="pl-9"
+          />
+        </div>
+        {/* Type filter */}
         <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setOffset(0); }}>
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-full sm:w-36">
             <SelectValue placeholder="Type" />
           </SelectTrigger>
           <SelectContent>
@@ -237,27 +248,26 @@ export default function TransactionsPage() {
             <SelectItem value="transfer">Transfer</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-
-      <div className="flex items-center gap-2 mb-2">
+        {/* Filters toggle */}
         <Button
           variant="outline"
-          size="sm"
           onClick={() => setFiltersOpen((o) => !o)}
+          className="gap-2 shrink-0"
         >
-          <Filter className="h-4 w-4 mr-1" />
+          <Filter className="h-4 w-4" />
           Filters
-          {filtersOpen ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />}
+          {filtersOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
         {(filterDateFrom || filterDateTo || filterAccountId !== "all" || filterCategoryId !== "all") && (
-          <Button variant="ghost" size="sm" onClick={clearFilters}>
+          <Button variant="ghost" onClick={clearFilters} className="shrink-0">
             Clear
           </Button>
         )}
       </div>
 
+      {/* Expanded filter panel */}
       {filtersOpen && (
-        <div className="grid grid-cols-2 gap-3 p-3 border rounded-md mb-4">
+        <div className="grid grid-cols-2 gap-3 p-4 border rounded-xl mb-4 bg-card">
           <div className="space-y-1">
             <Label className="text-xs">Date From</Label>
             <Input type="date" value={filterDateFrom}
@@ -291,84 +301,106 @@ export default function TransactionsPage() {
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm text-muted-foreground">
-            {loading ? "Loading…" : (
-              <span className="text-sm text-muted-foreground">
-                {total > 0 ? `Showing ${transactions.length} of ${total}` : ""}
-              </span>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-10 w-full" />
-              ))}
-            </div>
-          ) : transactions.length === 0 ? (
-            <div className="text-center py-16 space-y-3">
-              <p className="text-muted-foreground">No transactions found.</p>
-              {typeFilter === "all" && filterAccountId === "all" && filterCategoryId === "all" && !debouncedSearch && (
-                <a href="/transactions/new">
-                  <Button variant="outline" size="sm">Record your first transaction</Button>
-                </a>
-              )}
-              {(typeFilter !== "all" || filterAccountId !== "all" || filterCategoryId !== "all" || !!debouncedSearch) && (
-                <p className="text-xs text-muted-foreground">Try adjusting your filters or search.</p>
-              )}
-            </div>
-          ) : (
-            <ul className="space-y-0 divide-y">
-              {transactions.map((t) => (
-                <li
-                  key={t.id}
-                  role="button"
-                  tabIndex={0}
-                  className="py-3 flex items-center justify-between cursor-pointer hover:bg-muted/50 -mx-2 px-2 rounded"
-                  onClick={() => openEditSheet(t)}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openEditSheet(t); } }}
-                >
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-medium">
-                      {t.description || t.sub_type || t.type}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{t.date}</p>
-                    <p className="text-xs text-muted-foreground">
+      {/* Transaction table */}
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-xs text-muted-foreground uppercase tracking-wider bg-muted/50 border-b border-border">
+              <tr>
+                <th className="px-5 py-3.5 text-left font-semibold">Date</th>
+                <th className="px-5 py-3.5 text-left font-semibold">Description</th>
+                <th className="px-5 py-3.5 text-left font-semibold hidden sm:table-cell">Category</th>
+                <th className="px-5 py-3.5 text-left font-semibold hidden md:table-cell">Account</th>
+                <th className="px-5 py-3.5 text-right font-semibold">Amount</th>
+                <th className="px-4 py-3.5 w-10"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-8 text-center text-muted-foreground text-sm">
+                    <div className="space-y-3">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <Skeleton key={i} className="h-8 w-full" />
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              ) : transactions.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-16 text-center text-muted-foreground text-sm">
+                    No transactions found.
+                  </td>
+                </tr>
+              ) : (
+                transactions.map((t) => (
+                  <tr
+                    key={t.id}
+                    className="hover:bg-muted/30 transition-colors group cursor-pointer"
+                    onClick={() => openEditSheet(t)}
+                  >
+                    <td className="px-5 py-3.5 whitespace-nowrap font-medium text-foreground">
+                      {t.date}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-foreground">
+                          {t.description || t.sub_type || t.type}
+                        </span>
+                        {(t.type === "income" || t.type === "transfer") && (
+                          <TypeBadge type={t.type} />
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5 hidden sm:table-cell">
+                      {t.category_id ? (
+                        <CategoryChip
+                          name={categoryMap.get(t.category_id) ?? "—"}
+                          type={t.type as TxnType}
+                        />
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5 text-muted-foreground hidden md:table-cell">
                       {accountMap.get(t.account_id) ?? "—"}
-                      {t.category_id ? ` · ${categoryMap.get(t.category_id) ?? "—"}` : ""}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge
-                      variant="secondary"
-                      className={TYPE_COLORS[t.type]}
-                    >
-                      {t.type}
-                    </Badge>
-                    <span
-                      className={`text-sm font-semibold tabular-nums ${
+                    </td>
+                    <td className="px-5 py-3.5 text-right">
+                      <span className={cn(
+                        "font-semibold tabular-nums",
                         t.type === "income"
-                          ? "text-green-600"
+                          ? "text-accent-green"
                           : t.type === "expense"
-                          ? "text-red-500"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      {t.type === "expense" ? "-" : ""}
-                      {formatPeso(t.amount)}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+                          ? "text-foreground"
+                          : "text-muted-foreground",
+                      )}>
+                        {t.type === "expense" ? "-" : ""}
+                        {formatPeso(t.amount)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-center">
+                      <button
+                        className="p-1.5 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity rounded"
+                        onClick={(e) => { e.stopPropagation(); openEditSheet(t); }}
+                        aria-label="Edit"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-          {/* Pagination */}
-          {!loading && total > LIMIT && (
-            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+        {/* Pagination footer */}
+        {!loading && total > LIMIT && (
+          <div className="flex items-center justify-between px-5 py-3.5 border-t border-border bg-card">
+            <p className="text-sm text-muted-foreground hidden sm:block">
+              Showing {Math.min(offset + 1, total)}–{Math.min(offset + LIMIT, total)} of {total}
+            </p>
+            <div className="flex items-center gap-2 ml-auto">
               <Button
                 variant="outline"
                 size="sm"
@@ -377,9 +409,6 @@ export default function TransactionsPage() {
               >
                 Previous
               </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {Math.floor(offset / LIMIT) + 1} of {Math.ceil(total / LIMIT)}
-              </span>
               <Button
                 variant="outline"
                 size="sm"
@@ -389,72 +418,20 @@ export default function TransactionsPage() {
                 Next
               </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        )}
+      </div>
 
       {/* Edit Transaction Sheet */}
-      <Sheet open={editSheetOpen} onOpenChange={setEditSheetOpen}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Edit Transaction</SheetTitle>
-            <SheetDescription>Update the transaction details below.</SheetDescription>
-          </SheetHeader>
-          <div className="space-y-4 mt-4">
-            {/* Account select */}
-            <div className="space-y-1">
-              <Label>Account</Label>
-              <Select value={editForm.account_id} onValueChange={(v) => setEditForm((f) => ({ ...f, account_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="Account" /></SelectTrigger>
-                <SelectContent>
-                  {accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            {/* Type select */}
-            <div className="space-y-1">
-              <Label>Type</Label>
-              <Select value={editForm.type} onValueChange={(v) => setEditForm((f) => ({ ...f, type: v as "income" | "expense" | "transfer" }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="income">Income</SelectItem>
-                  <SelectItem value="expense">Expense</SelectItem>
-                  <SelectItem value="transfer">Transfer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {/* Category select */}
-            <div className="space-y-1">
-              <Label>Category</Label>
-              <Select value={editForm.category_id} onValueChange={(v) => setEditForm((f) => ({ ...f, category_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
-                <SelectContent>
-                  {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            {/* Amount */}
-            <div className="space-y-1">
-              <Label>Amount</Label>
-              <Input type="number" step="0.01" min="0" value={editForm.amount}
-                onChange={(e) => setEditForm((f) => ({ ...f, amount: e.target.value }))} />
-            </div>
-            {/* Date */}
-            <div className="space-y-1">
-              <Label>Date</Label>
-              <Input type="date" value={editForm.date}
-                onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))} />
-            </div>
-            {/* Description */}
-            <div className="space-y-1">
-              <Label>Description</Label>
-              <Input value={editForm.description}
-                onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))} />
-            </div>
-            {/* Actions */}
-            {saveError && <p className="text-sm text-destructive">{saveError}</p>}
-            <div className="flex gap-2 pt-2">
-              <Button className="flex-1" onClick={handleSave}>Save</Button>
+      <CrudSheet
+        open={editSheetOpen}
+        onOpenChange={setEditSheetOpen}
+        title={selectedTxn ? "Edit Transaction" : "Add Transaction"}
+        description="Update the transaction details below."
+        onSave={handleSave}
+        footer={
+          <div className="flex items-center justify-between w-full">
+            {selectedTxn && (
               <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="sm">Delete</Button>
@@ -470,10 +447,66 @@ export default function TransactionsPage() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+            )}
+            <div className="flex gap-3 ml-auto">
+              <Button variant="outline" onClick={() => setEditSheetOpen(false)}>Cancel</Button>
+              <Button onClick={handleSave}>Save</Button>
             </div>
           </div>
-        </SheetContent>
-      </Sheet>
+        }
+      >
+        {/* Account select */}
+        <div className="space-y-1">
+          <Label>Account</Label>
+          <Select value={editForm.account_id} onValueChange={(v) => setEditForm((f) => ({ ...f, account_id: v }))}>
+            <SelectTrigger><SelectValue placeholder="Account" /></SelectTrigger>
+            <SelectContent>
+              {accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        {/* Type select */}
+        <div className="space-y-1">
+          <Label>Type</Label>
+          <Select value={editForm.type} onValueChange={(v) => setEditForm((f) => ({ ...f, type: v as "income" | "expense" | "transfer" }))}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="income">Income</SelectItem>
+              <SelectItem value="expense">Expense</SelectItem>
+              <SelectItem value="transfer">Transfer</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {/* Category select */}
+        <div className="space-y-1">
+          <Label>Category</Label>
+          <Select value={editForm.category_id} onValueChange={(v) => setEditForm((f) => ({ ...f, category_id: v }))}>
+            <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+            <SelectContent>
+              {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        {/* Amount */}
+        <div className="space-y-1">
+          <Label>Amount</Label>
+          <Input type="number" step="0.01" min="0" value={editForm.amount}
+            onChange={(e) => setEditForm((f) => ({ ...f, amount: e.target.value }))} />
+        </div>
+        {/* Date */}
+        <div className="space-y-1">
+          <Label>Date</Label>
+          <Input type="date" value={editForm.date}
+            onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))} />
+        </div>
+        {/* Description */}
+        <div className="space-y-1">
+          <Label>Description</Label>
+          <Input value={editForm.description}
+            onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))} />
+        </div>
+        {saveError && <p className="text-sm text-destructive">{saveError}</p>}
+      </CrudSheet>
     </div>
   );
 }

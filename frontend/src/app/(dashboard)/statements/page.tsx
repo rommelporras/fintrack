@@ -2,18 +2,8 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { formatPeso } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -23,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CrudSheet } from "@/components/app/CrudSheet";
 import { Plus, CheckCircle2, Receipt } from "lucide-react";
 
 interface Statement {
@@ -58,6 +49,8 @@ export default function StatementsPage() {
   const [statements, setStatements] = useState<Statement[]>([]);
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [paidFilter, setPaidFilter] = useState<"all" | "unpaid" | "paid">("all");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -83,6 +76,8 @@ export default function StatementsPage() {
       ]);
       setStatements(stmts);
       setCreditCards(cards);
+    } catch {
+      setLoadError("Failed to load statements. Please refresh.");
     } finally {
       setLoading(false);
     }
@@ -103,9 +98,9 @@ export default function StatementsPage() {
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleCreate() {
     setSubmitting(true);
+    setSaveError(null);
     try {
       await api.post("/statements", {
         credit_card_id: form.credit_card_id,
@@ -121,6 +116,8 @@ export default function StatementsPage() {
         due_date: "", total_amount: "", minimum_due: "",
       });
       await load();
+    } catch (e: unknown) {
+      setSaveError(e instanceof Error ? e.message : "Failed to create statement");
     } finally {
       setSubmitting(false);
     }
@@ -135,181 +132,181 @@ export default function StatementsPage() {
   }, {});
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Statements</h1>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Statements</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Track credit card billing periods and payments
+          </p>
+        </div>
         <div className="flex items-center gap-3">
-          <div className="flex gap-2">
+          <div className="flex gap-1 rounded-lg bg-muted p-1">
             {(["all", "unpaid", "paid"] as const).map((f) => (
-              <Button
+              <button
                 key={f}
-                size="sm"
-                variant={paidFilter === f ? "default" : "outline"}
                 onClick={() => setPaidFilter(f)}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                  paidFilter === f
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
                 {f.charAt(0).toUpperCase() + f.slice(1)}
-              </Button>
+              </button>
             ))}
           </div>
-          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-          <SheetTrigger asChild>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              Add Statement
-            </Button>
-          </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>New Statement</SheetTitle>
-              <SheetDescription>Add a new statement.</SheetDescription>
-            </SheetHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-              <div className="space-y-1">
-                <Label>Credit Card</Label>
-                <Select
-                  value={form.credit_card_id}
-                  onValueChange={(v) => setForm((f) => ({ ...f, credit_card_id: v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select card" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {creditCards.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.bank_name} ••••{c.last_four}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label>Period Start</Label>
-                <Input
-                  type="date"
-                  value={form.period_start}
-                  onChange={(e) => setForm((f) => ({ ...f, period_start: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Period End</Label>
-                <Input
-                  type="date"
-                  value={form.period_end}
-                  onChange={(e) => setForm((f) => ({ ...f, period_end: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Due Date</Label>
-                <Input
-                  type="date"
-                  value={form.due_date}
-                  onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Total Amount</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  value={form.total_amount}
-                  onChange={(e) => setForm((f) => ({ ...f, total_amount: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Minimum Due</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  value={form.minimum_due}
-                  onChange={(e) => setForm((f) => ({ ...f, minimum_due: e.target.value }))}
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting ? "Saving…" : "Add Statement"}
-              </Button>
-            </form>
-          </SheetContent>
-        </Sheet>
+          <Button size="sm" onClick={() => setSheetOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" />
+            Add Statement
+          </Button>
         </div>
       </div>
 
+      <CrudSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        title="New Statement"
+        description="Add a credit card statement"
+        onSave={handleCreate}
+        saveLabel={submitting ? "Saving…" : "Add Statement"}
+        saveDisabled={submitting}
+      >
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <Label>Credit Card</Label>
+            <Select
+              value={form.credit_card_id}
+              onValueChange={(v) => setForm((f) => ({ ...f, credit_card_id: v }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select card" />
+              </SelectTrigger>
+              <SelectContent>
+                {creditCards.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.bank_name} ••••{c.last_four}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Period Start</Label>
+            <Input
+              type="date"
+              value={form.period_start}
+              onChange={(e) => setForm((f) => ({ ...f, period_start: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Period End</Label>
+            <Input
+              type="date"
+              value={form.period_end}
+              onChange={(e) => setForm((f) => ({ ...f, period_end: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Due Date</Label>
+            <Input
+              type="date"
+              value={form.due_date}
+              onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Total Amount</Label>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              value={form.total_amount}
+              onChange={(e) => setForm((f) => ({ ...f, total_amount: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Minimum Due</Label>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              value={form.minimum_due}
+              onChange={(e) => setForm((f) => ({ ...f, minimum_due: e.target.value }))}
+            />
+          </div>
+          {saveError && <p className="text-sm text-destructive">{saveError}</p>}
+        </div>
+      </CrudSheet>
+
+      {loadError && <p className="text-sm text-destructive">{loadError}</p>}
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full" />)}
         </div>
       ) : Object.keys(grouped).length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-12 text-center space-y-3">
-            <Receipt className="h-12 w-12 mx-auto text-muted-foreground" />
-            <p className="text-lg font-medium">No statements yet</p>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              Add a statement to track credit card payments and due dates
-            </p>
-            <Button size="sm" onClick={() => setSheetOpen(true)}>
-              <Plus className="h-4 w-4 mr-1" />
-              Add Statement
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="rounded-xl border-2 border-dashed border-border p-12 text-center space-y-3">
+          <Receipt className="h-12 w-12 mx-auto text-muted-foreground" />
+          <p className="text-lg font-medium">No statements yet</p>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+            Add a statement to track credit card payments and due dates
+          </p>
+          <Button size="sm" onClick={() => setSheetOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" />
+            Add Statement
+          </Button>
+        </div>
       ) : (
         Object.entries(grouped).map(([cardId, cardStatements]) => {
           const card = cardMap.get(cardId);
           return (
-            <Card key={cardId}>
-              <CardHeader>
-                <CardTitle className="text-base">
+            <div key={cardId} className="rounded-xl border bg-card overflow-hidden">
+              <div className="px-5 py-4 border-b border-border">
+                <h2 className="font-semibold text-foreground">
                   {card ? `${card.bank_name} ••••${card.last_four}` : cardId}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="divide-y space-y-0">
-                  {cardStatements.map((s) => (
-                    <li key={s.id} className="py-3 flex items-center justify-between gap-4">
-                      <div className="space-y-0.5">
-                        <p className="text-sm font-medium">
-                          {s.period_start} — {s.period_end}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Due: {s.due_date}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Total: {s.total_amount != null ? formatPeso(s.total_amount) : "—"}
-                          {s.minimum_due && ` · Min: ${formatPeso(s.minimum_due)}`}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {s.is_paid ? (
-                          <Badge variant="secondary" className="bg-green-100 text-green-800">
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            Paid
-                          </Badge>
-                        ) : (
-                          <>
-                            <Badge variant="secondary" className="bg-amber-100 text-amber-800">
-                              Unpaid
-                            </Badge>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => markPaid(s.id)}
-                            >
-                              Mark Paid
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+                </h2>
+              </div>
+              <ul className="divide-y divide-border">
+                {cardStatements.map((s) => (
+                  <li key={s.id} className="px-5 py-3.5 flex items-center justify-between gap-4">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-medium">
+                        {s.period_start} — {s.period_end}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Due: {s.due_date}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Total: {s.total_amount != null ? formatPeso(s.total_amount) : "—"}
+                        {s.minimum_due && ` · Min: ${formatPeso(s.minimum_due)}`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {s.is_paid ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-accent-green-dim text-accent-green">
+                          <CheckCircle2 className="h-3 w-3" />Paid
+                        </span>
+                      ) : (
+                        <>
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-accent-amber-dim text-accent-amber">
+                            Unpaid
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => markPaid(s.id)}
+                          >
+                            Mark Paid
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           );
         })
       )}

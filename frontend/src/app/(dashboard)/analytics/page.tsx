@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 import { api } from "@/lib/api";
 import { formatPeso } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,6 +25,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { CategoryChip } from "@/components/app/TypeBadge";
 
 interface CategorySpending {
   category_id: string;
@@ -43,12 +44,16 @@ interface CardHistory {
   statements: StatementPeriod[];
 }
 
-const FALLBACK_COLORS = [
-  "#6366f1", "#f59e0b", "#10b981", "#ef4444",
-  "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6",
-];
+const CHART_VARS = ["--chart-1", "--chart-2", "--chart-3", "--chart-4", "--chart-5"];
 
-const CARD_COLORS = ["#6366f1", "#f59e0b", "#10b981", "#ef4444", "#3b82f6"];
+// SSR-safe defaults (light mode values from globals.css)
+const SSR_CHART_COLORS = [
+  "oklch(0.55 0.14 165)",
+  "oklch(0.55 0.16 260)",
+  "oklch(0.55 0.16 70)",
+  "oklch(0.62 0.22 25)",
+  "oklch(0.6 0.18 280)",
+];
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -68,6 +73,29 @@ export default function AnalyticsPage() {
   const [loadingCards, setLoadingCards] = useState(true);
   const [spendingError, setSpendingError] = useState<string | null>(null);
   const [cardsError, setCardsError] = useState<string | null>(null);
+
+  // Read chart colors from CSS variables so they update with the theme
+  const { resolvedTheme } = useTheme();
+  const [themeColors, setThemeColors] = useState({
+    chart: SSR_CHART_COLORS,
+    grid: "oklch(0.92 0.005 260)",
+    axis: "oklch(0.46 0.01 260)",
+    tooltipBg: "oklch(1 0 0)",
+    tooltipBorder: "oklch(0.92 0.005 260)",
+    tooltipText: "oklch(0.15 0.01 260)",
+  });
+  useEffect(() => {
+    const s = getComputedStyle(document.documentElement);
+    const get = (v: string) => s.getPropertyValue(v).trim();
+    setThemeColors({
+      chart: CHART_VARS.map(get),
+      grid: get("--border"),
+      axis: get("--muted-foreground"),
+      tooltipBg: get("--card"),
+      tooltipBorder: get("--border"),
+      tooltipText: get("--card-foreground"),
+    });
+  }, [resolvedTheme]);
 
   useEffect(() => {
     setLoadingSpending(true);
@@ -96,7 +124,7 @@ export default function AnalyticsPage() {
   const pieData = spending.map((item, index) => ({
     name: item.category_name,
     value: Number(item.total),
-    fill: item.color ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length],
+    fill: item.color ?? themeColors.chart[index % themeColors.chart.length],
   }));
 
   const allPeriods = Array.from(
@@ -113,12 +141,18 @@ export default function AnalyticsPage() {
 
   const monthLabel = `${MONTH_NAMES[month - 1]} ${year}`;
 
+  const totalSpending = spending.reduce((sum, s) => sum + Number(s.total), 0);
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Analytics</h1>
+      {/* Page header */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Analytics</h1>
+        <p className="text-sm text-muted-foreground mt-1">Understand your spending patterns</p>
+      </div>
 
       {/* Month/Year selector */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
           <SelectTrigger className="w-36">
             <SelectValue />
@@ -145,21 +179,23 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Chart 1 — Spending by Category */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Spending by Category — {monthLabel}</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-border">
+          <h2 className="text-base font-semibold text-foreground">
+            Spending by Category — {monthLabel}
+          </h2>
+        </div>
+        <div className="p-5">
           {loadingSpending ? (
             <Skeleton className="h-64 w-full" />
           ) : spendingError ? (
-            <p className="py-8 text-center text-sm text-red-500">{spendingError}</p>
+            <p className="py-8 text-center text-sm text-destructive">{spendingError}</p>
           ) : pieData.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               No expenses recorded for {monthLabel}.
             </p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -179,6 +215,12 @@ export default function AnalyticsPage() {
                       ))}
                     </Pie>
                     <Tooltip
+                      contentStyle={{
+                        backgroundColor: themeColors.tooltipBg,
+                        border: `1px solid ${themeColors.tooltipBorder}`,
+                        color: themeColors.tooltipText,
+                        borderRadius: "8px",
+                      }}
                       formatter={(value) => {
                         const n = typeof value === "number" ? value : Number(value);
                         return formatPeso(n);
@@ -187,40 +229,71 @@ export default function AnalyticsPage() {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="space-y-1">
-                {spending.map((item, index) => (
-                  <div key={item.category_id} className="flex justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="inline-block h-3 w-3 rounded-full"
-                        style={{
-                          backgroundColor:
-                            item.color ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length],
-                        }}
-                      />
-                      <span>{item.category_name}</span>
-                    </div>
-                    <span className="font-medium">
-                      {formatPeso(Number(item.total))}
-                    </span>
-                  </div>
-                ))}
+
+              {/* Category spending table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
+                    <tr>
+                      <th className="pb-2.5 text-left font-semibold">Category</th>
+                      <th className="pb-2.5 text-right font-semibold">Amount</th>
+                      <th className="pb-2.5 text-right font-semibold w-24">% of Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {spending.map((item, index) => {
+                      const amount = Number(item.total);
+                      const pct = totalSpending > 0 ? (amount / totalSpending) * 100 : 0;
+                      const dotColor =
+                        item.color ?? themeColors.chart[index % themeColors.chart.length];
+                      return (
+                        <tr key={item.category_id} className="group">
+                          <td className="py-3 pr-4">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
+                                style={{ backgroundColor: dotColor }}
+                              />
+                              <CategoryChip name={item.category_name} />
+                            </div>
+                          </td>
+                          <td className="py-3 text-right font-semibold tabular-nums text-foreground">
+                            {formatPeso(amount)}
+                          </td>
+                          <td className="py-3 pl-4">
+                            <div className="flex items-center justify-end gap-2">
+                              <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
+                                <div
+                                  className="h-full rounded-full bg-primary"
+                                  style={{ width: `${Math.min(pct, 100)}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-muted-foreground tabular-nums w-9 text-right">
+                                {pct.toFixed(0)}%
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Chart 2 — Per-Card Statement History */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Statement History by Card</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-border">
+          <h2 className="text-base font-semibold text-foreground">Statement History by Card</h2>
+        </div>
+        <div className="p-5">
           {loadingCards ? (
             <Skeleton className="h-64 w-full" />
           ) : cardsError ? (
-            <p className="py-8 text-center text-sm text-red-500">{cardsError}</p>
+            <p className="py-8 text-center text-sm text-destructive">{cardsError}</p>
           ) : cardHistory.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               No credit cards or statements found.
@@ -229,31 +302,45 @@ export default function AnalyticsPage() {
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={barData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="period" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={themeColors.grid} />
+                  <XAxis
+                    dataKey="period"
+                    tick={{ fill: themeColors.axis }}
+                    axisLine={{ stroke: themeColors.grid }}
+                    tickLine={false}
+                  />
                   <YAxis
                     tickFormatter={(v: number) => `₱${(v / 1000).toFixed(0)}k`}
+                    tick={{ fill: themeColors.axis }}
+                    axisLine={false}
+                    tickLine={false}
                   />
                   <Tooltip
+                    contentStyle={{
+                      backgroundColor: themeColors.tooltipBg,
+                      border: `1px solid ${themeColors.tooltipBorder}`,
+                      color: themeColors.tooltipText,
+                      borderRadius: "8px",
+                    }}
                     formatter={(value) => {
                       const n = typeof value === "number" ? value : Number(value);
                       return formatPeso(n);
                     }}
                   />
-                  <Legend />
+                  <Legend wrapperStyle={{ color: themeColors.axis }} />
                   {cardHistory.map((card, index) => (
                     <Bar
                       key={card.card_label}
                       dataKey={card.card_label}
-                      fill={CARD_COLORS[index % CARD_COLORS.length]}
+                      fill={themeColors.chart[index % themeColors.chart.length]}
                     />
                   ))}
                 </BarChart>
               </ResponsiveContainer>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

@@ -17,39 +17,81 @@ import {
   PiggyBank,
   BarChart2,
   BookOpen,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import { useTheme } from "next-themes";
 
 function getApiBaseUrl(): string {
   if (typeof window === "undefined") return process.env.API_URL || "http://api:8000";
   return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 }
 
-const NAV_ITEMS = [
+const NAV_PRIMARY = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/recurring", label: "Recurring", icon: Repeat },
   { href: "/budgets", label: "Budgets", icon: PiggyBank },
   { href: "/analytics", label: "Analytics", icon: BarChart2 },
+];
+
+const NAV_FEATURES = [
   { href: "/scan", label: "Scan Receipt", icon: ScanLine },
   { href: "/accounts", label: "Accounts", icon: Wallet },
   { href: "/cards", label: "Credit Cards", icon: CreditCard },
   { href: "/statements", label: "Statements", icon: Receipt },
   { href: "/documents", label: "Documents", icon: FileText },
-  { href: "/notifications", label: "Notifications", icon: Bell },
-  { href: "/settings", label: "Settings", icon: Settings },
-  { href: "/guide", label: "User Guide", icon: BookOpen },
 ];
+
+function NavLink({
+  href,
+  label,
+  icon: Icon,
+  active,
+  onClick,
+  badge,
+}: {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  active: boolean;
+  onClick?: () => void;
+  badge?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+        active
+          ? "bg-primary/10 text-primary"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+      )}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="flex-1">{label}</span>
+      {badge && (
+        <span className="ml-auto bg-destructive text-destructive-foreground h-5 min-w-5 rounded-full text-[10px] font-bold px-1.5 flex items-center justify-center">
+          {badge}
+        </span>
+      )}
+    </Link>
+  );
+}
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { logout } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // Load initial unread count
   useEffect(() => {
@@ -131,45 +173,95 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   }, []);
 
   return (
-    <aside className="flex flex-col w-64 min-h-screen border-r bg-sidebar px-3 py-4">
-      <div className="mb-6 px-3">
-        <h1 className="text-xl font-bold tracking-tight">FinTrack</h1>
-        <p className="text-xs text-muted-foreground">Personal Finance</p>
+    <aside className="flex flex-col w-64 min-h-screen border-r bg-background px-4 py-6">
+      {/* Logo — hidden on mobile (mobile header shows wordmark instead) */}
+      <div className="mb-8 px-2 hidden lg:block">
+        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+          <div className="w-2 h-6 bg-primary rounded-sm shrink-0" />
+          FinTrack
+        </h1>
+        <p className="text-xs text-muted-foreground mt-1 ml-4">Personal Finance</p>
       </div>
-      <nav className="flex-1 space-y-1">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => (
-          <Link
+
+      {/* Primary nav */}
+      <nav className="flex-1 space-y-1 overflow-y-auto">
+        {NAV_PRIMARY.map(({ href, label, icon: Icon }) => (
+          <NavLink
             key={href}
             href={href}
+            label={label}
+            icon={Icon}
+            active={pathname === href}
             onClick={onNavigate}
-            className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              pathname === href
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-            )}
-          >
-            <Icon className="h-4 w-4 shrink-0" />
-            <span className="flex-1">{label}</span>
-            {href === "/notifications" && unreadCount > 0 && (
-              <Badge
-                variant="destructive"
-                className="ml-auto h-5 min-w-5 px-1 text-xs flex items-center justify-center"
-              >
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </Badge>
-            )}
-          </Link>
+          />
+        ))}
+
+        {/* Section divider */}
+        <div className="my-3 px-3 pt-3 border-t border-border">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Features
+          </span>
+        </div>
+
+        {NAV_FEATURES.map(({ href, label, icon: Icon }) => (
+          <NavLink
+            key={href}
+            href={href}
+            label={label}
+            icon={Icon}
+            active={pathname === href}
+            onClick={onNavigate}
+          />
         ))}
       </nav>
-      <Button
-        variant="ghost"
-        className="justify-start gap-3 text-muted-foreground"
-        onClick={logout}
-      >
-        <LogOut className="h-4 w-4" />
-        Sign out
-      </Button>
+
+      {/* Bottom utilities */}
+      <div className="mt-auto pt-4 border-t border-border flex flex-col gap-0.5">
+        <NavLink
+          href="/notifications"
+          label="Notifications"
+          icon={Bell}
+          active={pathname === "/notifications"}
+          onClick={onNavigate}
+          badge={unreadCount > 0 ? (unreadCount > 99 ? "99+" : String(unreadCount)) : undefined}
+        />
+        <NavLink
+          href="/settings"
+          label="Settings"
+          icon={Settings}
+          active={pathname === "/settings"}
+          onClick={onNavigate}
+        />
+        <NavLink
+          href="/guide"
+          label="User Guide"
+          icon={BookOpen}
+          active={pathname === "/guide"}
+          onClick={onNavigate}
+        />
+
+        {/* Theme toggle — render after mount to avoid next-themes hydration mismatch */}
+        <button
+          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+          className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors w-full text-left"
+        >
+          {mounted && (resolvedTheme === "dark" ? (
+            <Sun className="h-4 w-4 shrink-0" />
+          ) : (
+            <Moon className="h-4 w-4 shrink-0" />
+          ))}
+          <span>{mounted ? (resolvedTheme === "dark" ? "Light Mode" : "Dark Mode") : "Toggle Theme"}</span>
+        </button>
+
+        <Button
+          variant="ghost"
+          className="justify-start gap-3 text-muted-foreground px-3"
+          onClick={logout}
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          Sign out
+        </Button>
+      </div>
     </aside>
   );
 }

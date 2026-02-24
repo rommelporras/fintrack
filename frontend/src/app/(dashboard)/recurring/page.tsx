@@ -2,13 +2,11 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { formatPeso } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -16,14 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +26,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Plus, Repeat, Trash2, Pencil } from "lucide-react";
+import { CrudSheet } from "@/components/app/CrudSheet";
 
 interface RecurringTransaction {
   id: string;
@@ -83,9 +74,9 @@ const FREQUENCY_LABELS: Record<RecurringTransaction["frequency"], string> = {
 };
 
 const TYPE_COLORS: Record<RecurringTransaction["type"], string> = {
-  income: "bg-green-100 text-green-800",
-  expense: "bg-red-100 text-red-800",
-  transfer: "bg-blue-100 text-blue-800",
+  income: "bg-accent-green-dim text-accent-green",
+  expense: "bg-accent-red-dim text-accent-red",
+  transfer: "bg-accent-blue-dim text-accent-blue",
 };
 
 const EMPTY_CREATE_FORM: CreateForm = {
@@ -134,11 +125,10 @@ export default function RecurringPage() {
     load();
   }, []);
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
+  function submitCreate() {
     setSubmitting(true);
-    try {
-      await api.post("/recurring-transactions", {
+    api
+      .post("/recurring-transactions", {
         account_id: createForm.account_id,
         amount: createForm.amount,
         description: createForm.description,
@@ -147,13 +137,14 @@ export default function RecurringPage() {
         frequency: createForm.frequency,
         start_date: createForm.start_date,
         end_date: createForm.end_date || null,
-      });
-      setCreateOpen(false);
-      setCreateForm(EMPTY_CREATE_FORM);
-      await load();
-    } finally {
-      setSubmitting(false);
-    }
+      })
+      .then(() => {
+        setCreateOpen(false);
+        setCreateForm(EMPTY_CREATE_FORM);
+        load();
+      })
+      .catch(() => { /* submission failed — sheet stays open */ })
+      .finally(() => setSubmitting(false));
   }
 
   function openEdit(item: RecurringTransaction) {
@@ -172,12 +163,11 @@ export default function RecurringPage() {
     setEditOpen(true);
   }
 
-  async function handleEdit(e: React.FormEvent) {
-    e.preventDefault();
+  function submitEdit() {
     if (!editTarget) return;
     setSubmitting(true);
-    try {
-      await api.patch(`/recurring-transactions/${editTarget.id}`, {
+    api
+      .patch(`/recurring-transactions/${editTarget.id}`, {
         account_id: editForm.account_id,
         amount: editForm.amount,
         description: editForm.description,
@@ -187,22 +177,27 @@ export default function RecurringPage() {
         start_date: editForm.start_date,
         end_date: editForm.end_date || null,
         is_active: editForm.is_active,
-      });
-      setEditOpen(false);
-      setEditTarget(null);
-      await load();
-    } finally {
-      setSubmitting(false);
-    }
+      })
+      .then(() => {
+        setEditOpen(false);
+        setEditTarget(null);
+        load();
+      })
+      .catch(() => { /* submission failed — sheet stays open */ })
+      .finally(() => setSubmitting(false));
   }
 
   async function handleDelete() {
     if (!editTarget) return;
-    await api.delete(`/recurring-transactions/${editTarget.id}`);
-    setDeleteDialogOpen(false);
-    setEditOpen(false);
-    setEditTarget(null);
-    await load();
+    try {
+      await api.delete(`/recurring-transactions/${editTarget.id}`);
+      setDeleteDialogOpen(false);
+      setEditOpen(false);
+      setEditTarget(null);
+      await load();
+    } catch {
+      setDeleteDialogOpen(false);
+    }
   }
 
   async function handleToggleActive(item: RecurringTransaction) {
@@ -225,147 +220,14 @@ export default function RecurringPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Recurring</h1>
-        <Sheet open={createOpen} onOpenChange={setCreateOpen}>
-          <SheetTrigger asChild>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              New Recurring
-            </Button>
-          </SheetTrigger>
-          <SheetContent className="overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle>New Recurring Transaction</SheetTitle>
-              <SheetDescription>Set up a new recurring transaction.</SheetDescription>
-            </SheetHeader>
-            <form onSubmit={handleCreate} className="space-y-4 mt-4">
-              <div className="space-y-1">
-                <Label>Account</Label>
-                <Select
-                  value={createForm.account_id}
-                  onValueChange={(v) =>
-                    setCreateForm((f) => ({ ...f, account_id: v }))
-                  }
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select account" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.map((a) => (
-                      <SelectItem key={a.id} value={a.id}>
-                        {a.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label>Description</Label>
-                <Input
-                  value={createForm.description}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({ ...f, description: e.target.value }))
-                  }
-                  placeholder="e.g. Netflix subscription"
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Amount (₱)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  value={createForm.amount}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({ ...f, amount: e.target.value }))
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Type</Label>
-                <Select
-                  value={createForm.type}
-                  onValueChange={(v) =>
-                    setCreateForm((f) => ({
-                      ...f,
-                      type: v as "income" | "expense" | "transfer",
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="income">Income</SelectItem>
-                    <SelectItem value="expense">Expense</SelectItem>
-                    <SelectItem value="transfer">Transfer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label>Sub-type (optional)</Label>
-                <Input
-                  value={createForm.sub_type}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({ ...f, sub_type: e.target.value }))
-                  }
-                  placeholder="e.g. salary, rent"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Frequency</Label>
-                <Select
-                  value={createForm.frequency}
-                  onValueChange={(v) =>
-                    setCreateForm((f) => ({
-                      ...f,
-                      frequency: v as RecurringTransaction["frequency"],
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="biweekly">Biweekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="yearly">Yearly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label>Start Date</Label>
-                <Input
-                  type="date"
-                  value={createForm.start_date}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({ ...f, start_date: e.target.value }))
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>End Date (optional)</Label>
-                <Input
-                  type="date"
-                  value={createForm.end_date}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({ ...f, end_date: e.target.value }))
-                  }
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting ? "Saving…" : "Create"}
-              </Button>
-            </form>
-          </SheetContent>
-        </Sheet>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Recurring</h1>
+          <p className="text-sm text-muted-foreground mt-1">Automate your regular transactions</p>
+        </div>
+        <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <Plus className="h-4 w-4 mr-1" />
+          New Recurring
+        </Button>
       </div>
 
       {loading ? (
@@ -375,271 +237,403 @@ export default function RecurringPage() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-12 text-center space-y-3">
-            <Repeat className="h-12 w-12 mx-auto text-muted-foreground" />
-            <p className="text-lg font-medium">No recurring transactions</p>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              Set up recurring transactions to automatically track regular income
-              or expenses
-            </p>
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4 mr-1" />
-              New Recurring
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="rounded-xl border-2 border-dashed border-border p-12 text-center space-y-3">
+          <Repeat className="h-12 w-12 mx-auto text-muted-foreground" />
+          <p className="text-lg font-medium">No recurring transactions</p>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+            Set up recurring transactions to automatically track regular income
+            or expenses
+          </p>
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" />
+            New Recurring
+          </Button>
+        </div>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm text-muted-foreground">
+        <div className="rounded-xl border bg-card overflow-hidden">
+          <div className="px-5 py-4 border-b border-border">
+            <p className="text-sm text-muted-foreground">
               {items.length} recurring transaction{items.length !== 1 ? "s" : ""}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-0 divide-y">
-              {items.map((item) => (
-                <li
-                  key={item.id}
-                  className="py-3 flex items-center gap-3 -mx-2 px-2"
-                >
-                  {/* Active toggle */}
-                  <Checkbox
-                    checked={item.is_active}
-                    onCheckedChange={() => handleToggleActive(item)}
-                    aria-label={
-                      item.is_active ? "Deactivate" : "Activate"
-                    }
-                  />
+            </p>
+          </div>
+          <ul className="divide-y divide-border">
+            {items.map((item) => (
+              <li
+                key={item.id}
+                className="py-3 flex items-center gap-3 px-5"
+              >
+                {/* Active toggle */}
+                <Switch
+                  checked={item.is_active}
+                  onCheckedChange={() => handleToggleActive(item)}
+                  aria-label={item.is_active ? "Deactivate" : "Activate"}
+                />
 
-                  {/* Main info */}
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className={`text-sm font-medium truncate ${
-                        item.is_active ? "" : "text-muted-foreground line-through"
-                      }`}
-                    >
-                      {item.description || item.sub_type || item.type}
-                    </p>
+                {/* Main info */}
+                <div className="flex-1 min-w-0">
+                  <p
+                    className={`text-sm font-medium truncate ${
+                      item.is_active ? "" : "text-muted-foreground line-through"
+                    }`}
+                  >
+                    {item.description || item.sub_type || item.type}
+                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
                     <p className="text-xs text-muted-foreground">
-                      {accountMap.get(item.account_id) ?? "—"} &middot; Next:{" "}
-                      {item.next_due_date}
+                      {accountMap.get(item.account_id) ?? "—"}
                     </p>
-                  </div>
-
-                  {/* Badges + amount */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge variant="outline" className="hidden sm:inline-flex">
-                      {FREQUENCY_LABELS[item.frequency]}
-                    </Badge>
-                    <Badge
-                      variant="secondary"
-                      className={TYPE_COLORS[item.type]}
-                    >
-                      {item.type}
-                    </Badge>
-                    <span
-                      className={`text-sm font-semibold tabular-nums ${
-                        item.type === "income"
-                          ? "text-green-600"
-                          : item.type === "expense"
-                          ? "text-red-500"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      {item.type === "expense" ? "-" : ""}
-                      {formatPeso(item.amount)}
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                      Due {item.next_due_date}
                     </span>
-
-                    {/* Edit button */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 text-muted-foreground"
-                      onClick={() => openEdit(item)}
-                      aria-label="Edit"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
                   </div>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+                </div>
+
+                {/* Badges + amount */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground hidden sm:inline">
+                    {FREQUENCY_LABELS[item.frequency]}
+                  </span>
+                  <span
+                    className={`text-xs font-semibold px-2 py-0.5 rounded-full ${TYPE_COLORS[item.type]}`}
+                  >
+                    {item.type}
+                  </span>
+                  <span
+                    className={`text-sm font-semibold tabular-nums ${
+                      item.type === "income"
+                        ? "text-accent-green"
+                        : item.type === "expense"
+                        ? "text-foreground"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {item.type === "expense" ? "-" : ""}
+                    {formatPeso(item.amount)}
+                  </span>
+
+                  {/* Edit button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-muted-foreground"
+                    onClick={() => openEdit(item)}
+                    aria-label="Edit"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
+      {/* Create Sheet */}
+      <CrudSheet
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        title="New Recurring Transaction"
+        description="Set up a new recurring transaction."
+        onSave={submitCreate}
+        saveLabel={submitting ? "Saving…" : "Create"}
+        saveDisabled={submitting}
+      >
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <Label>Account</Label>
+            <Select
+              value={createForm.account_id}
+              onValueChange={(v) =>
+                setCreateForm((f) => ({ ...f, account_id: v }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select account" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Description</Label>
+            <Input
+              value={createForm.description}
+              onChange={(e) =>
+                setCreateForm((f) => ({ ...f, description: e.target.value }))
+              }
+              placeholder="e.g. Netflix subscription"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Amount (₱)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              value={createForm.amount}
+              onChange={(e) =>
+                setCreateForm((f) => ({ ...f, amount: e.target.value }))
+              }
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Type</Label>
+            <Select
+              value={createForm.type}
+              onValueChange={(v) =>
+                setCreateForm((f) => ({
+                  ...f,
+                  type: v as "income" | "expense" | "transfer",
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="income">Income</SelectItem>
+                <SelectItem value="expense">Expense</SelectItem>
+                <SelectItem value="transfer">Transfer</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Sub-type (optional)</Label>
+            <Input
+              value={createForm.sub_type}
+              onChange={(e) =>
+                setCreateForm((f) => ({ ...f, sub_type: e.target.value }))
+              }
+              placeholder="e.g. salary, rent"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Frequency</Label>
+            <Select
+              value={createForm.frequency}
+              onValueChange={(v) =>
+                setCreateForm((f) => ({
+                  ...f,
+                  frequency: v as RecurringTransaction["frequency"],
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="biweekly">Biweekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="yearly">Yearly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Start Date</Label>
+            <Input
+              type="date"
+              value={createForm.start_date}
+              onChange={(e) =>
+                setCreateForm((f) => ({ ...f, start_date: e.target.value }))
+              }
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>End Date (optional)</Label>
+            <Input
+              type="date"
+              value={createForm.end_date}
+              onChange={(e) =>
+                setCreateForm((f) => ({ ...f, end_date: e.target.value }))
+              }
+            />
+          </div>
+        </div>
+      </CrudSheet>
+
       {/* Edit Sheet */}
-      <Sheet open={editOpen} onOpenChange={setEditOpen}>
-        <SheetContent className="overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Edit Recurring Transaction</SheetTitle>
-            <SheetDescription>Update the recurring transaction details below.</SheetDescription>
-          </SheetHeader>
-          <form onSubmit={handleEdit} className="space-y-4 mt-4">
-            <div className="space-y-1">
-              <Label>Account</Label>
-              <Select
-                value={editForm.account_id}
-                onValueChange={(v) =>
-                  setEditForm((f) => ({ ...f, account_id: v }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>Description</Label>
-              <Input
-                value={editForm.description}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, description: e.target.value }))
-                }
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Amount (₱)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                value={editForm.amount}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, amount: e.target.value }))
-                }
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Type</Label>
-              <Select
-                value={editForm.type}
-                onValueChange={(v) =>
-                  setEditForm((f) => ({
-                    ...f,
-                    type: v as "income" | "expense" | "transfer",
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="income">Income</SelectItem>
-                  <SelectItem value="expense">Expense</SelectItem>
-                  <SelectItem value="transfer">Transfer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>Sub-type (optional)</Label>
-              <Input
-                value={editForm.sub_type}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, sub_type: e.target.value }))
-                }
-                placeholder="e.g. salary, rent"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Frequency</Label>
-              <Select
-                value={editForm.frequency}
-                onValueChange={(v) =>
-                  setEditForm((f) => ({
-                    ...f,
-                    frequency: v as RecurringTransaction["frequency"],
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="biweekly">Biweekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="yearly">Yearly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>Start Date</Label>
-              <Input
-                type="date"
-                value={editForm.start_date}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, start_date: e.target.value }))
-                }
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>End Date (optional)</Label>
-              <Input
-                type="date"
-                value={editForm.end_date}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, end_date: e.target.value }))
-                }
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="edit-active"
-                checked={editForm.is_active}
-                onCheckedChange={(v) =>
-                  setEditForm((f) => ({ ...f, is_active: v === true }))
-                }
-              />
-              <label htmlFor="edit-active" className="text-sm">
-                Active
-              </label>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <Button type="submit" className="flex-1" disabled={submitting}>
+      <CrudSheet
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        title="Edit Recurring Transaction"
+        description="Update the recurring transaction details below."
+        onSave={submitEdit}
+        saveLabel={submitting ? "Saving…" : "Save"}
+        saveDisabled={submitting}
+        footer={
+          <div className="flex items-center justify-between w-full">
+            <AlertDialog
+              open={deleteDialogOpen}
+              onOpenChange={setDeleteDialogOpen}
+            >
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" type="button">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete recurring transaction?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete this recurring transaction.
+                    This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete}>
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setEditOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={submitEdit} disabled={submitting}>
                 {submitting ? "Saving…" : "Save"}
               </Button>
-              <AlertDialog
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-              >
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm" type="button">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete recurring transaction?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will permanently delete this recurring transaction.
-                      This cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete}>
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
             </div>
-          </form>
-        </SheetContent>
-      </Sheet>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <Label>Account</Label>
+            <Select
+              value={editForm.account_id}
+              onValueChange={(v) =>
+                setEditForm((f) => ({ ...f, account_id: v }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select account" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Description</Label>
+            <Input
+              value={editForm.description}
+              onChange={(e) =>
+                setEditForm((f) => ({ ...f, description: e.target.value }))
+              }
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Amount (₱)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              value={editForm.amount}
+              onChange={(e) =>
+                setEditForm((f) => ({ ...f, amount: e.target.value }))
+              }
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Type</Label>
+            <Select
+              value={editForm.type}
+              onValueChange={(v) =>
+                setEditForm((f) => ({
+                  ...f,
+                  type: v as "income" | "expense" | "transfer",
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="income">Income</SelectItem>
+                <SelectItem value="expense">Expense</SelectItem>
+                <SelectItem value="transfer">Transfer</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Sub-type (optional)</Label>
+            <Input
+              value={editForm.sub_type}
+              onChange={(e) =>
+                setEditForm((f) => ({ ...f, sub_type: e.target.value }))
+              }
+              placeholder="e.g. salary, rent"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Frequency</Label>
+            <Select
+              value={editForm.frequency}
+              onValueChange={(v) =>
+                setEditForm((f) => ({
+                  ...f,
+                  frequency: v as RecurringTransaction["frequency"],
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="biweekly">Biweekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="yearly">Yearly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Start Date</Label>
+            <Input
+              type="date"
+              value={editForm.start_date}
+              onChange={(e) =>
+                setEditForm((f) => ({ ...f, start_date: e.target.value }))
+              }
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>End Date (optional)</Label>
+            <Input
+              type="date"
+              value={editForm.end_date}
+              onChange={(e) =>
+                setEditForm((f) => ({ ...f, end_date: e.target.value }))
+              }
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch
+              id="edit-active"
+              checked={editForm.is_active}
+              onCheckedChange={(v) =>
+                setEditForm((f) => ({ ...f, is_active: v }))
+              }
+            />
+            <Label htmlFor="edit-active">Active</Label>
+          </div>
+        </div>
+      </CrudSheet>
     </div>
   );
 }

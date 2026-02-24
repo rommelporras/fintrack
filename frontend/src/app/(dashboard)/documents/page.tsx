@@ -2,21 +2,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { CrudSheet } from "@/components/app/CrudSheet";
 import { PasteInput } from "@/components/app/PasteInput";
 import { TransactionConfirm } from "@/components/app/TransactionConfirm";
 import { BulkImportTable } from "@/components/app/BulkImportTable";
 import { api } from "@/lib/api";
-import { FileText, Copy, Check } from "lucide-react";
+import { FileText, Copy, Check, Plus } from "lucide-react";
 import type { ParsedTransaction, BulkParseResponse, PasteResult } from "@/types/parse";
 
 interface Document {
@@ -27,27 +20,22 @@ interface Document {
   created_at: string;
 }
 
-interface Account {
-  id: string;
-  name: string;
-  type: string;
-}
+interface Account { id: string; name: string; type: string; }
+interface Category { id: string; name: string; type: string; }
 
-interface Category {
-  id: string;
-  name: string;
-  type: string;
+function StatusBadge({ status }: { status: Document["status"] }) {
+  const classes: Record<Document["status"], string> = {
+    pending: "bg-muted text-muted-foreground",
+    processing: "bg-accent-amber-dim text-accent-amber",
+    done: "bg-accent-green-dim text-accent-green",
+    failed: "bg-accent-red-dim text-accent-red",
+  };
+  return (
+    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${classes[status]}`}>
+      {status}
+    </span>
+  );
 }
-
-const statusVariant: Record<
-  Document["status"],
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  pending: "secondary",
-  processing: "default",
-  done: "outline",
-  failed: "destructive",
-};
 
 export default function DocumentsPage() {
   const [selected, setSelected] = useState<Document | null>(null);
@@ -55,7 +43,6 @@ export default function DocumentsPage() {
   const [parsedBulk, setParsedBulk] = useState<BulkParseResponse | null>(null);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
-
   const [docs, setDocs] = useState<Document[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -83,14 +70,9 @@ export default function DocumentsPage() {
 
   useEffect(() => { void loadData(); }, []);
 
-  // Poll for document status updates when any doc is pending/processing
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
   useEffect(() => {
-    const hasPending = docs.some(
-      (d) => d.status === "pending" || d.status === "processing"
-    );
-
+    const hasPending = docs.some((d) => d.status === "pending" || d.status === "processing");
     if (hasPending && !pollingRef.current) {
       pollingRef.current = setInterval(() => {
         api.get<Document[]>("/documents").then(setDocs).catch(() => {});
@@ -99,12 +81,8 @@ export default function DocumentsPage() {
       clearInterval(pollingRef.current);
       pollingRef.current = null;
     }
-
     return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
+      if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
     };
   }, [docs]);
 
@@ -113,28 +91,18 @@ export default function DocumentsPage() {
   const handleCopyPrompt = async (doc: Document) => {
     setCopyError(null);
     try {
-      const data = await api.post<{ prompt: string }>(
-        `/documents/${doc.id}/prompt`,
-        {}
-      );
+      const data = await api.post<{ prompt: string }>(`/documents/${doc.id}/prompt`, {});
       await navigator.clipboard.writeText(data.prompt);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (e) {
-      setCopyError(
-        e instanceof Error ? e.message : "Failed to copy prompt."
-      );
+      setCopyError(e instanceof Error ? e.message : "Failed to copy prompt.");
     }
   };
 
   const handleParsed = (result: PasteResult) => {
-    if (result.kind === "single") {
-      setParsedSingle(result.data);
-      setParsedBulk(null);
-    } else {
-      setParsedBulk(result.data);
-      setParsedSingle(null);
-    }
+    if (result.kind === "single") { setParsedSingle(result.data); setParsedBulk(null); }
+    else { setParsedBulk(result.data); setParsedSingle(null); }
   };
 
   const handleClose = () => {
@@ -148,36 +116,39 @@ export default function DocumentsPage() {
   const isBulk = selected?.document_type === "cc_statement";
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Documents</h1>
-        <Button variant="outline" asChild>
-          <Link href="/scan">+ Upload</Link>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Documents</h1>
+          <p className="text-sm text-muted-foreground mt-1">Your uploaded receipts and statements</p>
+        </div>
+        <Button asChild size="sm">
+          <Link href="/scan"><Plus className="h-4 w-4 mr-1" />Upload</Link>
         </Button>
       </div>
 
       {loading ? (
         <div className="space-y-2">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-lg" />
-          ))}
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}
         </div>
       ) : error ? (
         <p className="text-sm text-destructive">{error}</p>
+      ) : docs.length === 0 ? (
+        <div className="rounded-xl border-2 border-dashed border-border p-12 text-center space-y-3">
+          <FileText className="h-12 w-12 mx-auto text-muted-foreground" />
+          <p className="text-lg font-medium">No documents yet</p>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+            Upload receipts or statements from the Scan page to get started
+          </p>
+          <Button size="sm" asChild><Link href="/scan">Go to Scan</Link></Button>
+        </div>
       ) : (
-        <>
-          {docs.length === 0 && (
-            <p className="text-muted-foreground text-sm">
-              No documents yet. Use the Scan page to upload receipts or
-              statements.
-            </p>
-          )}
-
-          <div className="space-y-2">
+        <div className="rounded-xl border bg-card overflow-hidden">
+          <div className="divide-y divide-border">
             {docs.map((doc) => (
-              <div
+              <button
                 key={doc.id}
-                className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/30 cursor-pointer"
+                className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-muted/50 transition-colors text-left"
                 onClick={() => {
                   setSelected(doc);
                   setParsedSingle(null);
@@ -186,93 +157,74 @@ export default function DocumentsPage() {
                   setCopyError(null);
                 }}
               >
-                <div className="flex items-center gap-3">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">{doc.filename}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {doc.document_type}
-                    </p>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{doc.filename}</p>
+                    <p className="text-xs text-muted-foreground">{doc.document_type}</p>
                   </div>
                 </div>
-                <Badge variant={statusVariant[doc.status]}>{doc.status}</Badge>
-              </div>
+                <StatusBadge status={doc.status} />
+              </button>
             ))}
           </div>
-        </>
+        </div>
       )}
 
-      <Sheet open={!!selected} onOpenChange={(open) => { if (!open) handleClose(); }}>
-        <SheetContent className="w-[420px] overflow-y-auto">
-          {selected && (
-            <>
-              <SheetHeader>
-                <SheetTitle>{selected.filename}</SheetTitle>
-                <SheetDescription>Update the document details below.</SheetDescription>
-              </SheetHeader>
-              <div className="mt-4 space-y-4">
-                {!defaultAccountId && !loading && (
-                  <p className="text-sm text-destructive mb-2">
-                    No account found. Please add an account before importing transactions.
+      <CrudSheet
+        open={!!selected}
+        onOpenChange={(open) => { if (!open) handleClose(); }}
+        title={selected?.filename ?? ""}
+        description="Import transactions from this document"
+        onSave={() => {}}
+        footer={<></>}
+      >
+        {selected && (
+          <div className="space-y-4">
+            {!defaultAccountId && !loading && (
+              <p className="text-sm text-destructive mb-2">
+                No account found. Please add an account before importing transactions.
+              </p>
+            )}
+            <Button variant="secondary" size="sm" className="w-full" onClick={() => handleCopyPrompt(selected)}>
+              {copied ? <><Check className="mr-2 h-4 w-4" /> Copied!</> : <><Copy className="mr-2 h-4 w-4" /> Copy AI Prompt</>}
+            </Button>
+            {copyError && <p className="text-sm text-destructive">{copyError}</p>}
+            {!parsedSingle && !parsedBulk && (
+              <div>
+                <p className="text-sm font-medium mb-2">Paste AI Response</p>
+                {defaultAccountId ? (
+                  <PasteInput bulk={isBulk} onParsed={handleParsed} />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {loading ? "Loading accounts..." : "Add an account first to import transactions."}
                   </p>
                 )}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => handleCopyPrompt(selected)}
-                >
-                  {copied ? (
-                    <>
-                      <Check className="mr-2 h-4 w-4" /> Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="mr-2 h-4 w-4" /> Copy AI Prompt
-                    </>
-                  )}
-                </Button>
-                {copyError && (
-                  <p className="text-sm text-destructive">{copyError}</p>
-                )}
-
-                {!parsedSingle && !parsedBulk && (
-                  <div>
-                    <p className="text-sm font-medium mb-2">Paste AI Response</p>
-                    {defaultAccountId ? (
-                      <PasteInput bulk={isBulk} onParsed={handleParsed} />
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        {loading ? "Loading accounts..." : "Add an account first to import transactions."}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {parsedSingle && (
-                  <TransactionConfirm
-                    parsed={parsedSingle}
-                    accountId={defaultAccountId}
-                    documentId={selected.id}
-                    categories={categories}
-                    onSuccess={() => { handleClose(); void loadData(); }}
-                  />
-                )}
-
-                {parsedBulk && (
-                  <BulkImportTable
-                    rows={parsedBulk.transactions}
-                    accountId={defaultAccountId}
-                    accounts={accounts}
-                    documentId={selected.id}
-                    onSuccess={() => { handleClose(); void loadData(); }}
-                  />
-                )}
               </div>
-            </>
-          )}
-        </SheetContent>
-      </Sheet>
+            )}
+            {parsedSingle && (
+              <TransactionConfirm
+                parsed={parsedSingle}
+                accountId={defaultAccountId}
+                documentId={selected.id}
+                categories={categories}
+                onSuccess={() => { handleClose(); void loadData(); }}
+              />
+            )}
+            {parsedBulk && (
+              <BulkImportTable
+                rows={parsedBulk.transactions}
+                accountId={defaultAccountId}
+                accounts={accounts}
+                documentId={selected.id}
+                onSuccess={() => { handleClose(); void loadData(); }}
+              />
+            )}
+          </div>
+        )}
+      </CrudSheet>
     </div>
   );
 }

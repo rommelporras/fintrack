@@ -1,13 +1,24 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { formatPeso } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn, formatPeso } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { AlertCircle, CheckCircle2, Circle, ChevronRight, X } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeftRight,
+  CheckCircle2,
+  Circle,
+  Plus,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+  X,
+} from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { StatCard } from "@/components/app/StatCard";
+import { TypeBadge, TxnType } from "@/components/app/TypeBadge";
 
 interface Summary {
   month: string;
@@ -18,9 +29,10 @@ interface Summary {
 
 interface Transaction {
   id: string;
+  account_id: string;
   description: string;
   amount: string;
-  type: string;
+  type: "income" | "expense" | "transfer";
   date: string;
 }
 
@@ -136,212 +148,218 @@ export default function DashboardPage() {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">
-        {summary ? summary.month : "Dashboard"}
-      </h1>
+  const accountMap = new Map(accounts.map((a) => [a.id, a.name]));
 
-      {/* Monthly Overview */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-l-4 border-l-emerald-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Income
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-green-600">
-              {summary ? formatPeso(summary.total_income) : "—"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-l-red-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Expenses
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-red-500">
-              {summary ? formatPeso(summary.total_expenses) : "—"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-l-teal-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Net
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p
-              className={`text-2xl font-bold ${
-                summary && Number(summary.net) >= 0
-                  ? "text-green-600"
-                  : "text-red-500"
-              }`}
-            >
-              {summary ? formatPeso(summary.net) : "—"}
-            </p>
-          </CardContent>
-        </Card>
+  return (
+    <div>
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            {summary ? summary.month : "Overview"}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Monitor your financial health
+          </p>
+        </div>
+        <Link href="/transactions/new">
+          <Button className="w-full sm:w-auto gap-2">
+            <Plus className="h-4 w-4" />
+            Add Transaction
+          </Button>
+        </Link>
       </div>
 
-      {/* Net Worth */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Net Worth
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-2xl font-bold">
-            {netWorth ? formatPeso(netWorth.total) : "—"}
-          </p>
-          {netWorth && netWorth.by_type.length > 0 && (
-            <div className="mt-2 space-y-1">
-              {netWorth.by_type.map((item) => (
-                <div
-                  key={item.type}
-                  className="flex justify-between text-sm text-muted-foreground"
-                >
-                  <span className="capitalize">{item.type.replaceAll("_", " ")}</span>
-                  <span>{formatPeso(item.total)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Stat grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard
+          label="Monthly Income"
+          value={summary ? formatPeso(summary.total_income) : "—"}
+          icon={<TrendingUp className="h-4 w-4" />}
+          accent="green"
+          trend={summary ? "This month" : undefined}
+          trendUp={true}
+        />
+        <StatCard
+          label="Monthly Expenses"
+          value={summary ? formatPeso(summary.total_expenses) : "—"}
+          icon={<TrendingDown className="h-4 w-4" />}
+          accent="red"
+          trend={summary ? "This month" : undefined}
+          trendUp={false}
+        />
+        <StatCard
+          label="Net Cash Flow"
+          value={summary ? formatPeso(summary.net) : "—"}
+          icon={<ArrowLeftRight className="h-4 w-4" />}
+          accent={summary && Number(summary.net) >= 0 ? "green" : "red"}
+          trendUp={summary ? Number(summary.net) >= 0 : undefined}
+        />
+        <StatCard
+          label="Net Worth"
+          value={netWorth ? formatPeso(netWorth.total) : "—"}
+          icon={<Wallet className="h-4 w-4" />}
+          accent="green"
+          featured={true}
+        />
+      </div>
 
-      {/* Upcoming Recurring */}
-      {upcoming.length > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Upcoming Recurring</CardTitle>
-            <Link
-              href="/recurring"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              View all
-            </Link>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {upcoming.map((r) => (
-                <li
-                  key={r.id}
-                  className="flex items-center justify-between py-1.5 border-b last:border-0"
-                >
-                  <div>
-                    <p className="text-sm font-medium">
-                      {r.description || r.frequency}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Due {r.next_due_date}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-sm font-semibold ${r.type === "income" ? "text-green-600" : "text-red-500"}`}
-                  >
-                    {formatPeso(r.amount)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Onboarding checklist */}
-      {showOnboarding && (
-        <Card className="border-dashed">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Get Started</CardTitle>
-              <button
-                onClick={() => {
-                  localStorage.setItem("fintrack_onboarding_dismissed", "true");
-                  setOnboardingDismissed(true);
-                }}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Dismiss onboarding"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            {onboardingSteps.map((step) => (
+      {/* Main 2-column section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Transactions — left, 2/3 width */}
+        <div className="lg:col-span-2">
+          <div className="rounded-xl border bg-card overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <h2 className="font-semibold text-foreground">Recent Transactions</h2>
               <Link
-                key={step.href}
-                href={step.href}
-                className="flex items-center gap-3 rounded-md px-2 py-2.5 hover:bg-muted transition-colors"
+                href="/transactions"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                {step.done ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-                ) : (
-                  <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
-                )}
-                <span className={step.done ? "text-sm text-muted-foreground line-through" : "text-sm"}>
-                  {step.label}
-                </span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto shrink-0" />
+                View all →
               </Link>
-            ))}
-            <p className="text-xs text-muted-foreground pt-2">
-              {completedCount} of {onboardingSteps.length} complete
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Recent Transactions */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Recent Transactions</CardTitle>
-          <Link
-            href="/transactions"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            View all
-          </Link>
-        </CardHeader>
-        <CardContent>
-          {transactions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No transactions yet.</p>
-          ) : (
-            <ul className="space-y-2">
-              {transactions.map((t) => (
-                <li
-                  key={t.id}
-                  className="flex items-center justify-between py-1.5 border-b last:border-0"
-                >
-                  <div>
-                    <p className="text-sm font-medium">
-                      {t.description || t.type}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{t.date}</p>
-                  </div>
-                  <span
-                    className={`text-sm font-semibold ${
-                      t.type === "income"
-                        ? "text-green-600"
-                        : t.type === "expense"
-                        ? "text-red-500"
-                        : "text-muted-foreground"
-                    }`}
+            </div>
+            {transactions.length === 0 ? (
+              <p className="text-sm text-muted-foreground p-5">No transactions yet.</p>
+            ) : (
+              <div className="divide-y divide-border">
+                {transactions.map((t) => (
+                  <div
+                    key={t.id}
+                    className="flex items-center justify-between px-5 py-3.5 hover:bg-muted/50 transition-colors"
                   >
-                    {t.type === "income" ? "+" : t.type === "expense" ? "-" : ""}
-                    {formatPeso(t.amount)}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={cn(
+                          "w-9 h-9 rounded-full flex items-center justify-center shrink-0",
+                          t.type === "income"
+                            ? "bg-accent-green-dim text-accent-green"
+                            : t.type === "expense"
+                            ? "bg-accent-red-dim text-accent-red"
+                            : "bg-accent-blue-dim text-accent-blue",
+                        )}
+                      >
+                        <ArrowLeftRight className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {t.description || t.type}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t.date}
+                          {accountMap.get(t.account_id) && (
+                            <> · {accountMap.get(t.account_id)}</>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0 ml-4">
+                      <p
+                        className={cn(
+                          "text-sm font-semibold tracking-tight",
+                          t.type === "income"
+                            ? "text-accent-green"
+                            : t.type === "expense"
+                            ? "text-accent-red"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {t.type === "income" ? "+" : t.type === "expense" ? "-" : ""}
+                        {formatPeso(t.amount)}
+                      </p>
+                      <TypeBadge type={t.type} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right sidebar widgets — 1/3 width */}
+        <div className="space-y-6">
+          {/* Get Started checklist — only when not dismissed and not all complete */}
+          {showOnboarding && (
+            <div className="rounded-xl border bg-card p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold text-foreground">Get Started</h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                    {completedCount}/{onboardingSteps.length}
                   </span>
-                </li>
-              ))}
-            </ul>
+                  <button
+                    onClick={() => {
+                      localStorage.setItem("fintrack_onboarding_dismissed", "true");
+                      setOnboardingDismissed(true);
+                    }}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Dismiss"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {onboardingSteps.map((step) => (
+                  <Link
+                    key={step.href}
+                    href={step.href}
+                    className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-muted transition-colors"
+                  >
+                    {step.done ? (
+                      <CheckCircle2 className="h-4 w-4 text-accent-green shrink-0" />
+                    ) : (
+                      <Circle className="h-4 w-4 text-muted-foreground shrink-0" />
+                    )}
+                    <span
+                      className={cn(
+                        "text-sm flex-1",
+                        step.done && "line-through text-muted-foreground",
+                      )}
+                    >
+                      {step.label}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
           )}
-        </CardContent>
-      </Card>
+
+          {/* Upcoming Bills */}
+          {upcoming.length > 0 && (
+            <div className="rounded-xl border bg-card p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold text-foreground">Upcoming Bills</h2>
+                <Link
+                  href="/recurring"
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Manage
+                </Link>
+              </div>
+              <div className="space-y-3">
+                {upcoming.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded bg-accent-red-dim text-accent-red flex items-center justify-center font-bold text-xs shrink-0">
+                        {(r.description || r.frequency).charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          {r.description || r.frequency}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Due {r.next_due_date}</p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-semibold tracking-tight text-foreground">
+                      {formatPeso(r.amount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

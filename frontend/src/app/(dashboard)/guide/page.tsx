@@ -76,9 +76,9 @@ function Callout({
   children: React.ReactNode;
 }) {
   const styles = {
-    tip: "bg-emerald-500/5 border-emerald-500/20 text-emerald-300",
-    warning: "bg-amber-500/5 border-amber-500/20 text-amber-300",
-    info: "bg-blue-500/5 border-blue-500/20 text-blue-300",
+    tip: "bg-accent-green-dim border-accent-green/20 text-accent-green",
+    warning: "bg-accent-amber-dim border-accent-amber/20 text-accent-amber",
+    info: "bg-accent-blue-dim border-accent-blue/20 text-accent-blue",
   };
   const icons = { tip: "💡", warning: "⚠️", info: "ℹ️" };
   return (
@@ -123,7 +123,7 @@ function DataTable({ headers, rows }: { headers: string[]; rows: React.ReactNode
 
 function Code({ children }: { children: React.ReactNode }) {
   return (
-    <code className="font-mono text-xs bg-muted border rounded px-1.5 py-0.5 text-teal-400">
+    <code className="font-mono text-xs bg-muted border rounded px-1.5 py-0.5 text-primary">
       {children}
     </code>
   );
@@ -131,7 +131,7 @@ function Code({ children }: { children: React.ReactNode }) {
 
 function CodeBlock({ children }: { children: string }) {
   return (
-    <pre className="bg-black/40 border rounded-lg p-4 overflow-x-auto font-mono text-xs text-slate-300 leading-relaxed mt-3">
+    <pre className="bg-muted border rounded-lg p-4 overflow-x-auto font-mono text-xs text-muted-foreground leading-relaxed mt-3">
       {children}
     </pre>
   );
@@ -572,7 +572,7 @@ export default function GuidePage() {
               [
                 <span
                   key="on-track"
-                  className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400"
+                  className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-accent-green-dim text-accent-green"
                 >
                   On Track
                 </span>,
@@ -581,7 +581,7 @@ export default function GuidePage() {
               [
                 <span
                   key="warning"
-                  className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400"
+                  className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-accent-amber-dim text-accent-amber"
                 >
                   Warning
                 </span>,
@@ -590,7 +590,7 @@ export default function GuidePage() {
               [
                 <span
                   key="exceeded"
-                  className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-red-500/15 text-red-400"
+                  className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-accent-red-dim text-accent-red"
                 >
                   Exceeded
                 </span>,

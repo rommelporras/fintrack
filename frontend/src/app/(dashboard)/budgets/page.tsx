@@ -2,18 +2,9 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { cn, formatPeso } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -36,6 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { CrudSheet } from "@/components/app/CrudSheet";
 
 interface BudgetResponse {
   id: string;
@@ -80,9 +72,9 @@ interface NewBudgetForm {
 }
 
 function progressColor(status: "ok" | "warning" | "exceeded"): string {
-  if (status === "exceeded") return "bg-red-500";
-  if (status === "warning") return "bg-amber-500";
-  return "bg-green-500";
+  if (status === "exceeded") return "bg-accent-red";
+  if (status === "warning") return "bg-accent-amber";
+  return "bg-accent-green";
 }
 
 function budgetLabel(item: BudgetStatusItem, cats: Category[], accounts: Account[]): string {
@@ -95,9 +87,9 @@ function budgetLabel(item: BudgetStatusItem, cats: Category[], accounts: Account
 }
 
 function statusBadgeClass(status: "ok" | "warning" | "exceeded"): string {
-  if (status === "exceeded") return "bg-red-100 text-red-800";
-  if (status === "warning") return "bg-amber-100 text-amber-800";
-  return "bg-green-100 text-green-800";
+  if (status === "exceeded") return "bg-accent-red-dim text-accent-red";
+  if (status === "warning") return "bg-accent-amber-dim text-accent-amber";
+  return "bg-accent-green-dim text-accent-green";
 }
 
 export default function BudgetsPage() {
@@ -105,6 +97,7 @@ export default function BudgetsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState<NewBudgetForm>({
@@ -119,6 +112,7 @@ export default function BudgetsPage() {
 
   async function load() {
     setLoading(true);
+    setLoadError(null);
     try {
       const [items, cats, accs] = await Promise.all([
         api.get<BudgetStatusItem[]>("/budgets/status"),
@@ -128,6 +122,8 @@ export default function BudgetsPage() {
       setBudgetItems(items);
       setCategories(cats);
       setAccounts(accs);
+    } catch {
+      setLoadError("Failed to load budgets. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -144,8 +140,7 @@ export default function BudgetsPage() {
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleCreate() {
     setSubmitting(true);
     try {
       await api.post("/budgets", {
@@ -168,225 +163,224 @@ export default function BudgetsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Budgets</h1>
-        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-          <SheetTrigger asChild>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              Add Budget
-            </Button>
-          </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>New Budget</SheetTitle>
-              <SheetDescription>Create a new budget.</SheetDescription>
-            </SheetHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-              <div className="space-y-1">
-                <Label>Budget Type</Label>
-                <Select
-                  value={form.type}
-                  onValueChange={(v) =>
-                    setForm((f) => ({
-                      ...f,
-                      type: v as "category" | "account",
-                      category_id: "",
-                      account_id: "",
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="category">Category</SelectItem>
-                    <SelectItem value="account">Account</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {form.type === "category" ? (
-                <div className="space-y-1">
-                  <Label>Category</Label>
-                  <Select
-                    value={form.category_id}
-                    onValueChange={(v) => setForm((f) => ({ ...f, category_id: v }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  <Label>Account</Label>
-                  <Select
-                    value={form.account_id}
-                    onValueChange={(v) => setForm((f) => ({ ...f, account_id: v }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select account" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accounts.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>
-                          {a.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              <div className="space-y-1">
-                <Label>Limit (₱)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  value={form.amount}
-                  onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Period</Label>
-                <Select
-                  value={form.period}
-                  onValueChange={(v) =>
-                    setForm((f) => ({ ...f, period: v as "monthly" | "weekly" }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-3">
-                <Label>Alert Thresholds</Label>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="alert80"
-                    checked={form.alert_at_80}
-                    onCheckedChange={(v) =>
-                      setForm((f) => ({ ...f, alert_at_80: v === true }))
-                    }
-                  />
-                  <label htmlFor="alert80" className="text-sm">
-                    Alert at 80% usage
-                  </label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="alert100"
-                    checked={form.alert_at_100}
-                    onCheckedChange={(v) =>
-                      setForm((f) => ({ ...f, alert_at_100: v === true }))
-                    }
-                  />
-                  <label htmlFor="alert100" className="text-sm">
-                    Alert when exceeded
-                  </label>
-                </div>
-              </div>
-              <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting ? "Saving…" : "Add Budget"}
-              </Button>
-            </form>
-          </SheetContent>
-        </Sheet>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Budgets</h1>
+          <p className="text-sm text-muted-foreground mt-1">Track your spending against limits</p>
+        </div>
+        <Button size="sm" onClick={() => setSheetOpen(true)}>
+          <Plus className="h-4 w-4 mr-1" />
+          Add Budget
+        </Button>
       </div>
 
+      <CrudSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        title="New Budget"
+        description="Set a spending limit"
+        onSave={handleCreate}
+        saveLabel={submitting ? "Saving…" : "Add Budget"}
+        saveDisabled={submitting}
+      >
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <Label>Budget Type</Label>
+            <Select
+              value={form.type}
+              onValueChange={(v) =>
+                setForm((f) => ({
+                  ...f,
+                  type: v as "category" | "account",
+                  category_id: "",
+                  account_id: "",
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="category">Category</SelectItem>
+                <SelectItem value="account">Account</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {form.type === "category" ? (
+            <div className="space-y-1">
+              <Label>Category</Label>
+              <Select
+                value={form.category_id}
+                onValueChange={(v) => setForm((f) => ({ ...f, category_id: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <Label>Account</Label>
+              <Select
+                value={form.account_id}
+                onValueChange={(v) => setForm((f) => ({ ...f, account_id: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select account" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div className="space-y-1">
+            <Label>Limit (₱)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              value={form.amount}
+              onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+              required
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Period</Label>
+            <Select
+              value={form.period}
+              onValueChange={(v) =>
+                setForm((f) => ({ ...f, period: v as "monthly" | "weekly" }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="weekly">Weekly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-3">
+            <Label>Alert Thresholds</Label>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="alert80"
+                checked={form.alert_at_80}
+                onCheckedChange={(v) =>
+                  setForm((f) => ({ ...f, alert_at_80: v === true }))
+                }
+              />
+              <label htmlFor="alert80" className="text-sm">
+                Alert at 80% usage
+              </label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="alert100"
+                checked={form.alert_at_100}
+                onCheckedChange={(v) =>
+                  setForm((f) => ({ ...f, alert_at_100: v === true }))
+                }
+              />
+              <label htmlFor="alert100" className="text-sm">
+                Alert when exceeded
+              </label>
+            </div>
+          </div>
+        </div>
+      </CrudSheet>
+
+      {loadError && (
+        <p className="text-sm text-destructive">{loadError}</p>
+      )}
+
       {loading ? (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full" />)}
         </div>
       ) : budgetItems.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-12 text-center space-y-3">
-            <PiggyBank className="h-12 w-12 mx-auto text-muted-foreground" />
-            <p className="text-lg font-medium">No budgets yet</p>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              Set a budget to track your spending against limits
-            </p>
-            <Button size="sm" onClick={() => setSheetOpen(true)}>
-              <Plus className="h-4 w-4 mr-1" />
-              Add Budget
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="rounded-xl border-2 border-dashed border-border p-12 text-center space-y-3">
+          <PiggyBank className="h-12 w-12 mx-auto text-muted-foreground" />
+          <p className="text-lg font-medium">No budgets yet</p>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+            Set a budget to track your spending against limits
+          </p>
+          <Button size="sm" onClick={() => setSheetOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" />
+            Add Budget
+          </Button>
+        </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {budgetItems.map((item) => (
-            <Card key={item.budget.id}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">
-                    {budgetLabel(item, categories, accounts)}
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant="secondary"
-                      className={statusBadgeClass(item.status)}
-                    >
-                      {item.status === "exceeded"
-                        ? "Exceeded"
-                        : item.status === "warning"
-                        ? "Warning"
-                        : "On Track"}
-                    </Badge>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
-                          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete budget?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will permanently delete the &quot;{budgetLabel(item, categories, accounts)}&quot; budget. This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(item.budget.id)}>Delete</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
+            <div key={item.budget.id} className="rounded-xl border bg-card p-5 card-interactive">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">
+                  {budgetLabel(item, categories, accounts)}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="secondary"
+                    className={statusBadgeClass(item.status)}
+                  >
+                    {item.status === "exceeded"
+                      ? "Exceeded"
+                      : item.status === "warning"
+                      ? "Warning"
+                      : "On Track"}
+                  </Badge>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                        <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete budget?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete the &quot;{budgetLabel(item, categories, accounts)}&quot; budget. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(item.budget.id)}>Delete</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    Spent: {formatPeso(item.spent)}
-                  </span>
-                  <span className="font-medium">
-                    Limit: {formatPeso(item.budget.amount)}
-                  </span>
-                </div>
-                <div className="h-2 rounded-full bg-muted">
-                  <div
-                    className={cn("h-2 rounded-full", progressColor(item.status))}
-                    style={{ width: `${Math.min(item.percent, 100)}%` }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground text-right">
-                  {item.percent.toFixed(1)}% used
-                </p>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="h-1.5 rounded-full bg-muted my-3">
+                <div
+                  className={cn("h-1.5 rounded-full", progressColor(item.status))}
+                  style={{ width: `${Math.min(item.percent, 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
+                  Spent: {formatPeso(item.spent)}
+                </span>
+                <span className="text-muted-foreground">
+                  Limit: {formatPeso(item.budget.amount)}
+                </span>
+                <span className="text-muted-foreground">
+                  {item.percent.toFixed(1)}%
+                </span>
+              </div>
+            </div>
           ))}
         </div>
       )}
