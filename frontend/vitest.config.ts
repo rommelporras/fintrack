@@ -3,7 +3,7 @@ import path from "path";
 
 export default defineConfig({
   test: {
-    environment: "jsdom",
+    environment: "happy-dom",
     globals: true,
     css: false,
     setupFiles: ["./src/__tests__/setup.ts"],
