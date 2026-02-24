@@ -4,14 +4,16 @@ from datetime import datetime
 from decimal import Decimal
 from sqlalchemy import String, DateTime, Numeric, Boolean, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 
 class AccountType(str, enum.Enum):
-    bank = "bank"
+    savings = "savings"
+    checking = "checking"
+    wallet = "wallet"
     credit_card = "credit_card"
-    digital_wallet = "digital_wallet"
+    loan = "loan"
     cash = "cash"
 
 
@@ -23,6 +25,12 @@ class Account(Base):
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    institution_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("institutions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     type: Mapped[AccountType] = mapped_column(nullable=False)
@@ -38,4 +46,8 @@ class Account(Base):
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    institution: Mapped["Institution | None"] = relationship(  # type: ignore[name-defined]
+        "Institution", back_populates="accounts", lazy="selectin"
     )

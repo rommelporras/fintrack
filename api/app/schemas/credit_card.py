@@ -2,11 +2,11 @@ import uuid
 from datetime import date
 from decimal import Decimal
 from pydantic import BaseModel, field_validator
+from app.schemas.institution import InstitutionBrief
 
 
 class CreditCardCreate(BaseModel):
     account_id: uuid.UUID
-    bank_name: str
     last_four: str
     credit_limit: Decimal | None = None
     statement_day: int
@@ -31,7 +31,6 @@ class CreditCardCreate(BaseModel):
 
 
 class CreditCardUpdate(BaseModel):
-    bank_name: str | None = None
     credit_limit: Decimal | None = None
     statement_day: int | None = None
     due_day: int | None = None
@@ -50,18 +49,18 @@ class CreditCardUpdate(BaseModel):
 class CreditCardResponse(BaseModel):
     id: uuid.UUID
     account_id: uuid.UUID
-    bank_name: str
+    institution: InstitutionBrief | None  # derived from credit_line.institution or account.institution
     last_four: str
     credit_limit: Decimal | None
     statement_day: int
     due_day: int
-    closed_period: dict | None = None   # injected: last closed statement period
-    open_period: dict | None = None     # injected: current open billing period
-    due_date: date | None = None        # injected: next payment due date
-    days_until_due: int | None = None   # injected
+    closed_period: dict | None = None
+    open_period: dict | None = None
+    due_date: date | None = None
+    days_until_due: int | None = None
     credit_line_id: uuid.UUID | None = None
     card_name: str | None = None
     available_override: Decimal | None = None
-    available_credit: Decimal | None = None  # computed, injected
+    available_credit: Decimal | None = None
 
     model_config = {"from_attributes": True}

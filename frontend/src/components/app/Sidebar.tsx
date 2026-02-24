@@ -19,6 +19,7 @@ import {
   BookOpen,
   Sun,
   Moon,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,6 +43,7 @@ const NAV_PRIMARY = [
 const NAV_FEATURES = [
   { href: "/scan", label: "Scan Receipt", icon: ScanLine },
   { href: "/accounts", label: "Accounts", icon: Wallet },
+  { href: "/institutions", label: "Institutions", icon: Building2 },
   { href: "/cards", label: "Credit Cards", icon: CreditCard },
   { href: "/statements", label: "Statements", icon: Receipt },
   { href: "/documents", label: "Documents", icon: FileText },

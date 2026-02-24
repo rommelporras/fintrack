@@ -16,8 +16,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus } from "lucide-react";
 import { CrudSheet } from "@/components/app/CrudSheet";
 
+interface Institution {
+  id: string;
+  name: string;
+  type: string;
+  color: string | null;
+}
+
 interface Account {
   id: string;
+  institution_id: string | null;
+  institution: Institution | null;
   name: string;
   type: string;
   opening_balance: string;
@@ -26,23 +35,36 @@ interface Account {
   is_active: boolean;
 }
 
+const ACCOUNT_TYPES = [
+  { value: "savings", label: "Savings" },
+  { value: "checking", label: "Checking" },
+  { value: "wallet", label: "Wallet" },
+  { value: "credit_card", label: "Credit Card" },
+  { value: "cash", label: "Cash" },
+  { value: "loan", label: "Loan" },
+] as const;
+
 const TYPE_BADGE: Record<string, { label: string; className: string }> = {
-  bank: { label: "Bank", className: "bg-accent-blue-dim text-accent-blue" },
+  savings: { label: "Savings", className: "bg-accent-blue-dim text-accent-blue" },
+  checking: { label: "Checking", className: "bg-accent-blue-dim text-accent-blue" },
   credit_card: { label: "Credit Card", className: "bg-accent-red-dim text-accent-red" },
-  digital_wallet: { label: "Digital Wallet", className: "bg-accent-blue-dim text-accent-blue" },
+  wallet: { label: "Wallet", className: "bg-accent-blue-dim text-accent-blue" },
   cash: { label: "Cash", className: "bg-accent-amber-dim text-accent-amber" },
+  loan: { label: "Loan", className: "bg-muted text-muted-foreground" },
 };
 
 export default function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [name, setName] = useState("");
-  const [type, setType] = useState("bank");
+  const [type, setType] = useState("savings");
   const [openingBalance, setOpeningBalance] = useState("0.00");
+  const [institutionId, setInstitutionId] = useState("");
 
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -53,10 +75,14 @@ export default function AccountsPage() {
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
-  async function loadAccounts() {
+  async function loadData() {
     try {
-      const data = await api.get<Account[]>("/accounts");
-      setAccounts(data);
+      const [accs, insts] = await Promise.all([
+        api.get<Account[]>("/accounts"),
+        api.get<Institution[]>("/institutions"),
+      ]);
+      setAccounts(accs);
+      setInstitutions(insts);
     } catch (e: unknown) {
       setLoadError(e instanceof Error ? e.message : "Failed to load accounts");
     } finally {
@@ -64,18 +90,26 @@ export default function AccountsPage() {
     }
   }
 
-  useEffect(() => { loadAccounts(); }, []);
+  useEffect(() => {
+    loadData();
+  }, []);
 
   async function handleCreate() {
     setSubmitting(true);
     setError(null);
     try {
-      await api.post("/accounts", { name, type, opening_balance: openingBalance });
+      await api.post("/accounts", {
+        name,
+        type,
+        opening_balance: openingBalance,
+        institution_id: institutionId && institutionId !== "__none__" ? institutionId : null,
+      });
       setOpen(false);
       setName("");
-      setType("bank");
+      setType("savings");
       setOpeningBalance("0.00");
-      await loadAccounts();
+      setInstitutionId("");
+      await loadData();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to create account");
     } finally {
@@ -93,8 +127,9 @@ export default function AccountsPage() {
 
   function openAddSheet() {
     setName("");
-    setType("bank");
+    setType("savings");
     setOpeningBalance("0.00");
+    setInstitutionId("");
     setError(null);
     setOpen(true);
   }
@@ -110,7 +145,7 @@ export default function AccountsPage() {
       });
       setEditOpen(false);
       setEditAccount(null);
-      await loadAccounts();
+      await loadData();
     } catch (e: unknown) {
       setEditError(e instanceof Error ? e.message : "Failed to update account");
     } finally {
@@ -123,7 +158,9 @@ export default function AccountsPage() {
       <div className="flex items-end justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Accounts</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage your bank accounts and wallets</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage your bank accounts and wallets
+          </p>
         </div>
       </div>
 
@@ -138,7 +175,10 @@ export default function AccountsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {accounts.map((account) => {
-            const badge = TYPE_BADGE[account.type] ?? { label: account.type, className: "bg-muted text-muted-foreground" };
+            const badge = TYPE_BADGE[account.type] ?? {
+              label: account.type,
+              className: "bg-muted text-muted-foreground",
+            };
             return (
               <button
                 key={account.id}
@@ -147,10 +187,12 @@ export default function AccountsPage() {
                 aria-label={`Edit ${account.name}`}
               >
                 <div className="flex items-start justify-between mb-4">
-                  <span className={cn(
-                    "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
-                    badge.className,
-                  )}>
+                  <span
+                    className={cn(
+                      "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
+                      badge.className,
+                    )}
+                  >
                     {badge.label}
                   </span>
                 </div>
@@ -158,6 +200,17 @@ export default function AccountsPage() {
                   {formatPeso(account.current_balance)}
                 </p>
                 <p className="text-sm text-muted-foreground">{account.name}</p>
+                {account.institution && (
+                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                    {account.institution.color && (
+                      <span
+                        className="inline-block w-2 h-2 rounded-full"
+                        style={{ background: account.institution.color }}
+                      />
+                    )}
+                    {account.institution.name}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -198,13 +251,32 @@ export default function AccountsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="bank">Bank</SelectItem>
-              <SelectItem value="digital_wallet">Digital Wallet</SelectItem>
-              <SelectItem value="cash">Cash</SelectItem>
-              <SelectItem value="credit_card">Credit Card</SelectItem>
+              {ACCOUNT_TYPES.map(({ value, label }) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
+        {type !== "cash" && (
+          <div className="space-y-2">
+            <Label>Institution</Label>
+            <Select value={institutionId} onValueChange={setInstitutionId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select institution" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">None</SelectItem>
+                {institutions.map((i) => (
+                  <SelectItem key={i.id} value={i.id}>
+                    {i.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div className="space-y-2">
           <Label htmlFor="account-opening-balance">Opening Balance</Label>
           <CurrencyInput

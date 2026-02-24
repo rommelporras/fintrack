@@ -8,10 +8,10 @@ async def user_and_accounts(client):
         "email": "txn@test.com", "name": "TXN User", "password": "password123"
     })
     bank = await client.post("/accounts", json={
-        "name": "BDO Savings", "type": "bank", "opening_balance": "10000.00"
+        "name": "BDO Savings", "type": "savings", "opening_balance": "10000.00"
     })
     wallet = await client.post("/accounts", json={
-        "name": "GCash", "type": "digital_wallet", "opening_balance": "5000.00"
+        "name": "GCash", "type": "wallet", "opening_balance": "5000.00"
     })
     return {
         "bank_id": bank.json()["id"],
@@ -99,7 +99,7 @@ async def test_atm_withdrawal_with_fee(client):
         "email": "atm@test.com", "name": "ATM User", "password": "pw123456"
     })
     gcash = await client.post("/accounts", json={
-        "name": "GCash", "type": "digital_wallet", "opening_balance": "10000.00"
+        "name": "GCash", "type": "wallet", "opening_balance": "10000.00"
     })
     cash = await client.post("/accounts", json={
         "name": "Cash Wallet", "type": "cash"

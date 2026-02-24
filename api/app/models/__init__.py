@@ -10,3 +10,5 @@ from app.models.notification import Notification  # noqa: F401
 from app.models.recurring_transaction import RecurringTransaction  # noqa: F401
 from app.models.push_subscription import PushSubscription  # noqa: F401
 from app.models.credit_line import CreditLine  # noqa: F401
+from app.models.institution import Institution  # noqa: F401
+from app.models.loan import Loan  # noqa: F401

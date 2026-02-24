@@ -1,16 +1,19 @@
 import uuid
 from decimal import Decimal
 from pydantic import BaseModel
+from app.schemas.institution import InstitutionBrief
 
 
 class CreditLineCreate(BaseModel):
     name: str
+    institution_id: uuid.UUID | None = None
     total_limit: Decimal | None = None
     available_override: Decimal | None = None
 
 
 class CreditLineUpdate(BaseModel):
     name: str | None = None
+    institution_id: uuid.UUID | None = None
     total_limit: Decimal | None = None
     available_override: Decimal | None = None
 
@@ -18,8 +21,7 @@ class CreditLineUpdate(BaseModel):
 class CreditCardInLine(BaseModel):
     """Minimal card info nested inside CreditLineResponse."""
     id: uuid.UUID
-    bank_name: str
-    card_name: str | None
+    card_name: str | None        # bank_name removed — card identified by card_name + last_four
     last_four: str
     statement_day: int
     due_day: int
@@ -34,6 +36,8 @@ class CreditCardInLine(BaseModel):
 
 class CreditLineResponse(BaseModel):
     id: uuid.UUID
+    institution_id: uuid.UUID | None
+    institution: InstitutionBrief | None
     name: str
     total_limit: Decimal | None
     available_override: Decimal | None

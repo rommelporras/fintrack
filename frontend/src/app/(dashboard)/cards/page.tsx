@@ -23,6 +23,13 @@ import { CrudSheet } from "@/components/app/CrudSheet";
 import { CurrencyInput } from "@/components/app/CurrencyInput";
 import { formatPeso } from "@/lib/utils";
 
+interface Institution {
+  id: string;
+  name: string;
+  type: string;
+  color: string | null;
+}
+
 interface Account {
   id: string;
   name: string;
@@ -31,12 +38,12 @@ interface Account {
 
 interface CreditCardInLine {
   id: string;
-  bank_name: string;
   card_name: string | null;
   last_four: string;
   statement_day: number;
   due_day: number;
   account_id: string;
+  institution: Institution | null;
   closed_period: { period_start: string; period_end: string } | null;
   open_period: { period_start: string; period_end: string } | null;
   due_date: string | null;
@@ -46,6 +53,8 @@ interface CreditCardInLine {
 interface CreditLine {
   id: string;
   name: string;
+  institution_id: string | null;
+  institution: Institution | null;
   total_limit: string | null;
   available_override: string | null;
   available_credit: string | null;
@@ -54,7 +63,6 @@ interface CreditLine {
 
 interface CreditCard {
   id: string;
-  bank_name: string;
   card_name: string | null;
   last_four: string;
   statement_day: number;
@@ -63,6 +71,7 @@ interface CreditCard {
   available_credit: string | null;
   available_override: string | null;
   credit_line_id: string | null;
+  institution: Institution | null;
   closed_period: { period_start: string; period_end: string } | null;
   open_period: { period_start: string; period_end: string } | null;
   due_date: string | null;
@@ -74,12 +83,9 @@ function BillingInfo({ card }: { card: CreditCard | CreditCardInLine }) {
     <div className="space-y-2 mt-3">
       {card.closed_period && (
         <div>
-          <p className="text-xs font-medium text-muted-foreground mb-0.5">
-            Current Statement
-          </p>
+          <p className="text-xs font-medium text-muted-foreground mb-0.5">Current Statement</p>
           <p className="text-sm">
-            {card.closed_period.period_start} →{" "}
-            {card.closed_period.period_end}
+            {card.closed_period.period_start} → {card.closed_period.period_end}
           </p>
           {card.due_date && (
             <p className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
@@ -94,9 +100,7 @@ function BillingInfo({ card }: { card: CreditCard | CreditCardInLine }) {
                         : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {card.days_until_due < 0
-                    ? "Overdue"
-                    : `${card.days_until_due}d left`}
+                  {card.days_until_due < 0 ? "Overdue" : `${card.days_until_due}d left`}
                 </span>
               )}
             </p>
@@ -105,9 +109,7 @@ function BillingInfo({ card }: { card: CreditCard | CreditCardInLine }) {
       )}
       {card.open_period && (
         <div>
-          <p className="text-xs font-medium text-muted-foreground mb-0.5">
-            Open Period
-          </p>
+          <p className="text-xs font-medium text-muted-foreground mb-0.5">Open Period</p>
           <p className="text-sm">
             {card.open_period.period_start} → {card.open_period.period_end}
           </p>
@@ -117,17 +119,32 @@ function BillingInfo({ card }: { card: CreditCard | CreditCardInLine }) {
   );
 }
 
+function InstitutionBadge({ institution }: { institution: Institution | null }) {
+  if (!institution) return null;
+  return (
+    <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+      {institution.color && (
+        <span
+          className="inline-block w-2 h-2 rounded-full shrink-0"
+          style={{ background: institution.color }}
+        />
+      )}
+      {institution.name}
+    </p>
+  );
+}
+
 export default function CardsPage() {
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [creditLines, setCreditLines] = useState<CreditLine[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [accountId, setAccountId] = useState("");
-  const [bankName, setBankName] = useState("");
   const [lastFour, setLastFour] = useState("");
   const [cardName, setCardName] = useState("");
   const [selectedLineId, setSelectedLineId] = useState("");
@@ -147,9 +164,9 @@ export default function CardsPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
-  const [editBankName, setEditBankName] = useState("");
   const [editCardName, setEditCardName] = useState("");
   const [editCreditLimit, setEditCreditLimit] = useState("");
+  const [editCreditLineId, setEditCreditLineId] = useState("__none__");
   const [editStatementDay, setEditStatementDay] = useState("15");
   const [editDueDay, setEditDueDay] = useState("3");
 
@@ -159,11 +176,13 @@ export default function CardsPage() {
   const [lineError, setLineError] = useState<string | null>(null);
   const [lineName, setLineName] = useState("");
   const [lineTotalLimit, setLineTotalLimit] = useState("");
+  const [lineInstitutionId, setLineInstitutionId] = useState("");
 
   const [editLine, setEditLine] = useState<CreditLine | null>(null);
   const [editLineOpen, setEditLineOpen] = useState(false);
   const [editLineName, setEditLineName] = useState("");
   const [editLineTotalLimit, setEditLineTotalLimit] = useState("");
+  const [editLineInstitutionId, setEditLineInstitutionId] = useState("");
   const [editLineSubmitting, setEditLineSubmitting] = useState(false);
   const [editLineError, setEditLineError] = useState<string | null>(null);
 
@@ -174,14 +193,16 @@ export default function CardsPage() {
 
   async function loadData() {
     try {
-      const [c, a, cl] = await Promise.all([
+      const [c, a, cl, inst] = await Promise.all([
         api.get<CreditCard[]>("/credit-cards"),
         api.get<Account[]>("/accounts"),
         api.get<CreditLine[]>("/credit-lines"),
+        api.get<Institution[]>("/institutions"),
       ]);
       setCards(c);
       setAccounts(a);
       setCreditLines(cl);
+      setInstitutions(inst);
     } catch {
       setLoadError("Failed to load cards. Please refresh.");
     } finally {
@@ -195,9 +216,9 @@ export default function CardsPage() {
 
   useEffect(() => {
     if (accountId === "__new__") {
-      setNewAccountName(bankName ? `${bankName} Credit Card` : "");
+      setNewAccountName(cardName ? `${cardName} Credit Card` : "");
     }
-  }, [bankName, accountId]);
+  }, [cardName, accountId]);
 
   async function handleAdd() {
     setSubmitting(true);
@@ -214,20 +235,18 @@ export default function CardsPage() {
       }
       await api.post("/credit-cards", {
         account_id: resolvedAccountId,
-        bank_name: bankName,
         last_four: lastFour,
         card_name: cardName || null,
-        credit_limit: (!selectedLineId || selectedLineId === "__none__") && creditLimit
-          ? Number(creditLimit)
-          : null,
-        credit_line_id: (selectedLineId && selectedLineId !== "__none__")
-          ? selectedLineId
-          : null,
+        credit_limit:
+          (!selectedLineId || selectedLineId === "__none__") && creditLimit
+            ? Number(creditLimit)
+            : null,
+        credit_line_id:
+          selectedLineId && selectedLineId !== "__none__" ? selectedLineId : null,
         statement_day: Number(statementDay),
         due_day: Number(dueDay),
       });
       setOpen(false);
-      setBankName("");
       setLastFour("");
       setCardName("");
       setSelectedLineId("");
@@ -244,9 +263,9 @@ export default function CardsPage() {
 
   function openEdit(card: CreditCard) {
     setEditCard(card);
-    setEditBankName(card.bank_name);
     setEditCardName(card.card_name ?? "");
     setEditCreditLimit(card.credit_limit ?? "");
+    setEditCreditLineId(card.credit_line_id ?? "__none__");
     setEditStatementDay(String(card.statement_day));
     setEditDueDay(String(card.due_day));
     setEditError(null);
@@ -257,11 +276,12 @@ export default function CardsPage() {
     if (!editCard) return;
     setEditSubmitting(true);
     setEditError(null);
+    const isInLine = editCreditLineId && editCreditLineId !== "__none__";
     try {
       await api.patch(`/credit-cards/${editCard.id}`, {
-        bank_name: editBankName || undefined,
         card_name: editCardName || null,
-        credit_limit: editCreditLimit ? Number(editCreditLimit) : null,
+        credit_line_id: isInLine ? editCreditLineId : null,
+        credit_limit: !isInLine && editCreditLimit ? Number(editCreditLimit) : null,
         statement_day: Number(editStatementDay),
         due_day: Number(editDueDay),
       });
@@ -297,10 +317,13 @@ export default function CardsPage() {
       await api.post("/credit-lines", {
         name: lineName,
         total_limit: lineTotalLimit ? Number(lineTotalLimit) : null,
+        institution_id:
+          lineInstitutionId && lineInstitutionId !== "__none__" ? lineInstitutionId : null,
       });
       setLineOpen(false);
       setLineName("");
       setLineTotalLimit("");
+      setLineInstitutionId("");
       await loadData();
     } catch (e: unknown) {
       setLineError(e instanceof Error ? e.message : "Failed to create credit line");
@@ -313,6 +336,7 @@ export default function CardsPage() {
     setEditLine(line);
     setEditLineName(line.name);
     setEditLineTotalLimit(line.total_limit ?? "");
+    setEditLineInstitutionId(line.institution_id ?? "");
     setEditLineError(null);
     setEditLineOpen(true);
   }
@@ -325,6 +349,10 @@ export default function CardsPage() {
       await api.patch(`/credit-lines/${editLine.id}`, {
         name: editLineName || undefined,
         total_limit: editLineTotalLimit ? Number(editLineTotalLimit) : null,
+        institution_id:
+          editLineInstitutionId && editLineInstitutionId !== "__none__"
+            ? editLineInstitutionId
+            : null,
       });
       setEditLineOpen(false);
       await loadData();
@@ -357,9 +385,7 @@ export default function CardsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Credit Cards
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Credit Cards</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Manage your cards and billing cycles
           </p>
@@ -411,14 +437,6 @@ export default function CardsPage() {
             </div>
           )}
           <div className="space-y-2">
-            <Label>Bank</Label>
-            <Input
-              value={bankName}
-              onChange={(e) => setBankName(e.target.value)}
-              placeholder="BPI"
-            />
-          </div>
-          <div className="space-y-2">
             <Label>Last 4 Digits</Label>
             <Input
               value={lastFour}
@@ -444,7 +462,9 @@ export default function CardsPage() {
               <SelectContent>
                 <SelectItem value="__none__">None (standalone)</SelectItem>
                 {creditLines.map((l) => (
-                  <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+                  <SelectItem key={l.id} value={l.id}>
+                    {l.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -452,11 +472,7 @@ export default function CardsPage() {
           {(!selectedLineId || selectedLineId === "__none__") && (
             <div className="space-y-2">
               <Label>Credit Limit</Label>
-              <CurrencyInput
-                value={creditLimit}
-                onChange={setCreditLimit}
-                placeholder="0.00"
-              />
+              <CurrencyInput value={creditLimit} onChange={setCreditLimit} placeholder="0.00" />
             </div>
           )}
           <div className="grid grid-cols-2 gap-4">
@@ -512,11 +528,15 @@ export default function CardsPage() {
               <div className="flex items-center justify-between px-1">
                 <div>
                   <p className="text-sm font-semibold text-foreground">{line.name}</p>
+                  <InstitutionBadge institution={line.institution} />
                   <p className="text-xs text-muted-foreground">
                     {line.total_limit != null && `Total: ${formatPeso(line.total_limit)}`}
-                    {line.available_credit != null && ` · Available: ${formatPeso(line.available_credit)}`}
+                    {line.available_credit != null &&
+                      ` · Available: ${formatPeso(line.available_credit)}`}
                     {line.available_override != null && (
-                      <span className="ml-1 text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">manual</span>
+                      <span className="ml-1 text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                        manual
+                      </span>
                     )}
                   </p>
                 </div>
@@ -532,7 +552,10 @@ export default function CardsPage() {
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
-                      onClick={() => { setDeleteLineId(line.id); setDeleteLineConfirmOpen(true); }}
+                      onClick={() => {
+                        setDeleteLineId(line.id);
+                        setDeleteLineConfirmOpen(true);
+                      }}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />Delete line
                     </DropdownMenuItem>
@@ -541,10 +564,7 @@ export default function CardsPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 {line.cards.map((c) => (
-                  <div
-                    key={c.id}
-                    className="rounded-xl border bg-card p-5 card-interactive"
-                  >
+                  <div key={c.id} className="rounded-xl border bg-card p-5 card-interactive">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-accent-blue-dim flex items-center justify-center shrink-0">
@@ -552,13 +572,9 @@ export default function CardsPage() {
                         </div>
                         <div>
                           <p className="font-semibold text-foreground text-sm">
-                            {c.bank_name} ···{c.last_four}
+                            {c.card_name ?? `···${c.last_four}`}
                           </p>
-                          {c.card_name && (
-                            <p className="text-xs text-muted-foreground">
-                              {c.card_name}
-                            </p>
-                          )}
+                          <p className="text-xs text-muted-foreground">···{c.last_four}</p>
                         </div>
                       </div>
                       <DropdownMenu>
@@ -576,7 +592,7 @@ export default function CardsPage() {
                                 available_credit: null,
                                 available_override: null,
                                 credit_line_id: line.id,
-                              } as CreditCard)
+                              } as unknown as CreditCard)
                             }
                           >
                             <Pencil className="h-4 w-4 mr-2" />Edit
@@ -604,16 +620,11 @@ export default function CardsPage() {
           {standaloneCards.length > 0 && (
             <div className="space-y-3">
               {creditLines.length > 0 && (
-                <p className="text-sm font-semibold text-foreground px-1">
-                  Standalone
-                </p>
+                <p className="text-sm font-semibold text-foreground px-1">Standalone</p>
               )}
               <div className="grid gap-4 sm:grid-cols-2">
                 {standaloneCards.map((c) => (
-                  <div
-                    key={c.id}
-                    className="rounded-xl border bg-card p-5 card-interactive"
-                  >
+                  <div key={c.id} className="rounded-xl border bg-card p-5 card-interactive">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-accent-blue-dim flex items-center justify-center shrink-0">
@@ -621,12 +632,12 @@ export default function CardsPage() {
                         </div>
                         <div>
                           <p className="font-semibold text-foreground text-sm">
-                            {c.bank_name} ···{c.last_four}
+                            {c.card_name ?? `···${c.last_four}`}
                           </p>
-                          {c.card_name && (
-                            <p className="text-xs text-muted-foreground">
-                              {c.card_name}
-                            </p>
+                          {c.institution ? (
+                            <InstitutionBadge institution={c.institution} />
+                          ) : (
+                            <p className="text-xs text-muted-foreground">···{c.last_four}</p>
                           )}
                         </div>
                       </div>
@@ -654,8 +665,7 @@ export default function CardsPage() {
                     </div>
                     {(c.credit_limit != null || c.available_credit != null) && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        {c.credit_limit != null &&
-                          `Total: ${formatPeso(c.credit_limit)}`}
+                        {c.credit_limit != null && `Total: ${formatPeso(c.credit_limit)}`}
                         {c.available_credit != null &&
                           ` · Available: ${formatPeso(c.available_credit)}`}
                         {c.available_override != null && (
@@ -686,13 +696,6 @@ export default function CardsPage() {
       >
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Bank</Label>
-            <Input
-              value={editBankName}
-              onChange={(e) => setEditBankName(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
             <Label>Card Name</Label>
             <Input
               value={editCardName}
@@ -700,7 +703,23 @@ export default function CardsPage() {
               placeholder="e.g. Amore Cashback"
             />
           </div>
-          {editCard?.credit_line_id === null && (
+          <div className="space-y-2">
+            <Label>Credit Line</Label>
+            <Select value={editCreditLineId} onValueChange={setEditCreditLineId}>
+              <SelectTrigger>
+                <SelectValue placeholder="None (standalone)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">None (standalone)</SelectItem>
+                {creditLines.map((l) => (
+                  <SelectItem key={l.id} value={l.id}>
+                    {l.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {(!editCreditLineId || editCreditLineId === "__none__") && (
             <div className="space-y-2">
               <Label>Credit Limit</Label>
               <CurrencyInput
@@ -732,9 +751,7 @@ export default function CardsPage() {
               />
             </div>
           </div>
-          {editError && (
-            <p className="text-sm text-destructive">{editError}</p>
-          )}
+          {editError && <p className="text-sm text-destructive">{editError}</p>}
         </div>
       </CrudSheet>
 
@@ -748,25 +765,26 @@ export default function CardsPage() {
             aria-labelledby="delete-card-dialog-title"
             aria-describedby="delete-card-dialog-desc"
           >
-            <h2 id="delete-card-dialog-title" className="text-lg font-semibold">Delete card?</h2>
+            <h2 id="delete-card-dialog-title" className="text-lg font-semibold">
+              Delete card?
+            </h2>
             <p id="delete-card-dialog-desc" className="text-sm text-muted-foreground">
-              This card and its billing cycle history will be removed. Your
-              transactions are not affected.
+              This card and its billing cycle history will be removed. Your transactions are not
+              affected.
             </p>
             {deleteError && <p className="text-sm text-destructive">{deleteError}</p>}
             <div className="flex gap-3 justify-end">
               <Button
                 variant="outline"
-                onClick={() => { setDeleteConfirmOpen(false); setDeleteError(null); }}
+                onClick={() => {
+                  setDeleteConfirmOpen(false);
+                  setDeleteError(null);
+                }}
                 disabled={deleteSubmitting}
               >
                 Cancel
               </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteCard}
-                disabled={deleteSubmitting}
-              >
+              <Button variant="destructive" onClick={handleDeleteCard} disabled={deleteSubmitting}>
                 {deleteSubmitting ? "Deleting…" : "Delete"}
               </Button>
             </div>
@@ -787,11 +805,35 @@ export default function CardsPage() {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Name</Label>
-            <Input value={lineName} onChange={(e) => setLineName(e.target.value)} placeholder="BPI Credit Line" />
+            <Input
+              value={lineName}
+              onChange={(e) => setLineName(e.target.value)}
+              placeholder="BPI Credit Line"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Institution</Label>
+            <Select value={lineInstitutionId} onValueChange={setLineInstitutionId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select institution" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">None</SelectItem>
+                {institutions.map((i) => (
+                  <SelectItem key={i.id} value={i.id}>
+                    {i.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label>Total Limit</Label>
-            <CurrencyInput value={lineTotalLimit} onChange={setLineTotalLimit} placeholder="0.00" />
+            <CurrencyInput
+              value={lineTotalLimit}
+              onChange={setLineTotalLimit}
+              placeholder="0.00"
+            />
           </div>
           {lineError && <p className="text-sm text-destructive">{lineError}</p>}
         </div>
@@ -813,8 +855,28 @@ export default function CardsPage() {
             <Input value={editLineName} onChange={(e) => setEditLineName(e.target.value)} />
           </div>
           <div className="space-y-2">
+            <Label>Institution</Label>
+            <Select value={editLineInstitutionId} onValueChange={setEditLineInstitutionId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select institution" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">None</SelectItem>
+                {institutions.map((i) => (
+                  <SelectItem key={i.id} value={i.id}>
+                    {i.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label>Total Limit</Label>
-            <CurrencyInput value={editLineTotalLimit} onChange={setEditLineTotalLimit} placeholder="0.00" />
+            <CurrencyInput
+              value={editLineTotalLimit}
+              onChange={setEditLineTotalLimit}
+              placeholder="0.00"
+            />
           </div>
           {editLineError && <p className="text-sm text-destructive">{editLineError}</p>}
         </div>
@@ -830,12 +892,29 @@ export default function CardsPage() {
             aria-labelledby="delete-line-dialog-title"
             aria-describedby="delete-line-dialog-desc"
           >
-            <h2 id="delete-line-dialog-title" className="text-lg font-semibold">Delete credit line?</h2>
-            <p id="delete-line-dialog-desc" className="text-sm text-muted-foreground">Cards will become standalone. Your transactions are not affected.</p>
+            <h2 id="delete-line-dialog-title" className="text-lg font-semibold">
+              Delete credit line?
+            </h2>
+            <p id="delete-line-dialog-desc" className="text-sm text-muted-foreground">
+              Cards will become standalone. Your transactions are not affected.
+            </p>
             {deleteLineError && <p className="text-sm text-destructive">{deleteLineError}</p>}
             <div className="flex gap-3 justify-end">
-              <Button variant="outline" onClick={() => { setDeleteLineConfirmOpen(false); setDeleteLineError(null); }} disabled={deleteLineSubmitting}>Cancel</Button>
-              <Button variant="destructive" onClick={handleDeleteLine} disabled={deleteLineSubmitting}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setDeleteLineConfirmOpen(false);
+                  setDeleteLineError(null);
+                }}
+                disabled={deleteLineSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteLine}
+                disabled={deleteLineSubmitting}
+              >
                 {deleteLineSubmitting ? "Deleting…" : "Delete"}
               </Button>
             </div>

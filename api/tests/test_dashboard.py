@@ -11,7 +11,7 @@ async def test_net_worth_no_accounts(auth_client: AsyncClient):
 
 async def test_net_worth_excludes_inactive(auth_client: AsyncClient):
     await auth_client.post("/accounts", json={
-        "name": "Inactive Bank", "type": "bank",
+        "name": "Inactive Bank", "type": "savings",
         "opening_balance": "50000.00", "currency": "PHP", "is_active": False,
     })
     r = await auth_client.get("/dashboard/net-worth")
@@ -29,11 +29,11 @@ async def test_net_worth_excludes_credit_card_type(auth_client: AsyncClient):
 
 async def test_net_worth_groups_by_type(auth_client: AsyncClient):
     await auth_client.post("/accounts", json={
-        "name": "BDO", "type": "bank",
+        "name": "BDO", "type": "savings",
         "opening_balance": "100000.00", "currency": "PHP",
     })
     await auth_client.post("/accounts", json={
-        "name": "GCash", "type": "digital_wallet",
+        "name": "GCash", "type": "wallet",
         "opening_balance": "5000.00", "currency": "PHP",
     })
     await auth_client.post("/accounts", json={
@@ -44,6 +44,6 @@ async def test_net_worth_groups_by_type(auth_client: AsyncClient):
     data = r.json()
     assert data["total"] == "107000.00"
     types = {item["type"]: item["total"] for item in data["by_type"]}
-    assert types["bank"] == "100000.00"
-    assert types["digital_wallet"] == "5000.00"
+    assert types["savings"] == "100000.00"
+    assert types["wallet"] == "5000.00"
     assert types["cash"] == "2000.00"

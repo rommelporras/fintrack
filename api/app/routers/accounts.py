@@ -15,7 +15,11 @@ router = APIRouter(prefix="/accounts", tags=["accounts"])
 
 async def _to_response(db: AsyncSession, account: Account) -> AccountResponse:
     balance = await compute_current_balance(db, account.id, account.opening_balance)
-    return AccountResponse.model_validate({**account.__dict__, "current_balance": balance})
+    return AccountResponse.model_validate({
+        **account.__dict__,
+        "current_balance": balance,
+        "institution": account.institution,
+    })
 
 
 @router.get("", response_model=list[AccountResponse])
@@ -29,7 +33,11 @@ async def list_accounts(
     accounts = result.scalars().all()
     balances = await compute_balances_bulk(db, accounts)
     return [
-        AccountResponse.model_validate({**a.__dict__, "current_balance": balances[a.id]})
+        AccountResponse.model_validate({
+            **a.__dict__,
+            "current_balance": balances[a.id],
+            "institution": a.institution,
+        })
         for a in accounts
     ]
 
@@ -45,7 +53,7 @@ async def create_account(
     await db.commit()
     await db.refresh(account)
     return AccountResponse.model_validate(
-        {**account.__dict__, "current_balance": account.opening_balance}
+        {**account.__dict__, "current_balance": account.opening_balance, "institution": account.institution}
     )
 
 

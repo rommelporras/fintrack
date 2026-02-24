@@ -5,6 +5,7 @@ from sqlalchemy import select
 from app.core.database import get_db
 from app.dependencies import get_current_user
 from app.models.credit_card import CreditCard
+from app.models.account import Account
 from app.models.user import User
 from app.schemas.credit_card import CreditCardCreate, CreditCardUpdate, CreditCardResponse
 from app.services.credit_card import (
@@ -18,6 +19,20 @@ from app.services.credit_line import compute_card_available_credit
 router = APIRouter(prefix="/credit-cards", tags=["credit-cards"])
 
 
+async def _get_institution(card: CreditCard, db: AsyncSession):
+    """Derive institution from credit_line (if in-line) or from account (if standalone)."""
+    if card.credit_line_id is not None:
+        if card.credit_line and card.credit_line.institution:
+            return card.credit_line.institution
+        return None
+    # Standalone: load account and its institution
+    result = await db.execute(select(Account).where(Account.id == card.account_id))
+    account = result.scalar_one_or_none()
+    if account and account.institution:
+        return account.institution
+    return None
+
+
 async def _enrich(card: CreditCard, db: AsyncSession) -> CreditCardResponse:
     closed = get_closed_statement_period(card.statement_day)
     open_ = get_open_billing_period(card.statement_day)
@@ -25,8 +40,10 @@ async def _enrich(card: CreditCard, db: AsyncSession) -> CreditCardResponse:
     available = None
     if card.credit_line_id is None:
         available = await compute_card_available_credit(db, card)
+    institution = await _get_institution(card, db)
     return CreditCardResponse.model_validate({
         **card.__dict__,
+        "institution": institution,
         "closed_period": {k: str(v) for k, v in closed.items()},
         "open_period": {k: str(v) for k, v in open_.items()},
         "due_date": due,

@@ -14,7 +14,7 @@ async def user_and_account(client):
     )
     acct = await client.post(
         "/accounts",
-        json={"name": "BDO Savings", "type": "bank", "opening_balance": "10000.00"},
+        json={"name": "BDO Savings", "type": "savings", "opening_balance": "10000.00"},
     )
     return {"account_id": acct.json()["id"]}
 

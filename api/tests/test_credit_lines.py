@@ -64,7 +64,7 @@ async def test_delete_credit_line_detaches_cards(auth_client, credit_line_id, cc
     # Create a card in this line
     r = await auth_client.post("/credit-cards", json={
         "account_id": cc_account_id,
-        "bank_name": "BPI",
+
         "last_four": "1234",
         "statement_day": 15,
         "due_day": 5,
@@ -103,7 +103,7 @@ async def test_available_credit_with_manual_override(auth_client):
 async def test_credit_card_with_credit_line(auth_client, credit_line_id, cc_account_id):
     r = await auth_client.post("/credit-cards", json={
         "account_id": cc_account_id,
-        "bank_name": "BPI",
+
         "last_four": "5678",
         "statement_day": 15,
         "due_day": 5,
@@ -118,6 +118,21 @@ async def test_credit_card_with_credit_line(auth_client, credit_line_id, cc_acco
     assert data["available_credit"] is None
 
 
+async def test_create_credit_line_with_institution(auth_client):
+    r = await auth_client.post("/institutions", json={"name": "BPI", "type": "traditional"})
+    inst_id = r.json()["id"]
+
+    r = await auth_client.post("/credit-lines", json={
+        "name": "BPI Credit Line",
+        "total_limit": "378000.00",
+        "institution_id": inst_id,
+    })
+    assert r.status_code == 201
+    data = r.json()
+    assert data["institution_id"] == inst_id
+    assert data["institution"]["name"] == "BPI"
+
+
 async def test_credit_lines_require_auth(client):
     r = await client.get("/credit-lines")
     assert r.status_code == 401
@@ -129,7 +144,7 @@ async def test_credit_line_available_credit_decreases_with_spending(
     # Attach card to the line
     r_card = await auth_client.post("/credit-cards", json={
         "account_id": cc_account_id,
-        "bank_name": "BPI",
+
         "last_four": "9999",
         "statement_day": 15,
         "due_day": 5,

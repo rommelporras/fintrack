@@ -91,7 +91,7 @@ async def statement_history(
     for card in cards:
         stmts = list(reversed(stmts_by_card[card.id][:6]))
         data.append({
-            "card_label": f"{card.bank_name} \u2022\u2022\u2022\u2022 {card.last_four}",
+            "card_label": f"{card.card_name or 'Card'} \u2022\u2022\u2022\u2022 {card.last_four}",
             "statements": [
                 {
                     "period": s.period_end.strftime("%b %Y"),

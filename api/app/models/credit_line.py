@@ -19,6 +19,12 @@ class CreditLine(Base):
         nullable=False,
         index=True,
     )
+    institution_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("institutions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     total_limit: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
     available_override: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
@@ -29,6 +35,9 @@ class CreditLine(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
+    institution: Mapped["Institution | None"] = relationship(  # type: ignore[name-defined]
+        "Institution", back_populates="credit_lines", lazy="selectin"
+    )
     cards: Mapped[list["CreditCard"]] = relationship(  # type: ignore[name-defined]
         "CreditCard", back_populates="credit_line", lazy="selectin"
     )

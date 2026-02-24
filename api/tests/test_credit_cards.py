@@ -22,7 +22,6 @@ async def test_list_credit_cards_empty(auth_client):
 async def test_create_credit_card(auth_client, cc_account_id):
     r = await auth_client.post("/credit-cards", json={
         "account_id": cc_account_id,
-        "bank_name": "BPI",
         "last_four": "1234",
         "credit_limit": "50000.00",
         "statement_day": 15,
@@ -30,7 +29,6 @@ async def test_create_credit_card(auth_client, cc_account_id):
     })
     assert r.status_code == 201
     data = r.json()
-    assert data["bank_name"] == "BPI"
     assert data["last_four"] == "1234"
     assert "closed_period" in data
     assert "due_date" in data
@@ -42,7 +40,6 @@ async def test_create_credit_card(auth_client, cc_account_id):
 async def test_create_credit_card_with_card_name(auth_client, cc_account_id):
     r = await auth_client.post("/credit-cards", json={
         "account_id": cc_account_id,
-        "bank_name": "RCBC",
         "last_four": "4321",
         "credit_limit": "30000.00",
         "card_name": "Gold",
@@ -58,7 +55,6 @@ async def test_create_credit_card_with_card_name(auth_client, cc_account_id):
 async def test_create_credit_card_invalid_last_four(auth_client, cc_account_id):
     r = await auth_client.post("/credit-cards", json={
         "account_id": cc_account_id,
-        "bank_name": "BPI",
         "last_four": "12AB",
         "statement_day": 15,
         "due_day": 5,
@@ -69,7 +65,6 @@ async def test_create_credit_card_invalid_last_four(auth_client, cc_account_id):
 async def test_create_credit_card_invalid_statement_day(auth_client, cc_account_id):
     r = await auth_client.post("/credit-cards", json={
         "account_id": cc_account_id,
-        "bank_name": "BPI",
         "last_four": "5678",
         "statement_day": 31,
         "due_day": 5,
@@ -80,23 +75,21 @@ async def test_create_credit_card_invalid_statement_day(auth_client, cc_account_
 async def test_update_credit_card(auth_client, cc_account_id):
     r = await auth_client.post("/credit-cards", json={
         "account_id": cc_account_id,
-        "bank_name": "BPI",
         "last_four": "9999",
         "statement_day": 10,
         "due_day": 1,
     })
     card_id = r.json()["id"]
     r2 = await auth_client.patch(f"/credit-cards/{card_id}", json={
-        "bank_name": "Metrobank"
+        "card_name": "Updated Card"
     })
     assert r2.status_code == 200
-    assert r2.json()["bank_name"] == "Metrobank"
+    assert r2.json()["card_name"] == "Updated Card"
 
 
 async def test_delete_credit_card(auth_client, cc_account_id):
     r = await auth_client.post("/credit-cards", json={
         "account_id": cc_account_id,
-        "bank_name": "Delete Me",
         "last_four": "0000",
         "statement_day": 20,
         "due_day": 10,

@@ -5,7 +5,7 @@ from httpx import AsyncClient
 @pytest_asyncio.fixture
 async def account_id(auth_client: AsyncClient) -> str:
     r = await auth_client.post("/accounts", json={
-        "name": "BDO Checking", "type": "bank", "currency": "PHP"
+        "name": "BDO Checking", "type": "savings", "currency": "PHP"
     })
     assert r.status_code == 201
     return r.json()["id"]
@@ -100,7 +100,7 @@ async def test_spending_by_category_cross_user_isolation(
             "email": "other_analytics@test.com", "password": "password123"
         })
         other_acc = (await other_client.post("/accounts", json={
-            "name": "Other Bank", "type": "bank", "currency": "PHP"
+            "name": "Other Bank", "type": "savings", "currency": "PHP"
         })).json()
         other_cat = (await other_client.post("/categories", json={
             "name": "OtherCat", "type": "expense", "icon": "x", "color": "#123456",
@@ -126,11 +126,12 @@ async def test_statement_history_no_cards(auth_client: AsyncClient):
 
 async def test_statement_history_single_card(auth_client: AsyncClient):
     acc = (await auth_client.post("/accounts", json={
-        "name": "BDO CC", "type": "bank", "currency": "PHP"
+        "name": "BDO CC", "type": "savings", "currency": "PHP"
     })).json()
     card = (await auth_client.post("/credit-cards", json={
-        "account_id": acc["id"], "bank_name": "BDO",
+        "account_id": acc["id"],
         "last_four": "1234", "statement_day": 1, "due_day": 25,
+        "card_name": "BDO",
     })).json()
 
     await auth_client.post("/statements", json={
@@ -159,10 +160,10 @@ async def test_statement_history_single_card(auth_client: AsyncClient):
 
 async def test_statement_history_limits_to_6(auth_client: AsyncClient):
     acc = (await auth_client.post("/accounts", json={
-        "name": "BPI CC", "type": "bank", "currency": "PHP"
+        "name": "BPI CC", "type": "savings", "currency": "PHP"
     })).json()
     card = (await auth_client.post("/credit-cards", json={
-        "account_id": acc["id"], "bank_name": "BPI",
+        "account_id": acc["id"],
         "last_four": "5678", "statement_day": 5, "due_day": 28,
     })).json()
 

@@ -6,13 +6,13 @@ from httpx import AsyncClient
 async def credit_card_id(auth_client: AsyncClient) -> str:
     # Create account first
     acc = await auth_client.post("/accounts", json={
-        "name": "BDO Checking", "type": "bank", "currency": "PHP"
+        "name": "BDO Checking", "type": "savings", "currency": "PHP"
     })
     account_id = acc.json()["id"]
     # Create credit card
     cc = await auth_client.post("/credit-cards", json={
         "account_id": account_id,
-        "bank_name": "BDO",
+
         "last_four": "1234",
         "statement_day": 1,
         "due_day": 21,
@@ -141,11 +141,11 @@ async def test_statement_not_visible_to_other_user(
         "email": "user_a_stmt@test.com", "name": "User A", "password": "password123"
     })
     acc = await client.post("/accounts", json={
-        "name": "BDO Checking", "type": "bank", "currency": "PHP"
+        "name": "BDO Checking", "type": "savings", "currency": "PHP"
     })
     cc = await client.post("/credit-cards", json={
         "account_id": acc.json()["id"],
-        "bank_name": "BDO",
+
         "last_four": "9999",
         "statement_day": 1,
         "due_day": 21,

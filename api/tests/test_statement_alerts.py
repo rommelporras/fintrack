@@ -51,7 +51,7 @@ async def user_and_card(db: AsyncSession):
     cc = CreditCard(
         user_id=user.id,
         account_id=account.id,
-        bank_name="BDO",
+
         last_four="5678",
         statement_day=1,
         due_day=21,

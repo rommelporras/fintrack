@@ -41,6 +41,7 @@ async def _enrich(db: AsyncSession, line: CreditLine) -> CreditLineResponse:
     available = await compute_line_available_credit(db, line)
     return CreditLineResponse.model_validate({
         **line.__dict__,
+        "institution": line.institution,
         "available_credit": available,
         "cards": [_card_to_summary(c) for c in line.cards],
     })

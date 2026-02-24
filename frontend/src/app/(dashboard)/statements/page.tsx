@@ -32,8 +32,9 @@ interface Statement {
 
 interface CreditCard {
   id: string;
-  bank_name: string;
+  card_name: string | null;
   last_four: string;
+  institution: { name: string; color: string | null } | null;
 }
 
 interface NewStatementForm {
@@ -185,7 +186,9 @@ export default function StatementsPage() {
               <SelectContent>
                 {creditCards.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
-                    {c.bank_name} ••••{c.last_four}
+                    {c.institution?.name ? `${c.institution.name} — ` : ""}
+                    {c.card_name ?? `••••${c.last_four}`}
+                    {c.card_name ? ` ••••${c.last_four}` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -265,8 +268,13 @@ export default function StatementsPage() {
             <div key={cardId} className="rounded-xl border bg-card overflow-hidden">
               <div className="px-5 py-4 border-b border-border">
                 <h2 className="font-semibold text-foreground">
-                  {card ? `${card.bank_name} ••••${card.last_four}` : cardId}
+                  {card
+                    ? `${card.institution?.name ? card.institution.name + " — " : ""}${card.card_name ?? `••••${card.last_four}`}`
+                    : cardId}
                 </h2>
+                {card?.card_name && (
+                  <p className="text-xs text-muted-foreground mt-0.5">••••{card.last_four}</p>
+                )}
               </div>
               <ul className="divide-y divide-border">
                 {cardStatements.map((s) => (

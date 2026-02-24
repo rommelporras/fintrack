@@ -21,7 +21,6 @@ class CreditCard(Base):
     account_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="CASCADE"), index=True
     )
-    bank_name: Mapped[str] = mapped_column(String(255), nullable=False)
     last_four: Mapped[str] = mapped_column(String(4), nullable=False)
     credit_limit: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
     credit_line_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -34,7 +33,7 @@ class CreditCard(Base):
     available_override: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
 
     credit_line: Mapped["CreditLine | None"] = relationship(  # type: ignore[name-defined]
-        "CreditLine", back_populates="cards"
+        "CreditLine", back_populates="cards", lazy="selectin"
     )
 
     statement_day: Mapped[int] = mapped_column(Integer, nullable=False)

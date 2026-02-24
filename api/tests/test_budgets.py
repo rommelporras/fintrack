@@ -7,7 +7,7 @@ from httpx import AsyncClient
 @pytest.fixture
 async def account_id(auth_client: AsyncClient) -> str:
     r = await auth_client.post("/accounts", json={
-        "name": "BDO Checking", "type": "bank", "currency": "PHP"
+        "name": "BDO Checking", "type": "savings", "currency": "PHP"
     })
     assert r.status_code == 201
     return r.json()["id"]
