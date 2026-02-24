@@ -14,6 +14,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, CreditCard as CreditCardIcon } from "lucide-react";
 import { CrudSheet } from "@/components/app/CrudSheet";
+import { CurrencyInput } from "@/components/app/CurrencyInput";
 
 interface Account {
   id: string;
@@ -172,13 +173,10 @@ export default function CardsPage() {
             <Input value={lastFour} onChange={(e) => setLastFour(e.target.value)} placeholder="1234" maxLength={4} />
           </div>
           <div className="space-y-2">
-            <Label>Credit Limit (₱)</Label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
+            <Label>Credit Limit</Label>
+            <CurrencyInput
               value={creditLimit}
-              onChange={(e) => setCreditLimit(e.target.value)}
+              onChange={setCreditLimit}
               placeholder="0.00"
             />
           </div>
