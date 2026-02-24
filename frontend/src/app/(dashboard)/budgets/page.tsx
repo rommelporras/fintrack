@@ -12,8 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CurrencyInput } from "@/components/app/CurrencyInput";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, PiggyBank } from "lucide-react";
 import {
@@ -245,15 +245,11 @@ export default function BudgetsPage() {
             </div>
           )}
           <div className="space-y-1">
-            <Label>Limit (₱)</Label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
+            <Label>Limit</Label>
+            <CurrencyInput
               value={form.amount}
-              onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-              required
+              onChange={(raw) => setForm((f) => ({ ...f, amount: raw }))}
+              placeholder="0.00"
             />
           </div>
           <div className="space-y-1">
