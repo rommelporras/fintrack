@@ -19,6 +19,7 @@ from app.routers import budgets as budgets_router
 from app.routers import notifications as notifications_router
 from app.routers import analytics as analytics_router
 from app.routers import recurring_transactions as recurring_router
+from app.models import credit_line as _credit_line_model  # noqa: F401
 
 
 @asynccontextmanager

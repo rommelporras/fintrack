@@ -11,6 +11,9 @@ class CreditCardCreate(BaseModel):
     credit_limit: Decimal | None = None
     statement_day: int
     due_day: int
+    credit_line_id: uuid.UUID | None = None
+    card_name: str | None = None
+    available_override: Decimal | None = None
 
     @field_validator("statement_day", "due_day")
     @classmethod
@@ -32,6 +35,9 @@ class CreditCardUpdate(BaseModel):
     credit_limit: Decimal | None = None
     statement_day: int | None = None
     due_day: int | None = None
+    credit_line_id: uuid.UUID | None = None
+    card_name: str | None = None
+    available_override: Decimal | None = None
 
     @field_validator("statement_day", "due_day")
     @classmethod
@@ -53,5 +59,9 @@ class CreditCardResponse(BaseModel):
     open_period: dict | None = None     # injected: current open billing period
     due_date: date | None = None        # injected: next payment due date
     days_until_due: int | None = None   # injected
+    credit_line_id: uuid.UUID | None = None
+    card_name: str | None = None
+    available_override: Decimal | None = None
+    available_credit: Decimal | None = None  # computed, injected
 
     model_config = {"from_attributes": True}

@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from sqlalchemy import String, DateTime, Integer, Numeric, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 
@@ -24,6 +24,19 @@ class CreditCard(Base):
     bank_name: Mapped[str] = mapped_column(String(255), nullable=False)
     last_four: Mapped[str] = mapped_column(String(4), nullable=False)
     credit_limit: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
+    credit_line_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("credit_lines.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    card_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    available_override: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
+
+    credit_line: Mapped["CreditLine | None"] = relationship(  # type: ignore[name-defined]
+        "CreditLine", back_populates="cards"
+    )
+
     statement_day: Mapped[int] = mapped_column(Integer, nullable=False)
     due_day: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
