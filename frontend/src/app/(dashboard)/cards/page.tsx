@@ -12,7 +12,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, CreditCard as CreditCardIcon } from "lucide-react";
+import { Plus, CreditCard as CreditCardIcon, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { CrudSheet } from "@/components/app/CrudSheet";
 import { CurrencyInput } from "@/components/app/CurrencyInput";
 import { formatPeso } from "@/lib/utils";
@@ -130,6 +136,21 @@ export default function CardsPage() {
 
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  // Edit state
+  const [editCard, setEditCard] = useState<CreditCard | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteCardId, setDeleteCardId] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editBankName, setEditBankName] = useState("");
+  const [editCardName, setEditCardName] = useState("");
+  const [editCreditLimit, setEditCreditLimit] = useState("");
+  const [editStatementDay, setEditStatementDay] = useState("15");
+  const [editDueDay, setEditDueDay] = useState("3");
+
   async function loadData() {
     try {
       const [c, a, cl] = await Promise.all([
@@ -189,6 +210,54 @@ export default function CardsPage() {
       setError(e instanceof Error ? e.message : "Failed to create card");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function openEdit(card: CreditCard) {
+    setEditCard(card);
+    setEditBankName(card.bank_name);
+    setEditCardName(card.card_name ?? "");
+    setEditCreditLimit(card.credit_limit ?? "");
+    setEditStatementDay(String(card.statement_day));
+    setEditDueDay(String(card.due_day));
+    setEditError(null);
+    setEditOpen(true);
+  }
+
+  async function handleEditCard() {
+    if (!editCard) return;
+    setEditSubmitting(true);
+    setEditError(null);
+    try {
+      await api.patch(`/credit-cards/${editCard.id}`, {
+        bank_name: editBankName || undefined,
+        card_name: editCardName || null,
+        credit_limit: editCreditLimit ? Number(editCreditLimit) : null,
+        statement_day: Number(editStatementDay),
+        due_day: Number(editDueDay),
+      });
+      setEditOpen(false);
+      await loadData();
+    } catch (e: unknown) {
+      setEditError(e instanceof Error ? e.message : "Failed to update card");
+    } finally {
+      setEditSubmitting(false);
+    }
+  }
+
+  async function handleDeleteCard() {
+    if (!deleteCardId) return;
+    setDeleteError(null);
+    setDeleteSubmitting(true);
+    try {
+      await api.delete(`/credit-cards/${deleteCardId}`);
+      setDeleteConfirmOpen(false);
+      setDeleteCardId(null);
+      await loadData();
+    } catch {
+      setDeleteError("Failed to delete card. Please try again.");
+    } finally {
+      setDeleteSubmitting(false);
     }
   }
 
@@ -346,20 +415,53 @@ export default function CardsPage() {
                     key={c.id}
                     className="rounded-xl border bg-card p-5 card-interactive"
                   >
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-8 h-8 rounded-lg bg-accent-blue-dim flex items-center justify-center shrink-0">
-                        <CreditCardIcon className="h-4 w-4 text-accent-blue" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-foreground text-sm">
-                          {c.bank_name} ···{c.last_four}
-                        </p>
-                        {c.card_name && (
-                          <p className="text-xs text-muted-foreground">
-                            {c.card_name}
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-accent-blue-dim flex items-center justify-center shrink-0">
+                          <CreditCardIcon className="h-4 w-4 text-accent-blue" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground text-sm">
+                            {c.bank_name} ···{c.last_four}
                           </p>
-                        )}
+                          {c.card_name && (
+                            <p className="text-xs text-muted-foreground">
+                              {c.card_name}
+                            </p>
+                          )}
+                        </div>
                       </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() =>
+                              openEdit({
+                                ...c,
+                                credit_limit: null,
+                                available_credit: null,
+                                available_override: null,
+                                credit_line_id: line.id,
+                              } as CreditCard)
+                            }
+                          >
+                            <Pencil className="h-4 w-4 mr-2" />Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => {
+                              setDeleteCardId(c.id);
+                              setDeleteConfirmOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                     <BillingInfo card={c} />
                   </div>
@@ -378,11 +480,12 @@ export default function CardsPage() {
               )}
               <div className="grid gap-4 sm:grid-cols-2">
                 {standaloneCards.map((c) => (
-                    <div
-                      key={c.id}
-                      className="rounded-xl border bg-card p-5 card-interactive"
-                    >
-                      <div className="flex items-center gap-2 mb-1">
+                  <div
+                    key={c.id}
+                    className="rounded-xl border bg-card p-5 card-interactive"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-accent-blue-dim flex items-center justify-center shrink-0">
                           <CreditCardIcon className="h-4 w-4 text-accent-blue" />
                         </div>
@@ -397,25 +500,147 @@ export default function CardsPage() {
                           )}
                         </div>
                       </div>
-                      {(c.credit_limit != null || c.available_credit != null) && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {c.credit_limit != null &&
-                            `Total: ${formatPeso(c.credit_limit)}`}
-                          {c.available_credit != null &&
-                            ` · Available: ${formatPeso(c.available_credit)}`}
-                          {c.available_override != null && (
-                            <span className="ml-1 text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
-                              manual
-                            </span>
-                          )}
-                        </p>
-                      )}
-                      <BillingInfo card={c} />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEdit(c)}>
+                            <Pencil className="h-4 w-4 mr-2" />Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => {
+                              setDeleteCardId(c.id);
+                              setDeleteConfirmOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                  ))}
+                    {(c.credit_limit != null || c.available_credit != null) && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {c.credit_limit != null &&
+                          `Total: ${formatPeso(c.credit_limit)}`}
+                        {c.available_credit != null &&
+                          ` · Available: ${formatPeso(c.available_credit)}`}
+                        {c.available_override != null && (
+                          <span className="ml-1 text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                            manual
+                          </span>
+                        )}
+                      </p>
+                    )}
+                    <BillingInfo card={c} />
+                  </div>
+                ))}
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Edit Card Sheet */}
+      <CrudSheet
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        title="Edit Credit Card"
+        description="Update card details"
+        onSave={handleEditCard}
+        saveLabel={editSubmitting ? "Saving…" : "Save Changes"}
+        saveDisabled={editSubmitting}
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Bank</Label>
+            <Input
+              value={editBankName}
+              onChange={(e) => setEditBankName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Card Name</Label>
+            <Input
+              value={editCardName}
+              onChange={(e) => setEditCardName(e.target.value)}
+              placeholder="e.g. Amore Cashback"
+            />
+          </div>
+          {editCard?.credit_line_id === null && (
+            <div className="space-y-2">
+              <Label>Credit Limit</Label>
+              <CurrencyInput
+                value={editCreditLimit}
+                onChange={setEditCreditLimit}
+                placeholder="0.00"
+              />
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Statement Day</Label>
+              <Input
+                type="number"
+                min="1"
+                max="28"
+                value={editStatementDay}
+                onChange={(e) => setEditStatementDay(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Due Day</Label>
+              <Input
+                type="number"
+                min="1"
+                max="28"
+                value={editDueDay}
+                onChange={(e) => setEditDueDay(e.target.value)}
+              />
+            </div>
+          </div>
+          {editError && (
+            <p className="text-sm text-destructive">{editError}</p>
+          )}
+        </div>
+      </CrudSheet>
+
+      {/* Delete Confirmation */}
+      {deleteConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div
+            className="bg-card rounded-xl border p-6 max-w-sm mx-4 space-y-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-card-dialog-title"
+            aria-describedby="delete-card-dialog-desc"
+          >
+            <h2 id="delete-card-dialog-title" className="text-lg font-semibold">Delete card?</h2>
+            <p id="delete-card-dialog-desc" className="text-sm text-muted-foreground">
+              This card and its billing cycle history will be removed. Your
+              transactions are not affected.
+            </p>
+            {deleteError && <p className="text-sm text-destructive">{deleteError}</p>}
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => { setDeleteConfirmOpen(false); setDeleteError(null); }}
+                disabled={deleteSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteCard}
+                disabled={deleteSubmitting}
+              >
+                {deleteSubmitting ? "Deleting…" : "Delete"}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>
