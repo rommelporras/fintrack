@@ -19,6 +19,7 @@ from app.routers import budgets as budgets_router
 from app.routers import notifications as notifications_router
 from app.routers import analytics as analytics_router
 from app.routers import recurring_transactions as recurring_router
+from app.routers import credit_lines as credit_lines_router
 
 
 @asynccontextmanager
@@ -52,6 +53,7 @@ app.include_router(budgets_router.router)
 app.include_router(notifications_router.router)
 app.include_router(analytics_router.router)
 app.include_router(recurring_router.router)
+app.include_router(credit_lines_router.router)
 
 
 @app.exception_handler(IntegrityError)
