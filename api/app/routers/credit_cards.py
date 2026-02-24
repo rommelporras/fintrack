@@ -13,12 +13,12 @@ from app.services.credit_card import (
     get_due_date,
     days_until_due,
 )
+from app.services.credit_line import compute_card_available_credit
 
 router = APIRouter(prefix="/credit-cards", tags=["credit-cards"])
 
 
 async def _enrich(card: CreditCard, db: AsyncSession) -> CreditCardResponse:
-    from app.services.credit_line import compute_card_available_credit
     closed = get_closed_statement_period(card.statement_day)
     open_ = get_open_billing_period(card.statement_day)
     due = get_due_date(card.statement_day, card.due_day)
