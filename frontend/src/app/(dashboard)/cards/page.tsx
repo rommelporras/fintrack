@@ -129,6 +129,8 @@ export default function CardsPage() {
   const [accountId, setAccountId] = useState("");
   const [bankName, setBankName] = useState("");
   const [lastFour, setLastFour] = useState("");
+  const [cardName, setCardName] = useState("");
+  const [selectedLineId, setSelectedLineId] = useState("");
   const [statementDay, setStatementDay] = useState("15");
   const [dueDay, setDueDay] = useState("3");
   const [newAccountName, setNewAccountName] = useState("");
@@ -136,7 +138,7 @@ export default function CardsPage() {
 
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Edit state
+  // Edit card state
   const [editCard, setEditCard] = useState<CreditCard | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteCardId, setDeleteCardId] = useState<string | null>(null);
@@ -150,6 +152,25 @@ export default function CardsPage() {
   const [editCreditLimit, setEditCreditLimit] = useState("");
   const [editStatementDay, setEditStatementDay] = useState("15");
   const [editDueDay, setEditDueDay] = useState("3");
+
+  // Credit line state
+  const [lineOpen, setLineOpen] = useState(false);
+  const [lineSubmitting, setLineSubmitting] = useState(false);
+  const [lineError, setLineError] = useState<string | null>(null);
+  const [lineName, setLineName] = useState("");
+  const [lineTotalLimit, setLineTotalLimit] = useState("");
+
+  const [editLine, setEditLine] = useState<CreditLine | null>(null);
+  const [editLineOpen, setEditLineOpen] = useState(false);
+  const [editLineName, setEditLineName] = useState("");
+  const [editLineTotalLimit, setEditLineTotalLimit] = useState("");
+  const [editLineSubmitting, setEditLineSubmitting] = useState(false);
+  const [editLineError, setEditLineError] = useState<string | null>(null);
+
+  const [deleteLineId, setDeleteLineId] = useState<string | null>(null);
+  const [deleteLineConfirmOpen, setDeleteLineConfirmOpen] = useState(false);
+  const [deleteLineSubmitting, setDeleteLineSubmitting] = useState(false);
+  const [deleteLineError, setDeleteLineError] = useState<string | null>(null);
 
   async function loadData() {
     try {
@@ -195,13 +216,21 @@ export default function CardsPage() {
         account_id: resolvedAccountId,
         bank_name: bankName,
         last_four: lastFour,
-        credit_limit: creditLimit ? Number(creditLimit) : null,
+        card_name: cardName || null,
+        credit_limit: (!selectedLineId || selectedLineId === "__none__") && creditLimit
+          ? Number(creditLimit)
+          : null,
+        credit_line_id: (selectedLineId && selectedLineId !== "__none__")
+          ? selectedLineId
+          : null,
         statement_day: Number(statementDay),
         due_day: Number(dueDay),
       });
       setOpen(false);
       setBankName("");
       setLastFour("");
+      setCardName("");
+      setSelectedLineId("");
       setAccountId("");
       setCreditLimit("");
       setNewAccountName("");
@@ -261,6 +290,67 @@ export default function CardsPage() {
     }
   }
 
+  async function handleAddLine() {
+    setLineSubmitting(true);
+    setLineError(null);
+    try {
+      await api.post("/credit-lines", {
+        name: lineName,
+        total_limit: lineTotalLimit ? Number(lineTotalLimit) : null,
+      });
+      setLineOpen(false);
+      setLineName("");
+      setLineTotalLimit("");
+      await loadData();
+    } catch (e: unknown) {
+      setLineError(e instanceof Error ? e.message : "Failed to create credit line");
+    } finally {
+      setLineSubmitting(false);
+    }
+  }
+
+  function openEditLine(line: CreditLine) {
+    setEditLine(line);
+    setEditLineName(line.name);
+    setEditLineTotalLimit(line.total_limit ?? "");
+    setEditLineError(null);
+    setEditLineOpen(true);
+  }
+
+  async function handleEditLine() {
+    if (!editLine) return;
+    setEditLineSubmitting(true);
+    setEditLineError(null);
+    try {
+      await api.patch(`/credit-lines/${editLine.id}`, {
+        name: editLineName || undefined,
+        total_limit: editLineTotalLimit ? Number(editLineTotalLimit) : null,
+      });
+      setEditLineOpen(false);
+      await loadData();
+    } catch (e: unknown) {
+      setEditLineError(e instanceof Error ? e.message : "Failed to update credit line");
+    } finally {
+      setEditLineSubmitting(false);
+    }
+  }
+
+  async function handleDeleteLine() {
+    if (!deleteLineId) return;
+    setDeleteLineSubmitting(true);
+    setDeleteLineError(null);
+    try {
+      await api.delete(`/credit-lines/${deleteLineId}`);
+      setDeleteLineConfirmOpen(false);
+      setDeleteLineId(null);
+      await loadData();
+    } catch {
+      setDeleteLineError("Failed to delete credit line. Please try again.");
+    } finally {
+      setDeleteLineSubmitting(false);
+    }
+  }
+
   const standaloneCards = cards.filter((c) => c.credit_line_id === null);
 
   return (
@@ -274,10 +364,14 @@ export default function CardsPage() {
             Manage your cards and billing cycles
           </p>
         </div>
-        <Button size="sm" onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" />
-          Add Card
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setLineOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" />Add Credit Line
+          </Button>
+          <Button size="sm" onClick={() => setOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" />Add Card
+          </Button>
+        </div>
       </div>
 
       <CrudSheet
@@ -334,13 +428,37 @@ export default function CardsPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label>Credit Limit</Label>
-            <CurrencyInput
-              value={creditLimit}
-              onChange={setCreditLimit}
-              placeholder="0.00"
+            <Label>Card Name</Label>
+            <Input
+              value={cardName}
+              onChange={(e) => setCardName(e.target.value)}
+              placeholder="e.g. Amore Cashback"
             />
           </div>
+          <div className="space-y-2">
+            <Label>Credit Line</Label>
+            <Select value={selectedLineId} onValueChange={setSelectedLineId}>
+              <SelectTrigger>
+                <SelectValue placeholder="None (standalone)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">None (standalone)</SelectItem>
+                {creditLines.map((l) => (
+                  <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {(!selectedLineId || selectedLineId === "__none__") && (
+            <div className="space-y-2">
+              <Label>Credit Limit</Label>
+              <CurrencyInput
+                value={creditLimit}
+                onChange={setCreditLimit}
+                placeholder="0.00"
+              />
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Statement Day</Label>
@@ -393,21 +511,33 @@ export default function CardsPage() {
             <div key={line.id} className="space-y-3">
               <div className="flex items-center justify-between px-1">
                 <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    {line.name}
-                  </p>
+                  <p className="text-sm font-semibold text-foreground">{line.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {line.total_limit != null &&
-                      `Total: ${formatPeso(line.total_limit)}`}
-                    {line.available_credit != null &&
-                      ` · Available: ${formatPeso(line.available_credit)}`}
+                    {line.total_limit != null && `Total: ${formatPeso(line.total_limit)}`}
+                    {line.available_credit != null && ` · Available: ${formatPeso(line.available_credit)}`}
                     {line.available_override != null && (
-                      <span className="ml-1 text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
-                        manual
-                      </span>
+                      <span className="ml-1 text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">manual</span>
                     )}
                   </p>
                 </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => openEditLine(line)}>
+                      <Pencil className="h-4 w-4 mr-2" />Edit line
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => { setDeleteLineId(line.id); setDeleteLineConfirmOpen(true); }}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />Delete line
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 {line.cards.map((c) => (
@@ -608,7 +738,7 @@ export default function CardsPage() {
         </div>
       </CrudSheet>
 
-      {/* Delete Confirmation */}
+      {/* Delete Card Confirmation */}
       {deleteConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div
@@ -638,6 +768,75 @@ export default function CardsPage() {
                 disabled={deleteSubmitting}
               >
                 {deleteSubmitting ? "Deleting…" : "Delete"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Credit Line Sheet */}
+      <CrudSheet
+        open={lineOpen}
+        onOpenChange={setLineOpen}
+        title="New Credit Line"
+        description="A credit line groups cards that share a spending limit"
+        onSave={handleAddLine}
+        saveLabel={lineSubmitting ? "Creating…" : "Create Credit Line"}
+        saveDisabled={lineSubmitting}
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Name</Label>
+            <Input value={lineName} onChange={(e) => setLineName(e.target.value)} placeholder="BPI Credit Line" />
+          </div>
+          <div className="space-y-2">
+            <Label>Total Limit</Label>
+            <CurrencyInput value={lineTotalLimit} onChange={setLineTotalLimit} placeholder="0.00" />
+          </div>
+          {lineError && <p className="text-sm text-destructive">{lineError}</p>}
+        </div>
+      </CrudSheet>
+
+      {/* Edit Credit Line Sheet */}
+      <CrudSheet
+        open={editLineOpen}
+        onOpenChange={setEditLineOpen}
+        title="Edit Credit Line"
+        description="Update credit line details"
+        onSave={handleEditLine}
+        saveLabel={editLineSubmitting ? "Saving…" : "Save Changes"}
+        saveDisabled={editLineSubmitting}
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Name</Label>
+            <Input value={editLineName} onChange={(e) => setEditLineName(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Total Limit</Label>
+            <CurrencyInput value={editLineTotalLimit} onChange={setEditLineTotalLimit} placeholder="0.00" />
+          </div>
+          {editLineError && <p className="text-sm text-destructive">{editLineError}</p>}
+        </div>
+      </CrudSheet>
+
+      {/* Delete Credit Line Confirmation */}
+      {deleteLineConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div
+            className="bg-card rounded-xl border p-6 max-w-sm mx-4 space-y-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-line-dialog-title"
+            aria-describedby="delete-line-dialog-desc"
+          >
+            <h2 id="delete-line-dialog-title" className="text-lg font-semibold">Delete credit line?</h2>
+            <p id="delete-line-dialog-desc" className="text-sm text-muted-foreground">Cards will become standalone. Your transactions are not affected.</p>
+            {deleteLineError && <p className="text-sm text-destructive">{deleteLineError}</p>}
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={() => { setDeleteLineConfirmOpen(false); setDeleteLineError(null); }} disabled={deleteLineSubmitting}>Cancel</Button>
+              <Button variant="destructive" onClick={handleDeleteLine} disabled={deleteLineSubmitting}>
+                {deleteLineSubmitting ? "Deleting…" : "Delete"}
               </Button>
             </div>
           </div>
