@@ -14,6 +14,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   redis:
     image: redis:8.0.5
@@ -26,6 +27,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   api:
     build:
@@ -54,6 +56,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
 
   worker:
     build:
@@ -104,6 +107,7 @@ services:
       - ./frontend:/app
       - /app/node_modules
       - /app/.next
+    restart: unless-stopped
 
 volumes:
   postgres_data:
